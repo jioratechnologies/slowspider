@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Slow Spider</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#6b7a5e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1d1a" media="(prefers-color-scheme: dark)">
+<meta name="description" content="A calm, single-screen organizer for tasks, clusters, priorities and deadlines.">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Slow Spider">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+
+<!-- Cloud sync library (Supabase). Loaded lazily; the app works fully without it (offline / signed out). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+<style>
+  :root{
+    --bg:#F4F3ED;          /* paper */
+    --panel:#FDFCF9;
+    --panel-2:#FBFAF4;     /* task cards, inset fields */
+    --sunken:#ECEAE0;
+    --ink:#29271F;
+    --muted:#6B6558;       /* ink-2 */
+    --ink3:#9C9585;        /* tertiary/meta */
+    --line:#E6E2D7;        /* hair */
+    --line-strong:#DAD5C7;
+    --accent:#6B7A5E;      /* sage — primary (as shipped in Claude Design prototype) */
+    --accent-soft:#E8EBE0;
+    --sage:#6B7A5E;        /* completion + brand */
+    --sage-soft:#E8EBE0;
+    --sage-ink:#556246;
+    --clay:#BE5F3C;
+    --float:#ECEAE0;
+    --high:#B75440;
+    --med:#B98A2E;
+    --low:#6C89A0;
+    --none:transparent;    /* priority none = no edge */
+    --overdue:#B75440;
+    --soon:#B98A2E;
+    --sh-1:0 1px 2px rgba(41,39,31,.05);
+    --sh-2:0 2px 5px rgba(41,39,31,.05),0 10px 22px -12px rgba(41,39,31,.15);
+    --sh-3:0 6px 16px rgba(41,39,31,.08),0 30px 60px -18px rgba(41,39,31,.26);
+    --shadow:var(--sh-2);
+    --ring:rgba(107,122,94,.32);
+    --radius:14px;
+    --serif:'Newsreader',ui-serif,Georgia,'Times New Roman',serif;
+    --glide:cubic-bezier(.22,1,.36,1);
+    --spring:cubic-bezier(.34,1.4,.5,1);
+    --logo-mark:#C0BBAF;   /* warm grey, light theme (Claude Design) */
+    --logo-dot:#E08A3E;    /* warm orange dot */
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1C1B19;
+      --panel:#282623;
+      --panel-2:#2E2B27;
+      --sunken:#161513;
+      --ink:#ECE7DB;
+      --muted:#A79F92;
+      --ink3:#746D61;
+      --line:#37342E;
+      --line-strong:#45423b;
+      --accent:#A9B795;
+      --accent-soft:rgba(107,122,94,.22);
+      --sage:#A9B795;
+      --sage-soft:rgba(107,122,94,.22);
+      --sage-ink:#B4C1A2;
+      --clay:#E08A64;
+      --float:#161513;
+      --high:#D5715C;
+      --med:#DDAE51;
+      --low:#8FAAC0;
+      --overdue:#D5715C;
+      --soon:#DDAE51;
+      --sh-1:0 1px 2px rgba(0,0,0,.4);
+      --sh-2:0 2px 6px rgba(0,0,0,.4),0 12px 26px -12px rgba(0,0,0,.6);
+      --sh-3:0 8px 18px rgba(0,0,0,.5),0 34px 60px -18px rgba(0,0,0,.78);
+      --ring:rgba(169,183,149,.4);
+      --logo-mark:#6B655B;   /* muted warm grey on dark (Claude Design) */
+      --logo-dot:#EDA35A;
+    }
+  }
+  /* Manual "Dark" choice — forces dark regardless of system setting */
+  :root[data-theme="dark"]{
+    --bg:#1C1B19;--panel:#282623;--panel-2:#2E2B27;--sunken:#161513;--ink:#ECE7DB;--muted:#A79F92;
+    --ink3:#746D61;--line:#37342E;--line-strong:#45423b;--accent:#E08A64;--accent-soft:rgba(206,106,69,.18);
+    --accent:#A9B795;--accent-soft:rgba(107,122,94,.22);
+    --sage:#A9B795;--sage-soft:rgba(107,122,94,.22);--sage-ink:#B4C1A2;--clay:#E08A64;--float:#161513;
+    --high:#D5715C;--med:#DDAE51;--low:#8FAAC0;--overdue:#D5715C;--soon:#DDAE51;
+    --sh-1:0 1px 2px rgba(0,0,0,.4);--sh-2:0 2px 6px rgba(0,0,0,.4),0 12px 26px -12px rgba(0,0,0,.6);
+    --sh-3:0 8px 18px rgba(0,0,0,.5),0 34px 60px -18px rgba(0,0,0,.78);--ring:rgba(169,183,149,.4);
+    --logo-mark:#6B655B;--logo-dot:#EDA35A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.topbar{
+    position:sticky;top:0;z-index:50;
+    background:color-mix(in srgb,var(--bg) 88%, transparent);
+    backdrop-filter:saturate(1.2) blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:14px 20px;
+    padding-top:max(14px, env(safe-area-inset-top));
+  }
+  .topbar-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:1500px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+  .brand{gap:14px}
+  .brand h1{font-family:var(--serif);font-size:27px;margin:0;font-weight:600;letter-spacing:-.015em;line-height:1.1}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--accent)}
+  .brand .brandmark{width:54px;height:auto;display:block;flex:none}
+  .brand .sub{font-size:12px;color:var(--muted);margin-top:1px}
+  .quickadd{
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--line-strong);border-radius:999px;
+    padding:7px 9px 7px 16px;box-shadow:var(--shadow);margin:0 0 14px;
+  }
+  .quickadd input{
+    border:0;outline:0;background:transparent;color:var(--ink);
+    font-size:15px;flex:1;min-width:80px;
+  }
+  .quickadd input::placeholder{color:var(--muted)}
+  .btn{
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);
+    padding:8px 13px;border-radius:999px;font-size:13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(1.05);color:#fff}
+  .btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn.ghost:hover{color:var(--accent);background:var(--accent-soft)}
+  .btn.small{padding:5px 9px;font-size:12px}
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .search{
+    display:flex;align-items:center;gap:6px;background:var(--panel);
+    border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;
+  }
+  .search input{border:0;outline:0;background:transparent;color:var(--ink);font-size:13px;width:120px}
+
+  main{max-width:1500px;margin:0 auto;padding:20px}
+  /* No accidental text-selection while dragging cards/clusters; editable fields stay selectable */
+  main{-webkit-user-select:none;user-select:none}
+  main input, main textarea, main [contenteditable="true"], main [contenteditable="true"] *{-webkit-user-select:text;user-select:text}
+
+  /* Deadlines panel */
+  .dl-card{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--soon);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 15px;margin-bottom:18px}
+  .dl-card.has-overdue{border-left-color:var(--overdue)}
+  .dl-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .dl-title{font-family:var(--serif);font-weight:600;font-size:16.5px;display:flex;align-items:center;gap:7px}
+  .dl-pills{display:flex;gap:7px;flex-wrap:wrap}
+  .dl-pill{border:1px solid var(--line-strong);background:var(--bg);color:var(--muted);border-radius:999px;padding:3px 11px;font-size:12px;cursor:pointer;transition:.12s}
+  .dl-pill.overdue{color:#fff;background:var(--overdue);border-color:var(--overdue)}
+  .dl-pill.soon{color:#fff;background:var(--soon);border-color:var(--soon)}
+  .dl-pill.up.on{color:var(--ink);border-color:var(--accent)}
+  .dl-pill.muted{opacity:.5}
+  .dl-collapse{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12.5px}
+  .dl-collapse:hover{color:var(--accent)}
+  .dl-body{margin-top:11px;display:flex;flex-direction:column;gap:3px}
+  .dl-group-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:8px 2px 3px;font-weight:700}
+  .dl-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;cursor:pointer}
+  .dl-row:hover{background:var(--accent-soft)}
+  .dl-dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .dl-row .t{flex:1;font-size:13.5px}
+  .dl-row .d{font-size:12px;font-weight:650;white-space:nowrap}
+  .dl-row .d.overdue{color:var(--overdue)} .dl-row .d.soon{color:var(--soon)}
+  .dl-row .c{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .dl-empty{color:var(--muted);font-size:13px;padding:2px}
+
+  /* Floating tray */
+  .tray{
+    background:var(--float);
+    border:1.5px dashed var(--line-strong);
+    border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:22px;transition:.15s;
+  }
+  .tray.dragover{border-color:var(--accent);background:var(--accent-soft)}
+  .tray-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .tray-head .label{font-weight:600;font-size:14px}
+  .tray-head .hint{font-size:12px;color:var(--muted)}
+  .tray-body{display:flex;gap:10px;flex-wrap:wrap;min-height:44px;align-items:flex-start}
+  .tray-body .empty{color:var(--muted);font-size:13px;font-style:italic;padding:8px 2px}
+  .tray .card{width:260px}
+
+  /* Cold store & Dumping bin */
+  .stash{margin-top:20px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--sh-1);overflow:hidden}
+  /* Frozen — cold store turns frosty greyish-blue */
+  .stash.cold{background:color-mix(in srgb,var(--sunken) 55%, #8fb0c9 22%);border-color:color-mix(in srgb,var(--line) 55%, #8fb0c9 45%)}
+  .stash.cold .stash-title{color:color-mix(in srgb,var(--ink) 60%, #5b7d99 40%)}
+  .stash.cold .stash-item{background:color-mix(in srgb,var(--panel-2) 66%, #8fb0c9 34%);border-color:color-mix(in srgb,var(--line) 45%, #8fb0c9 55%)}
+  .stash.cold .si-dot{filter:saturate(.3) brightness(1.06)}
+  @keyframes ss-freeze{0%{filter:saturate(1);box-shadow:0 0 0 0 rgba(143,176,201,0)}
+    38%{filter:saturate(.28) brightness(1.14);box-shadow:0 0 0 5px rgba(143,176,201,.55)}
+    100%{filter:saturate(.6) brightness(1.05);box-shadow:0 0 0 0 rgba(143,176,201,0)}}
+  .stash-item.just-frozen{animation:ss-freeze .8s var(--glide)}
+  /* Rot — bin items fade in stages as they age */
+  .stash-item.rot-1{opacity:.82;filter:sepia(.22) saturate(.8)}
+  .stash-item.rot-2{opacity:.6;filter:sepia(.48) saturate(.55)}
+  .stash-item.rot-2 .si-name{text-decoration:line-through;text-decoration-color:var(--ink3)}
+  .rot-emoji{margin-right:1px}
+  .stash-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none}
+  .stash-title{font-family:var(--serif);font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:8px}
+  .stash-sub{font-size:12px;color:var(--ink3)}
+  .stash-count{margin-left:auto;font-size:12px;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 9px}
+  .stash-chev{color:var(--muted);transition:transform .2s var(--glide);font-size:12px}
+  .stash.open .stash-chev{transform:rotate(90deg)}
+  .stash-body{padding:0 14px 14px;display:none;flex-direction:column;gap:8px}
+  .stash.open .stash-body{display:flex}
+  .stash-empty{color:var(--ink3);font-size:12.5px;font-style:italic;padding:6px 2px}
+  .stash-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);touch-action:none;cursor:grab}
+  .stash-item:active{cursor:grabbing}
+  .stash-item .stash-btn,.stash-item .si-actions{cursor:pointer}
+  .stash-item.sdragging{opacity:.32}
+  .stash-ghost{border-radius:12px;pointer-events:none}
+  .stash-item .si-dot{width:10px;height:10px;border-radius:3px;flex:none}
+  .stash-item .si-name{font-weight:600;font-size:14px}
+  .stash-item .si-meta{font-size:11.5px;color:var(--ink3)}
+  .stash-item .si-actions{margin-left:auto;display:flex;gap:6px;flex:none}
+  .stash-btn{font-size:12px;color:var(--muted);border:1px solid var(--line-strong);background:var(--panel);cursor:pointer;padding:5px 11px;border-radius:8px;white-space:nowrap}
+  .stash-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .stash-btn.danger{color:var(--high)}
+  .stash-btn.danger:hover{color:var(--high);border-color:var(--high)}
+  .stash.dragover{box-shadow:0 0 0 2px var(--accent) inset, var(--sh-2)}
+  .stash.cold.dragover{box-shadow:0 0 0 2px #8fb0c9 inset, var(--sh-2)}
+  #dumpBin.dragover{box-shadow:0 0 0 2px var(--high) inset, var(--sh-2)}
+
+  /* Cluster grid */
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;align-items:start}
+  .cluster{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    box-shadow:var(--sh-2);display:flex;flex-direction:column;position:relative;
+    transition:box-shadow .22s var(--glide),transform .36s var(--glide);
+  }
+  .cluster:hover{box-shadow:var(--sh-3)}
+  .cluster:has(.menu.open){z-index:50}
+  .cluster.dragover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+  .cluster.cluster-dragging{opacity:.34}
+  .cluster.cluster-over{box-shadow:0 0 0 2px var(--accent) inset, var(--sh-3)}
+  .cluster-head{
+    display:flex;align-items:center;gap:8px;padding:13px 15px;border-bottom:1px solid var(--line);
+    border-top-left-radius:20px;border-top-right-radius:20px;
+  }
+  .cluster-grip{cursor:grab;color:var(--ink3);flex:none;display:flex;align-items:center;padding:3px;margin:-3px -1px -3px -5px;border-radius:6px;touch-action:none}
+  .cluster-grip:hover{color:var(--accent);background:var(--accent-soft)}
+  .cluster-grip:active{cursor:grabbing}
+  .cluster-swatch{width:10px;height:10px;border-radius:3px;flex:none}
+  .cluster-name{font-family:var(--serif);font-weight:600;font-size:17px;letter-spacing:-.01em;flex:1;outline:none}
+  .cluster-count{font-size:12px;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px}
+  .cluster-menu{position:relative}
+  .cluster-body{padding:10px 12px;display:flex;flex-direction:column;gap:9px;min-height:56px}
+  .cluster-body .empty{color:var(--muted);font-size:12.5px;font-style:italic;padding:6px 2px;text-align:center}
+
+  /* Task card */
+  .card{
+    position:relative;background:var(--panel-2);border:1px solid var(--line);
+    border-left:3px solid var(--none);border-radius:14px;padding:11px 12px 11px 15px;
+    box-shadow:var(--sh-1);transition:box-shadow .22s var(--glide),transform .22s var(--glide),opacity .2s;
+  }
+  .card:hover{box-shadow:var(--sh-2);transform:translateY(-1px)}
+  .card.dragging{opacity:.32}
+  .card.p-high{border-left-color:var(--high)}
+  .card.p-med{border-left-color:var(--med)}
+  .card.p-low{border-left-color:var(--low)}
+  .card.p-none{border-left-color:var(--none)}
+  .card.done{opacity:.55}
+  .card.done .card-title{text-decoration:line-through;color:var(--muted)}
+  .card-top{display:flex;align-items:flex-start;gap:9px}
+  .check{
+    appearance:none;-webkit-appearance:none;margin:2px 0 0;width:17px;height:17px;flex:none;
+    border:1.5px solid var(--line-strong);border-radius:5px;cursor:pointer;background:var(--panel);transition:.12s;
+  }
+  .check:checked{background:var(--sage);border-color:var(--sage)}
+  .check:checked::after{content:"✓";color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;line-height:15px}
+  .card-title{flex:1;font-size:14.5px;word-break:break-word;cursor:text}
+  .card-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:7px;padding-left:26px}
+  .chip{font-size:12px;display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
+  .chip.prio{display:none}
+  .chip.date{color:var(--ink3)}
+  .chip.date.overdue{color:var(--overdue)}
+  .chip.date.soon{color:var(--soon)}
+  .card-actions{position:absolute;top:8px;right:8px;display:flex;gap:2px;opacity:0;transition:.12s}
+  .card:hover .card-actions{opacity:1}
+  .icon-btn{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;padding:3px;border-radius:6px;line-height:1}
+  .icon-btn:hover{color:var(--accent);background:var(--accent-soft)}
+  .card-notes{font-size:12.5px;color:var(--muted);margin-top:6px;padding-left:26px;white-space:pre-wrap}
+  /* Milestone progress on task card */
+  .mstone{display:flex;align-items:center;gap:9px;margin-top:9px;padding-left:26px}
+  .mstone-bar{flex:1;height:5px;border-radius:999px;background:var(--sunken);overflow:hidden}
+  .mstone-bar>span{display:block;height:100%;background:var(--sage);border-radius:999px;transition:width .45s var(--glide)}
+  .mstone-lbl{font-size:11.5px;color:var(--ink3);white-space:nowrap;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:4px}
+  /* Cluster completion bar */
+  .cluster-progress{display:flex;align-items:center;gap:9px;padding:9px 15px 0}
+  .cluster-progress .cp-bar{flex:1;height:5px;border-radius:999px;background:var(--sunken);overflow:hidden}
+  .cluster-progress .cp-bar>span{display:block;height:100%;background:var(--sage);border-radius:999px;transition:width .45s var(--glide)}
+  .cluster-progress .cp-lbl{font-size:11px;color:var(--ink3);white-space:nowrap;font-variant-numeric:tabular-nums}
+  /* Milestone editor (modal) */
+  .ms-row{display:flex;align-items:center;gap:9px;padding:4px 0}
+  .ms-row .mch{appearance:none;-webkit-appearance:none;width:18px;height:18px;flex:none;border:1.5px solid var(--line-strong);border-radius:5px;cursor:pointer;background:var(--panel)}
+  .ms-row .mch:checked{background:var(--sage);border-color:var(--sage)}
+  .ms-row .mch:checked::after{content:"✓";color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:15px}
+  .ms-row input.mtitle{flex:1;border:1px solid transparent;background:transparent;color:var(--ink);font-size:14px;padding:5px 7px;border-radius:7px;outline:none}
+  .ms-row input.mtitle:focus{border-color:var(--line-strong);background:var(--bg)}
+  .ms-row input.mtitle.done{text-decoration:line-through;color:var(--muted)}
+  .ms-add{display:flex;gap:8px;margin-top:7px}
+  .ms-add input{flex:1;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--ink);font-size:14px;outline:none}
+  .ms-empty{font-size:12.5px;color:var(--ink3);padding:2px 0 4px}
+
+  /* Menu popover */
+  .menu{
+    position:absolute;top:26px;right:0;background:var(--panel);border:1px solid var(--line-strong);
+    border-radius:10px;box-shadow:var(--shadow);padding:5px;min-width:150px;z-index:30;display:none;
+  }
+  .menu.open{display:block}
+  .menu button{display:flex;width:100%;text-align:left;gap:8px;border:0;background:transparent;color:var(--ink);
+    padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;align-items:center}
+  .menu button:hover{background:var(--accent-soft)}
+  .menu button.danger{color:var(--high)}
+  .menu button.danger:hover{background:color-mix(in srgb,var(--high) 12%,transparent)}
+  .menu .sep{height:1px;background:var(--line);margin:4px 2px}
+
+  /* Modal */
+  .overlay{position:fixed;inset:0;background:rgba(20,20,18,.4);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+  .overlay.open{display:flex}
+  .modal{background:var(--panel);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:440px;padding:22px;border:1px solid var(--line)}
+  .modal h3{margin:0 0 16px;font-size:17px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .field input[type=text],.field textarea,.field input[type=date],.field select{
+    width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;
+    background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit;outline:none;
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+  .field textarea{resize:vertical;min-height:64px}
+  .prio-row{display:flex;gap:7px}
+  .prio-opt{flex:1;text-align:center;padding:8px 4px;border:1px solid var(--line-strong);border-radius:9px;cursor:pointer;font-size:13px;transition:.12s}
+  .prio-opt[data-on="1"]{color:#fff;border-color:transparent}
+  .prio-opt.high[data-on="1"]{background:var(--high)} .prio-opt.med[data-on="1"]{background:var(--med)}
+  .prio-opt.low[data-on="1"]{background:var(--low)} .prio-opt.none[data-on="1"]{background:var(--none)}
+  .color-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .color-grid .sw{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:.12s}
+  .color-grid .sw.on{outline:2px solid var(--ink);outline-offset:2px}
+  .cat-select{display:flex;flex-wrap:wrap;gap:7px}
+  .cat-chip{border:1px solid var(--line-strong);background:var(--bg);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;transition:.12s;display:inline-flex;align-items:center;gap:6px}
+  .cat-chip .d{width:8px;height:8px;border-radius:50%}
+  .cat-chip.on{color:#fff;border-color:transparent}
+  .cat-pill{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid;background:transparent;font-weight:600;white-space:nowrap}
+  .cat-row{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)}
+  .cat-row:last-child{border-bottom:0}
+  .cat-row .dot{width:18px;height:18px;border-radius:50%;flex:none;cursor:pointer;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line-strong)}
+  .cat-row input{flex:1;border:1px solid transparent;background:transparent;color:var(--ink);font-size:14px;padding:5px 7px;border-radius:7px;outline:none}
+  .cat-row input:focus{border-color:var(--line-strong);background:var(--bg)}
+  .cat-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;align-items:center}
+  .cat-filter .lbl{font-size:12px;color:var(--muted);margin-right:2px}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px}
+  .modal-actions .right{display:flex;gap:8px;margin-left:auto}
+  .hidden{display:none!important}
+  /* Backup modal */
+  .bk-section{border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:12px;background:var(--bg)}
+  .bk-title{font-weight:650;font-size:14px;display:flex;align-items:center;gap:7px;margin-bottom:4px}
+  .bk-section p{margin:0 0 10px;font-size:12.5px;color:var(--muted);line-height:1.4}
+  .bk-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .bk-state{font-size:12px;color:var(--muted)}
+  .bk-state.ok{color:var(--accent);font-weight:600}
+  .bk-state.warn{color:var(--soon);font-weight:600}
+  #bkData{width:100%;height:84px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel);color:var(--ink);padding:8px;resize:vertical;outline:none}
+  .bk-note{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .footnote{text-align:center;color:var(--muted);font-size:12px;margin:30px 0 8px}
+  .footnote a{color:var(--accent);cursor:pointer}
+  input[type=file]{display:none}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+
+  /* ---- Global top bar (Claude Design) ---- */
+  .app-topbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:11px 22px;background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:saturate(1.1) blur(14px);
+    -webkit-backdrop-filter:saturate(1.1) blur(14px);border-bottom:1px solid var(--line)}
+  .tb-left{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+  .tb-mark{width:22px;height:16px;flex:none}
+  .tb-name{font-family:var(--serif);font-size:15px;font-weight:600;white-space:nowrap}
+  .tb-note{font-size:12px;color:var(--ink3);white-space:nowrap}
+  .tb-tabs{display:flex;background:var(--sunken);border-radius:999px;padding:3px;flex:none}
+  .tb-tab{border:0;background:transparent;color:var(--muted);font-size:13px;padding:6px 16px;border-radius:999px;cursor:pointer;transition:.18s var(--glide);white-space:nowrap}
+  .tb-tab.on{background:var(--panel);color:var(--ink);box-shadow:var(--sh-1)}
+  .tb-right{display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end}
+  .tb-icon{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s}
+  .tb-icon:hover{color:var(--accent);border-color:var(--accent)}
+  .tb-icon.on{color:var(--sage-ink);border-color:var(--sage);background:var(--sage-soft)}
+  @media (max-width:720px){ .tb-note{display:none} .tb-tab{padding:6px 12px} }
+
+  /* board header no longer sticky (top bar handles sticky) */
+  header.topbar{position:static}
+  .btn.cluster-add{background:var(--sage-soft);color:var(--sage-ink);border-color:transparent}
+  .btn.cluster-add:hover{color:var(--sage-ink);border-color:transparent;filter:brightness(.97)}
+
+  /* ---- Cluster board (row grid, tops aligned) ---- */
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;align-items:start}
+  .cluster{width:100%;margin:0}
+
+  /* ---- Responsive (mobile automatic, based on screen width) ---- */
+  @media (max-width:640px){
+    header.topbar{padding:12px 15px}
+    main{padding:15px}
+    .brand{gap:11px}
+    .brand .brandmark{width:44px}
+    .brand h1{font-size:23px}
+    .board{grid-template-columns:1fr}
+    .toolbar{gap:7px}
+    .toolbar .search{flex:1;min-width:0}
+    .toolbar .search input{width:100%}
+    .cluster-body .card{cursor:default}
+  }
+
+  /* ---- Design language view ---- */
+  #designView{max-width:1000px;margin:0 auto;padding:26px 26px 60px}
+  #designView h1{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.015em;margin:0 0 22px}
+  .dl-sec{margin-bottom:36px}
+  .dl-sec-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .dl-sec-h h2{font-family:var(--serif);font-weight:600;font-size:20px;margin:0}
+  .dl-sec-h .desc{font-size:12.5px;color:var(--ink3)}
+  .sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+  .sw{height:70px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);display:flex;align-items:flex-end;padding:9px;font-size:11px;font-weight:600}
+  .sw small{font-family:ui-monospace,Menlo,monospace;font-weight:400;opacity:.8}
+  .dl-type div{display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+  .dl-type .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink3)}
+  .dl-elev{display:flex;gap:16px;flex-wrap:wrap}
+  .dl-elev div{flex:1;min-width:150px;height:92px;background:var(--panel);border:1px solid var(--line);border-radius:16px;display:flex;align-items:flex-end;padding:13px;font-size:12px;color:var(--ink3)}
+  .dl-motion div{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);flex-wrap:wrap}
+  .dl-motion .mono{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--sage-ink);background:var(--sage-soft);padding:3px 9px;border-radius:7px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <svg class="brandmark" viewBox="0 0 143 100" fill="none" role="img" aria-label="Slow Spider">
+        <g stroke="var(--ink)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 91 54 8 100 91"/>
+          <path d="M43 91 89 8 135 91"/>
+        </g>
+        <circle cx="71.5" cy="87" r="11.5" fill="var(--logo-dot)"/>
+      </svg>
+
+      <div>
+        <h1>Slow Spider</h1>
+        <div class="sub" id="subline">Everything in one place</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+        <input id="searchInput" type="text" placeholder="Search">
+      </div>
+      <button class="btn small" id="sortBtn" title="Toggle ordering"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><path d="M4 7h11M4 12h7M4 17h4M17 8v9m0 0 3-3m-3 3-3-3"/></svg> <span id="sortLabel">Smart order</span></button>
+      <button class="btn small cluster-add" id="addClusterBtn">+ Cluster</button>
+      <div class="cluster-menu" style="position:relative">
+        <button class="btn small ghost" id="menuBtn">⋯</button>
+        <div class="menu" id="appMenu" style="right:0;left:auto;min-width:250px">
+          <button data-app="install" id="installItem" class="hidden">⬇ Install app</button>
+          <button data-app="theme">🌗 Theme: <span id="themeState" style="margin-left:4px;color:var(--muted)">Auto</span></button>
+          <button data-app="cats">🏷 Manage categories…</button>
+          <button data-app="sync" id="syncItem">☁ Sign in to sync…</button>
+          <button data-app="backup">💾 Backup &amp; local file…</button>
+          <button data-app="ics">📅 Export deadlines to calendar (.ics)</button>
+          <div class="sep"></div>
+          <button data-app="notify">🔔 Browser reminders: <span id="notifyState" style="margin-left:4px;color:var(--muted)">Off</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="deadlines"></div>
+
+  <form class="quickadd" id="quickForm">
+    <input id="quickInput" type="text" placeholder="Add a task and press Enter — it lands in Floating until you're ready" autocomplete="off">
+    <button class="btn primary small" type="submit">+ Add</button>
+  </form>
+
+  <section class="tray" id="tray">
+    <div class="tray-head">
+      <span class="label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="vertical-align:-3px;margin-right:5px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Floating</span>
+      <span class="hint">Unsorted tasks live here. Drag one into a cluster when you're ready — or leave it.</span>
+    </div>
+    <div class="tray-body" id="trayBody"></div>
+  </section>
+
+  <div class="cat-filter" id="catFilter"></div>
+
+  <div class="board" id="board"></div>
+
+  <section id="coldStore" class="stash cold"></section>
+  <section id="dumpBin" class="stash"></section>
+
+  <div class="footnote">
+    Saved automatically in this browser. <a id="exportLink">Export a backup</a> · <a id="importLink">Import</a>
+    <input type="file" id="importFile" accept="application/json">
+  </div>
+</main>
+
+<!-- Task modal -->
+<div class="overlay" id="taskOverlay">
+  <div class="modal">
+    <h3 id="taskModalTitle">Edit task</h3>
+    <div class="field">
+      <label>Task</label>
+      <input type="text" id="mTitle" placeholder="What needs doing?">
+    </div>
+    <div class="field">
+      <label>Priority</label>
+      <div class="prio-row" id="mPrio">
+        <div class="prio-opt high" data-v="high">High</div>
+        <div class="prio-opt med" data-v="med">Medium</div>
+        <div class="prio-opt low" data-v="low">Low</div>
+        <div class="prio-opt none" data-v="none">None</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Deadline (optional)</label>
+      <input type="date" id="mDate">
+    </div>
+    <div class="field">
+      <label>Cluster</label>
+      <select id="mCluster"></select>
+    </div>
+    <div class="field">
+      <label>Milestones — break this task into parts</label>
+      <div id="mMilestones"></div>
+      <div class="ms-add">
+        <input type="text" id="mMsInput" placeholder="Add a milestone and press Enter" autocomplete="off">
+        <button type="button" class="btn small" id="mMsAdd">Add</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="mNotes" placeholder="Any detail you want to keep with it"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="mDelete" style="color:var(--high)">🗑 Move to bin</button>
+      <div class="right">
+        <button class="btn" id="mCancel">Cancel</button>
+        <button class="btn primary" id="mSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cluster modal -->
+<div class="overlay" id="clusterOverlay">
+  <div class="modal">
+    <h3 id="clusterModalTitle">New cluster</h3>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="cName" placeholder="e.g. Publications, Book projects, Teaching">
+    </div>
+    <div class="field">
+      <label>Colour</label>
+      <div class="color-grid" id="cColors"></div>
+    </div>
+    <div class="field">
+      <label>Category — what kind of cluster is this?</label>
+      <div class="cat-select" id="cCategory"></div>
+      <button type="button" class="btn small ghost" id="cManageCats" style="margin-top:8px">⚙ Manage categories</button>
+    </div>
+    <div class="modal-actions">
+      <div class="right">
+        <button class="btn" id="cCancel">Cancel</button>
+        <button class="btn primary" id="cSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage categories modal -->
+<div class="overlay" id="categoryOverlay">
+  <div class="modal" style="max-width:460px">
+    <h3>Manage categories</h3>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Categories describe what kind of cluster something is — Work, Personal, Family, Project, Hustle, and so on. Rename them, recolour by clicking the dot, or remove ones you don't use.</p>
+    <div id="catList"></div>
+    <div class="bk-row" style="margin-top:12px">
+      <input type="text" id="catNewName" placeholder="New category name" style="flex:1;padding:9px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--ink);font-size:14px;outline:none">
+      <button class="btn small primary" id="catAdd">Add</button>
+    </div>
+    <div class="modal-actions"><div class="right"><button class="btn" id="catClose">Done</button></div></div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMsg" style="color:var(--muted);font-size:14px;margin:0 0 6px"></p>
+    <div class="modal-actions">
+      <div class="right">
+        <button class="btn" id="confirmNo">Cancel</button>
+        <button class="btn primary" id="confirmYes" style="background:var(--high);border-color:var(--high)">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Install modal (instructions fallback) -->
+<div class="overlay" id="installOverlay">
+  <div class="modal" style="max-width:440px">
+    <h3>Install Slow Spider</h3>
+    <div id="installBody"></div>
+    <div class="modal-actions"><div class="right"><button class="btn" id="installClose">Done</button></div></div>
+  </div>
+</div>
+
+<!-- Backup & sync modal -->
+<div class="overlay" id="backupOverlay">
+  <div class="modal" style="max-width:540px;max-height:88vh;overflow:auto">
+    <h3>Backup &amp; sync</h3>
+
+    <div class="bk-section">
+      <div class="bk-title">☁ Automatic cloud backup</div>
+      <p>Connect a backup file inside a folder your cloud already syncs — iCloud Drive, Google Drive, Dropbox or OneDrive. The organizer then saves to it on every change, and your cloud service copies it to all your devices. No account or server needed.</p>
+      <div class="bk-row">
+        <button class="btn primary small" id="bkConnect">Connect a backup file</button>
+        <button class="btn small hidden" id="bkReconnect">Reconnect</button>
+        <button class="btn small ghost hidden" id="bkDisconnect">Disconnect</button>
+        <span class="bk-state" id="bkAutoState">Not connected</span>
+      </div>
+      <div class="bk-note hidden" id="bkUnsupported">Automatic file sync needs Chrome or Edge. In Safari or Firefox, use Manual backup below — it works everywhere.</div>
+    </div>
+
+    <div class="bk-section">
+      <div class="bk-title">⬇ Manual backup</div>
+      <p>Download a full backup file, or import one to restore or move to another computer. Keeping it in a cloud folder is a simple, universal backup.</p>
+      <div class="bk-row">
+        <button class="btn small" id="bkExport">Download backup</button>
+        <button class="btn small" id="bkImport">Import backup</button>
+        <span class="bk-state" id="bkLast"></span>
+      </div>
+    </div>
+
+    <div class="bk-section">
+      <div class="bk-title">🤖 Let an assistant manage it</div>
+      <p>This box is your data as text. Copy it to hand to any AI assistant — Claude or another — with your permission, then paste its updated version back and Apply to load the changes.</p>
+      <textarea id="bkData" spellcheck="false"></textarea>
+      <div class="bk-row" style="margin-top:8px">
+        <button class="btn small" id="bkCopy">Copy</button>
+        <button class="btn small primary" id="bkApply">Apply pasted data</button>
+        <button class="btn small ghost" id="bkReset">Reset to current</button>
+        <span class="bk-state" id="bkApplyState"></span>
+      </div>
+    </div>
+
+    <div class="modal-actions"><div class="right"><button class="btn" id="bkClose">Done</button></div></div>
+  </div>
+</div>
+
+<!-- Cloud sign-in / sync modal -->
+<div class="overlay" id="syncOverlay">
+  <div class="modal" style="max-width:410px">
+    <h3 id="syncTitle">Sign in to sync</h3>
+    <div id="syncStep1">
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.55;margin:0 0 14px">Sync your tasks across all your devices. Slow Spider is invite-only — sign in with the email you were invited with. We'll email you a 6-digit code.</p>
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px">Email</label>
+      <input id="syncEmail" type="email" autocomplete="email" placeholder="you@example.com">
+      <div class="modal-actions"><div class="right"><button class="btn" id="syncCancel">Cancel</button><button class="btn primary" id="syncSend">Send code</button></div></div>
+    </div>
+    <div id="syncStep2" class="hidden">
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.55;margin:0 0 14px">Enter the 6-digit code we emailed to <b id="syncEmailEcho"></b>.</p>
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px">6-digit code</label>
+      <input id="syncCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6">
+      <div class="modal-actions"><div class="right"><button class="btn" id="syncBack">Back</button><button class="btn primary" id="syncVerify">Verify &amp; sign in</button></div></div>
+    </div>
+    <div id="syncSignedIn" class="hidden">
+      <p style="color:var(--muted);font-size:13.5px;line-height:1.55;margin:0 0 6px">Signed in as <b id="syncWho"></b>.</p>
+      <p style="color:var(--ink3);font-size:12.5px;line-height:1.5;margin:0 0 8px">Your tasks sync automatically across every device where you sign in with this email.</p>
+      <div class="modal-actions"><div class="right"><button class="btn ghost" id="syncSignOut">Sign out</button><button class="btn primary" id="syncDone">Done</button></div></div>
+    </div>
+    <div id="syncErr" class="bk-state" style="margin-top:6px;min-height:16px"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const KEY="myOrganizer.v1";
+  const COLORS=["#6b7a5e","#4c9a8a","#4f8f5a","#8a9a4e","#6f8fa6","#3f8fb0","#5b6bb0","#8a6ea6",
+    "#a05a86","#b06f8a","#c0563f","#b0574f","#c17f4a","#c99a3f","#b58a3f","#9a7b53","#7d8891","#5f7d6a"];
+  const PRIO_RANK={high:3,med:2,low:1,none:0};
+  const BIN_MS=14*86400000;   // 2 weeks (dumping-bin retention)
+
+  // ---- state ----
+  let state=load();
+  let sortMode=state.sortMode||"smart";     // "smart" | "manual"
+  let search="";
+  let activeCategory=null;                   // category id to filter clusters, or null
+  let editingTaskId=null;
+  let editingClusterId=null;   // for cluster modal
+  let confirmCb=null;
+
+  function uid(){return "id"+Math.floor(performance.now()*1000).toString(36)+Math.floor(Math.random()*1e6).toString(36);}
+
+  function defaultCategories(){
+    return [
+      {id:uid(),name:"Work",color:"#6f8fa6"},
+      {id:uid(),name:"Profession",color:"#5b6bb0"},
+      {id:uid(),name:"Personal",color:"#6b7a5e"},
+      {id:uid(),name:"Family",color:"#c17f4a"},
+      {id:uid(),name:"Project",color:"#8a6ea6"},
+      {id:uid(),name:"Hustle",color:"#c0563f"}
+    ];
+  }
+  function seed(){
+    const c1=uid(),c2=uid(),c3=uid();
+    const cats=defaultCategories();
+    const catId=n=>{const c=cats.find(x=>x.name===n);return c?c.id:null;};
+    return {
+      version:1,
+      sortMode:"smart",
+      categories:cats,
+      clusters:[
+        {id:c1,name:"Publications",color:COLORS[0],category:catId("Profession"),status:"active",binnedAt:null},
+        {id:c2,name:"Book projects",color:COLORS[7],category:catId("Project"),status:"active",binnedAt:null},
+        {id:c3,name:"Teaching",color:COLORS[13],category:catId("Work"),status:"active",binnedAt:null}
+      ],
+      tasks:[]
+    };
+  }
+  function migrate(d){
+    if(!Array.isArray(d.categories)) d.categories=defaultCategories();
+    d.clusters.forEach(c=>{if(!("category" in c)) c.category=null; if(!c.status) c.status="active"; if(!("binnedAt" in c)) c.binnedAt=null;});
+    d.tasks.forEach(t=>{if(!Array.isArray(t.milestones)) t.milestones=[]; if(!("binned" in t)) t.binned=false; if(!("binnedAt" in t)) t.binnedAt=null; if(!("cold" in t)) t.cold=false;});
+    // ---- cloud-sync fields (per-entity last-write-wins + tombstones) ----
+    if(!d.tomb || typeof d.tomb!=="object") d.tomb={t:{},c:{},k:{}};
+    ["t","c","k"].forEach(k=>{ if(!d.tomb[k]) d.tomb[k]={}; });
+    const now=(function(){try{return Date.now();}catch(e){return 1;}})();
+    d.clusters.forEach((c,i)=>{ if(c.pos==null)c.pos=i; if(c.updatedAt==null)c.updatedAt=now; });
+    d.categories.forEach((c,i)=>{ if(c.pos==null)c.pos=i; if(c.updatedAt==null)c.updatedAt=now; });
+    d.tasks.forEach(t=>{ if(t.updatedAt==null)t.updatedAt=now; });
+    if(d.settingsUpdatedAt==null) d.settingsUpdatedAt=now;
+    // drop tombstones older than 60 days so the list can't grow forever
+    ["t","c","k"].forEach(k=>{ for(const id in d.tomb[k]){ if(now-d.tomb[k][id]>60*86400000) delete d.tomb[k][id]; } });
+    purgeBin(d);
+    return d;
+  }
+  // permanently remove bin items older than 2 weeks (leaves a tombstone so the delete syncs)
+  function purgeBin(d){
+    let now; try{now=Date.now();}catch(e){return;}
+    const tomb=d.tomb||{t:{},c:{},k:{}};
+    const gone=new Set();
+    d.clusters=d.clusters.filter(c=>{
+      if(c.status==="binned" && c.binnedAt && (now-c.binnedAt)>BIN_MS){gone.add(c.id);if(tomb.c)tomb.c[c.id]=now;return false;}
+      return true;
+    });
+    d.tasks=d.tasks.filter(t=>{
+      if(gone.has(t.cluster)){if(tomb.t)tomb.t[t.id]=now;return false;}                  // tasks of purged clusters
+      if(t.binned && t.binnedAt && (now-t.binnedAt)>BIN_MS){if(tomb.t)tomb.t[t.id]=now;return false;}   // purged tasks
+      return true;
+    });
+  }
+  function daysLeft(binnedAt){ try{return Math.max(0, Math.ceil((BIN_MS-(Date.now()-binnedAt))/86400000));}catch(e){return 14;} }
+  function isClusterActive(c){return !c.status || c.status==="active";}
+  // a task counts as "live" (board/deadlines/counts) if not binned and not inside a cold/binned cluster
+  function isTaskLive(t){
+    if(t.binned||t.cold) return false;
+    if(t.cluster==null) return true;
+    const c=state.clusters.find(x=>x.id===t.cluster);
+    return c ? isClusterActive(c) : true;
+  }
+  // progress helpers
+  function taskProgress(t){
+    const ms=t.milestones||[];
+    if(ms.length){const done=ms.filter(m=>m.done).length;return {done,total:ms.length,pct:Math.round(done/ms.length*100)};}
+    return {done:t.done?1:0,total:0,pct:t.done?100:0};
+  }
+  function clusterProgress(clusterId){
+    const arr=state.tasks.filter(t=>t.cluster===clusterId && !t.binned && !t.cold);
+    const total=arr.length, done=arr.filter(t=>t.done).length;
+    return {done,total,pct: total?Math.round(done/total*100):0};
+  }
+  function load(){
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(raw){const d=JSON.parse(raw); if(d&&d.clusters&&d.tasks){const m=migrate(d);try{localStorage.setItem(KEY,JSON.stringify(m));}catch(e){}return m;}}
+    }catch(e){}
+    const s=seed();
+    try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
+    return s;
+  }
+  function save(){
+    state.sortMode=sortMode;
+    stampChanges();
+    try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+    scheduleAutoBackup();
+    scheduleSync();
+  }
+
+  // ---- per-entity change stamping (feeds the cloud merge; no mutation site needs to know) ----
+  const SYNC_TYPES=[["t","tasks"],["c","clusters"],["k","categories"]];
+  let lastSig=null;   // Map "type:id" -> content signature (excludes updatedAt)
+  function sigOf(e){ const c=Object.assign({},e); delete c.updatedAt; return JSON.stringify(c); }
+  function ensureTomb(){ if(!state.tomb||typeof state.tomb!=="object") state.tomb={t:{},c:{},k:{}}; ["t","c","k"].forEach(k=>{ if(!state.tomb[k]) state.tomb[k]={}; }); }
+  function primeSig(){
+    ensureTomb();
+    state.clusters.forEach((c,i)=>{ c.pos=i; if(c.updatedAt==null)c.updatedAt=nowMs(); });
+    state.categories.forEach((c,i)=>{ c.pos=i; if(c.updatedAt==null)c.updatedAt=nowMs(); });
+    state.tasks.forEach(t=>{ if(t.updatedAt==null)t.updatedAt=nowMs(); });
+    lastSig=new Map();
+    for(const [tk,ak] of SYNC_TYPES) for(const e of state[ak]) lastSig.set(tk+":"+e.id, sigOf(e));
+    state._setSig=JSON.stringify({s:state.sortMode,n:!!state.notify});
+    if(state.settingsUpdatedAt==null) state.settingsUpdatedAt=nowMs();
+  }
+  function stampChanges(){
+    ensureTomb();
+    if(!lastSig){ primeSig(); return; }
+    const now=nowMs();
+    state.clusters.forEach((c,i)=>{ c.pos=i; });
+    state.categories.forEach((c,i)=>{ c.pos=i; });
+    const sig=new Map(); const seen={t:new Set(),c:new Set(),k:new Set()};
+    for(const [tk,ak] of SYNC_TYPES){
+      for(const e of state[ak]){
+        const key=tk+":"+e.id, s=sigOf(e);
+        seen[tk].add(e.id);
+        if(lastSig.get(key)!==s) e.updatedAt=now;
+        sig.set(key,s);
+      }
+    }
+    for(const key of lastSig.keys()){
+      const i=key.indexOf(":"), tk=key.slice(0,i), id=key.slice(i+1);
+      if(seen[tk] && !seen[tk].has(id)) state.tomb[tk][id]=now;   // disappeared -> tombstone
+    }
+    const setSig=JSON.stringify({s:state.sortMode,n:!!state.notify});
+    if(state._setSig!==undefined && state._setSig!==setSig) state.settingsUpdatedAt=now;
+    state._setSig=setSig;
+    lastSig=sig;
+  }
+
+  // ---- helpers ----
+  const $=s=>document.querySelector(s);
+  function esc(t){const d=document.createElement("div");d.textContent=t==null?"":t;return d.innerHTML;}
+  function todayStr(){const d=new Date();d.setHours(0,0,0,0);return d;}
+  function dayDiff(dateStr){
+    if(!dateStr) return null;
+    const d=new Date(dateStr+"T00:00:00");
+    return Math.round((d-todayStr())/86400000);
+  }
+  function fmtDate(dateStr){
+    const diff=dayDiff(dateStr);
+    if(diff===null) return "";
+    const d=new Date(dateStr+"T00:00:00");
+    const opts={month:"short",day:"numeric"};
+    let label=d.toLocaleDateString(undefined,opts);
+    if(diff===0) label="Today";
+    else if(diff===1) label="Tomorrow";
+    else if(diff===-1) label="Yesterday";
+    else if(diff<-1) label=(-diff)+"d overdue";
+    else if(diff<=7) label="in "+diff+"d";
+    return label;
+  }
+  function dateClass(dateStr){
+    const diff=dayDiff(dateStr);
+    if(diff===null) return "";
+    if(diff<0) return "overdue";
+    if(diff<=2) return "soon";
+    return "";
+  }
+
+  function tasksIn(clusterId){
+    let arr=state.tasks.filter(t=>t.cluster===clusterId && !t.binned && !t.cold);
+    if(search){
+      const q=search.toLowerCase();
+      arr=arr.filter(t=>(t.title||"").toLowerCase().includes(q)||(t.notes||"").toLowerCase().includes(q));
+    }
+    if(sortMode==="smart"){
+      arr=arr.slice().sort((a,b)=>{
+        if(!!a.done!==!!b.done) return a.done?1:-1;
+        const pr=PRIO_RANK[b.priority||"none"]-PRIO_RANK[a.priority||"none"];
+        if(pr) return pr;
+        const ad=a.deadline?dayDiff(a.deadline):Infinity;
+        const bd=b.deadline?dayDiff(b.deadline):Infinity;
+        if(ad!==bd) return ad-bd;
+        return (a.order||0)-(b.order||0);
+      });
+    }else{
+      arr=arr.slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    }
+    return arr;
+  }
+
+  // ---- rendering ----
+  function taskCard(t){
+    const el=document.createElement("div");
+    el.className="card p-"+(t.priority||"none")+(t.done?" done":"");
+    el.draggable=true;
+    el.dataset.id=t.id;
+    const prio=t.priority||"none";
+    const dchip=t.deadline?`<span class="chip date ${dateClass(t.deadline)}">🗓 ${esc(fmtDate(t.deadline))}</span>`:"";
+    const pchip=prio!=="none"?`<span class="chip prio ${prio}">${prio==="high"?"High":prio==="med"?"Medium":"Low"}</span>`:"";
+    const meta=(pchip||dchip)?`<div class="card-meta">${pchip}${dchip}</div>`:"";
+    const notes=t.notes?`<div class="card-notes">${esc(t.notes)}</div>`:"";
+    let mstone="";
+    if(t.milestones && t.milestones.length){
+      const p=taskProgress(t);
+      mstone=`<div class="mstone" title="${p.done} of ${p.total} milestones done">
+        <div class="mstone-bar"><span style="width:${p.pct}%"></span></div>
+        <span class="mstone-lbl">${p.done}/${p.total}</span></div>`;
+    }
+    el.innerHTML=`
+      <div class="card-actions">
+        <button class="icon-btn" data-act="edit" title="Edit">✎</button>
+        <button class="icon-btn" data-act="del" title="Delete">✕</button>
+      </div>
+      <div class="card-top">
+        <input class="check" type="checkbox" ${t.done?"checked":""} data-act="check">
+        <div class="card-title" data-act="edit">${esc(t.title)||"<span style='color:var(--muted)'>Untitled</span>"}</div>
+      </div>
+      ${meta}${notes}${mstone}`;
+    return el;
+  }
+
+  function render(){
+    // subline count (live tasks / active clusters only)
+    const live=state.tasks.filter(isTaskLive);
+    const total=live.length, done=live.filter(t=>t.done).length;
+    const activeCl=state.clusters.filter(isClusterActive).length;
+    $("#subline").textContent = total? `${total-done} open · ${done} done · ${activeCl} clusters` : "Everything in one place";
+
+    // floating
+    const trayBody=$("#trayBody");
+    trayBody.innerHTML="";
+    const floaters=tasksIn(null);
+    if(!floaters.length){
+      trayBody.innerHTML=`<div class="empty">Nothing floating. New tasks appear here first.</div>`;
+    }else{
+      floaters.forEach(t=>trayBody.appendChild(taskCard(t)));
+    }
+
+    // category filter bar
+    renderCatFilter();
+
+    // board
+    const board=$("#board");
+    board.innerHTML="";
+    state.clusters.forEach(c=>{
+      if(!isClusterActive(c)) return;   // cold/binned clusters render in their own sections
+      if(activeCategory && c.category!==activeCategory) return;
+      const col=document.createElement("div");
+      col.className="cluster";
+      col.dataset.cluster=c.id;
+      const items=tasksIn(c.id);
+      const openCount=state.tasks.filter(t=>t.cluster===c.id&&!t.done&&!t.binned).length;
+      const cat=getCategory(c.category);
+      const catPill=cat?`<span class="cat-pill" style="color:${cat.color};border-color:${cat.color}">${esc(cat.name)}</span>`:"";
+      const cp=clusterProgress(c.id);
+      const cprog=cp.total?`<div class="cluster-progress" title="${cp.done} of ${cp.total} tasks complete"><div class="cp-bar"><span style="width:${cp.pct}%"></span></div><span class="cp-lbl">${cp.pct}%</span></div>`:"";
+      col.innerHTML=`
+        <div class="cluster-head">
+          <span class="cluster-grip" data-cgrip="${c.id}" title="Drag to reorder clusters"><svg width="11" height="15" viewBox="0 0 12 16" fill="currentColor"><circle cx="3.2" cy="3" r="1.35"/><circle cx="8.8" cy="3" r="1.35"/><circle cx="3.2" cy="8" r="1.35"/><circle cx="8.8" cy="8" r="1.35"/><circle cx="3.2" cy="13" r="1.35"/><circle cx="8.8" cy="13" r="1.35"/></svg></span>
+          <span class="cluster-swatch" style="background:${c.color}"></span>
+          <div class="cluster-name" contenteditable="true" spellcheck="false" data-cid="${c.id}">${esc(c.name)}</div>
+          ${catPill}
+          <span class="cluster-count">${openCount}</span>
+          <div class="cluster-menu">
+            <button class="icon-btn" data-cmenu="${c.id}">⋯</button>
+            <div class="menu" data-menu="${c.id}">
+              <button data-cact="edit" data-cid="${c.id}">✎ Edit name, colour, category</button>
+              <button data-cact="left" data-cid="${c.id}">← Move left</button>
+              <button data-cact="right" data-cid="${c.id}">→ Move right</button>
+              <div class="sep"></div>
+              <button data-cact="cold" data-cid="${c.id}">❄ Pause → Cold store</button>
+              <button class="danger" data-cact="bin" data-cid="${c.id}">🗑 Move to Dumping bin</button>
+            </div>
+          </div>
+        </div>
+        ${cprog}
+        <div class="cluster-body" data-body="${c.id}"></div>`;
+      const body=col.querySelector(".cluster-body");
+      if(!items.length){
+        body.innerHTML=`<div class="empty">Drag tasks here</div>`;
+      }else{
+        items.forEach(t=>body.appendChild(taskCard(t)));
+      }
+      board.appendChild(col);
+    });
+    renderDeadlines();
+    renderColdStore();
+    renderDumpBin();
+  }
+
+  // ---- Cold store & Dumping bin ----
+  let coldOpen=false, binOpen=false, justFrozenId=null;
+  function renderColdStore(){
+    const host=$("#coldStore");
+    const cold=state.clusters.filter(c=>c.status==="cold");
+    const coldTasks=state.tasks.filter(t=>t.cold&&!t.binned);
+    const rows=cold.map(c=>{
+      const n=state.tasks.filter(t=>t.cluster===c.id&&!t.binned&&!t.cold).length;
+      const cat=getCategory(c.category);
+      const frz=(c.id===justFrozenId)?" just-frozen":"";
+      return `<div class="stash-item${frz}" data-skind="cluster" data-sid="${c.id}" data-splace="cold">
+        <span class="si-dot" style="background:${c.color}"></span>
+        <span class="si-name">${esc(c.name)}</span>
+        <span class="si-meta">${n} task${n!==1?"s":""}${cat?" · "+esc(cat.name):""}</span>
+        <span class="si-actions">
+          <button class="stash-btn" data-cold-resume="${c.id}">▶ Resume</button>
+          <button class="stash-btn danger" data-cold-bin="${c.id}">🗑 Bin</button>
+        </span></div>`;
+    }).join("")
+    + coldTasks.map(t=>{
+      const frz=(t.id===justFrozenId)?" just-frozen":"";
+      return `<div class="stash-item${frz}" data-skind="task" data-sid="${t.id}" data-splace="cold">
+        <span class="si-dot" style="background:var(--muted)"></span>
+        <span class="si-name">${esc(t.title)||"Untitled"}</span>
+        <span class="si-meta">task · ${esc(clusterName(t.cluster))}</span>
+        <span class="si-actions">
+          <button class="stash-btn" data-cold-resume-t="${t.id}">▶ Resume</button>
+          <button class="stash-btn danger" data-cold-bin-t="${t.id}">🗑 Bin</button>
+        </span></div>`;
+    }).join("");
+    const total=cold.length+coldTasks.length;
+    host.innerHTML=`
+      <div class="stash-head" data-stash="cold">
+        <span class="stash-title">❄ Cold store</span>
+        <span class="stash-sub">Paused projects, kept for later</span>
+        <span class="stash-count">${total}</span>
+        <span class="stash-chev">▸</span>
+      </div>
+      <div class="stash-body">${total?rows:`<div class="stash-empty">Nothing paused. Drag a cluster or task here, or use a cluster's ⋯ menu → Pause.</div>`}</div>`;
+    host.classList.toggle("open", coldOpen);
+    justFrozenId=null;   // one-shot freeze animation
+  }
+  function rotStage(binnedAt){ const dl=daysLeft(binnedAt); return dl<=4?2:dl<=9?1:0; }
+  function rotEmoji(stage){ return stage===2?`<span class="rot-emoji">🥀</span>`:stage===1?`<span class="rot-emoji">🍂</span>`:""; }
+  function renderDumpBin(){
+    const host=$("#dumpBin");
+    const binnedClusters=state.clusters.filter(c=>c.status==="binned");
+    const binnedTasks=state.tasks.filter(t=>t.binned);
+    const cRows=binnedClusters.map(c=>{
+      const n=state.tasks.filter(t=>t.cluster===c.id).length;
+      const rs=rotStage(c.binnedAt);
+      return `<div class="stash-item rot-${rs}" data-skind="cluster" data-sid="${c.id}" data-splace="bin">
+        <span class="si-dot" style="background:${c.color}"></span>
+        <span class="si-name">${rotEmoji(rs)}${esc(c.name)}</span>
+        <span class="si-meta">cluster · ${n} task${n!==1?"s":""} · deletes in ${daysLeft(c.binnedAt)}d</span>
+        <span class="si-actions">
+          <button class="stash-btn" data-bin-restore-c="${c.id}">↩ Restore</button>
+          <button class="stash-btn danger" data-bin-del-c="${c.id}">✕ Delete now</button>
+        </span></div>`;
+    }).join("");
+    const tRows=binnedTasks.map(t=>{
+      const rs=rotStage(t.binnedAt);
+      return `<div class="stash-item rot-${rs}" data-skind="task" data-sid="${t.id}" data-splace="bin">
+        <span class="si-dot" style="background:var(--muted)"></span>
+        <span class="si-name">${rotEmoji(rs)}${esc(t.title)||"Untitled"}</span>
+        <span class="si-meta">task · ${esc(clusterName(t.cluster))} · deletes in ${daysLeft(t.binnedAt)}d</span>
+        <span class="si-actions">
+          <button class="stash-btn" data-bin-restore-t="${t.id}">↩ Restore</button>
+          <button class="stash-btn danger" data-bin-del-t="${t.id}">✕ Delete now</button>
+        </span></div>`;
+    }).join("");
+    const count=binnedClusters.length+binnedTasks.length;
+    const empty=`<div class="stash-empty">The bin is empty. Deleted clusters and tasks land here and are removed for good after 2 weeks.</div>`;
+    const emptyBtn=count?`<button class="stash-btn danger" data-bin-empty="1" style="align-self:flex-start;margin-top:4px">✕ Empty bin now</button>`:"";
+    host.innerHTML=`
+      <div class="stash-head" data-stash="bin">
+        <span class="stash-title">🗑 Dumping bin</span>
+        <span class="stash-sub">Removed for good after 2 weeks</span>
+        <span class="stash-count">${count}</span>
+        <span class="stash-chev">▸</span>
+      </div>
+      <div class="stash-body">${count?(cRows+tRows+emptyBtn):empty}</div>`;
+    host.classList.toggle("open", binOpen);
+  }
+
+  // stash actions
+  function coldCluster(id){const c=state.clusters.find(x=>x.id===id);if(c){c.status="cold";c.binnedAt=null;justFrozenId=id;coldOpen=true;save();render();}}
+  function resumeCluster(id){const c=state.clusters.find(x=>x.id===id);if(c){c.status="active";c.binnedAt=null;coldOpen=state.clusters.some(x=>x.status==="cold");save();render();}}
+  function binCluster(id){const c=state.clusters.find(x=>x.id===id);if(c){c.status="binned";try{c.binnedAt=Date.now();}catch(e){c.binnedAt=0;}save();render();}}
+  function restoreClusterFromBin(id){const c=state.clusters.find(x=>x.id===id);if(c){c.status="active";c.binnedAt=null;save();render();}}
+  function deleteClusterForever(id){
+    const c=state.clusters.find(x=>x.id===id);const n=state.tasks.filter(t=>t.cluster===id).length;
+    askConfirm("Delete permanently?",`"${c?c.name:"cluster"}"${n?` and its ${n} task${n>1?"s":""}`:""} will be gone for good.`,()=>{
+      state.tasks=state.tasks.filter(t=>t.cluster!==id);
+      state.clusters=state.clusters.filter(x=>x.id!==id);
+      save();render();
+    });
+  }
+  function binTask(id){const t=getTask(id);if(t){t.binned=true;t.cold=false;try{t.binnedAt=Date.now();}catch(e){t.binnedAt=0;}save();render();}}
+  function restoreTask(id){const t=getTask(id);if(t){t.binned=false;t.binnedAt=null;save();render();}}
+  function coldTask(id){const t=getTask(id);if(t){t.cold=true;justFrozenId=id;coldOpen=true;save();render();}}
+  function resumeTask(id){const t=getTask(id);if(t){t.cold=false;save();render();}}
+  function deleteTaskForever(id){
+    const t=getTask(id);
+    askConfirm("Delete permanently?",`"${t?t.title||"Untitled":"task"}" will be gone for good.`,()=>{deleteTask(id);});
+  }
+  function emptyBinForever(){
+    askConfirm("Empty the bin?","Everything in the Dumping bin will be permanently deleted.",()=>{
+      const goneC=state.clusters.filter(c=>c.status==="binned").map(c=>c.id);
+      state.clusters=state.clusters.filter(c=>c.status!=="binned");
+      state.tasks=state.tasks.filter(t=>!t.binned && goneC.indexOf(t.cluster)<0);
+      save();render();
+    });
+  }
+
+  function renderCatFilter(){
+    const host=$("#catFilter");
+    const used=state.categories.filter(cat=>state.clusters.some(c=>c.category===cat.id));
+    if(!used.length){host.innerHTML="";return;}
+    let html=`<span class="lbl">Show:</span><button class="cat-chip${activeCategory===null?" on":""}" data-filter="all" ${activeCategory===null?'style="background:var(--accent);border-color:transparent"':''}>All</button>`;
+    used.forEach(cat=>{
+      const on=activeCategory===cat.id;
+      html+=`<button class="cat-chip${on?" on":""}" data-filter="${cat.id}" ${on?`style="background:${cat.color};border-color:transparent"`:''}><span class="d" style="background:${on?'#fff':cat.color}"></span>${esc(cat.name)}</button>`;
+    });
+    host.innerHTML=html;
+  }
+
+  // ---- deadline intelligence ----
+  let dlExpanded=true;
+  function deadlineBuckets(){
+    const overdue=[],soon=[],upcoming=[];
+    state.tasks.forEach(t=>{
+      if(t.done||!t.deadline||!isTaskLive(t)) return;
+      const d=dayDiff(t.deadline);
+      if(d<0) overdue.push(t);
+      else if(d<=2) soon.push(t);
+      else if(d<=7) upcoming.push(t);
+    });
+    const by=(a,b)=>dayDiff(a.deadline)-dayDiff(b.deadline);
+    overdue.sort(by);soon.sort(by);upcoming.sort(by);
+    return {overdue,soon,upcoming};
+  }
+  function clusterName(id){const c=state.clusters.find(x=>x.id===id);return c?c.name:"Floating";}
+  function clusterColor(id){const c=state.clusters.find(x=>x.id===id);return c?c.color:"var(--none)";}
+  function rowHtml(t,kind){
+    const d=dayDiff(t.deadline);
+    let lbl=fmtDate(t.deadline), cls=kind==="overdue"?"overdue":kind==="soon"?"soon":"";
+    return `<div class="dl-row" data-open="${t.id}">
+        <span class="dl-dot" style="background:${clusterColor(t.cluster)}"></span>
+        <span class="t">${esc(t.title)}</span>
+        <span class="d ${cls}">${esc(lbl)}</span>
+        <span class="c">· ${esc(clusterName(t.cluster))}</span>
+      </div>`;
+  }
+  function renderDeadlines(){
+    const host=$("#deadlines");
+    const {overdue,soon,upcoming}=deadlineBuckets();
+    if(!overdue.length && !soon.length && !upcoming.length){host.innerHTML="";return;}
+    const pills=[
+      overdue.length?`<span class="dl-pill overdue">${overdue.length} overdue</span>`:"",
+      soon.length?`<span class="dl-pill soon">${soon.length} due soon</span>`:"",
+      upcoming.length?`<span class="dl-pill up on">${upcoming.length} this week</span>`:""
+    ].join("");
+    let body="";
+    if(dlExpanded){
+      if(overdue.length) body+=`<div class="dl-group-label" style="color:var(--overdue)">Overdue / missed</div>`+overdue.map(t=>rowHtml(t,"overdue")).join("");
+      if(soon.length) body+=`<div class="dl-group-label" style="color:var(--soon)">Due soon (next 2 days)</div>`+soon.map(t=>rowHtml(t,"soon")).join("");
+      if(upcoming.length) body+=`<div class="dl-group-label">Upcoming this week</div>`+upcoming.map(t=>rowHtml(t,"up")).join("");
+    }
+    host.innerHTML=`<div class="dl-card ${overdue.length?"has-overdue":""}">
+        <div class="dl-head">
+          <span class="dl-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--clay)" stroke-width="1.7" style="flex:none"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2.5 6 5M15 2.5 18 5"/></svg>Deadlines</span>
+          <span class="dl-pills">${pills}</span>
+          <button class="dl-collapse" id="dlToggle">${dlExpanded?"Hide":"Show"}</button>
+        </div>
+        <div class="dl-body">${dlExpanded?body:""}</div>
+      </div>`;
+    const tg=$("#dlToggle"); if(tg) tg.onclick=()=>{dlExpanded=!dlExpanded;renderDeadlines();};
+  }
+
+  // ---- calendar (.ics) export ----
+  function pad(n){return String(n).padStart(2,"0");}
+  function icsDate(dateStr,offsetDays){
+    const d=new Date(dateStr+"T00:00:00");
+    if(offsetDays) d.setDate(d.getDate()+offsetDays);
+    return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  }
+  function icsStamp(){
+    const d=new Date();
+    return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+"Z";
+  }
+  function icsEsc(s){return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");}
+  function exportICS(){
+    const withDates=state.tasks.filter(t=>t.deadline);
+    if(!withDates.length){askConfirm("Nothing to export","Add a deadline to at least one task first, then export.",null);
+      $("#confirmYes").style.display="none";return;}
+    const stamp=icsStamp();
+    let lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Slow Spider//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Slow Spider"];
+    withDates.forEach(t=>{
+      const pfx=t.priority&&t.priority!=="none"?`[${t.priority==="med"?"Medium":t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}] `:"";
+      const desc=[t.notes||"", "Cluster: "+clusterName(t.cluster), t.done?"(completed)":""].filter(Boolean).join("\n");
+      lines.push("BEGIN:VEVENT","UID:"+t.id+"@my-organizer","DTSTAMP:"+stamp,
+        "DTSTART;VALUE=DATE:"+icsDate(t.deadline,0),
+        "DTEND;VALUE=DATE:"+icsDate(t.deadline,1),
+        "SUMMARY:"+icsEsc(pfx+t.title),
+        "DESCRIPTION:"+icsEsc(desc),
+        "STATUS:"+(t.done?"CONFIRMED":"CONFIRMED"),
+        "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:"+icsEsc("Deadline tomorrow: "+t.title),"END:VALARM",
+        "END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    const blob=new Blob([lines.join("\r\n")],{type:"text/calendar"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="slowspider.ics";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
+  // ---- browser reminders (opt-in) ----
+  function updateNotifyLabel(){
+    const el=$("#notifyState"); if(!el) return;
+    el.textContent = state.notify ? (("Notification" in window && Notification.permission==="granted")?"On":"Blocked") : "Off";
+  }
+  function toggleNotify(){
+    if(!("Notification" in window)){askConfirm("Not available","This browser doesn't support reminders. The in-app Deadlines panel and calendar alarms still work.",null);$("#confirmYes").style.display="none";return;}
+    if(!state.notify){
+      Notification.requestPermission().then(p=>{state.notify=(p==="granted");save();updateNotifyLabel();if(state.notify)fireReminder(true);});
+    }else{state.notify=false;save();updateNotifyLabel();}
+  }
+  let remindedThisLoad=false;
+  function fireReminder(force){
+    if(!state.notify||remindedThisLoad&&!force)return;
+    if(!("Notification" in window)||Notification.permission!=="granted")return;
+    const {overdue,soon}=deadlineBuckets();
+    if(!overdue.length&&!soon.length){if(force)new Notification("Slow Spider",{body:"No deadlines overdue or due soon. You're clear."});remindedThisLoad=true;return;}
+    const parts=[];
+    if(overdue.length)parts.push(overdue.length+" overdue");
+    if(soon.length)parts.push(soon.length+" due soon");
+    new Notification("Slow Spider — deadlines",{body:parts.join(" · ")+".\n"+[...overdue,...soon].slice(0,4).map(t=>"• "+t.title).join("\n")});
+    remindedThisLoad=true;
+  }
+
+  // ---- task ops ----
+  function addTask(title){
+    title=(title||"").trim();
+    if(!title) return;
+    const maxOrder=state.tasks.reduce((m,t)=>Math.max(m,t.order||0),0);
+    state.tasks.push({id:uid(),title,priority:"none",deadline:"",cluster:null,notes:"",done:false,cold:false,binned:false,binnedAt:null,milestones:[],order:maxOrder+1});
+    save();render();
+  }
+  function getTask(id){return state.tasks.find(t=>t.id===id);}
+  function deleteTask(id){state.tasks=state.tasks.filter(t=>t.id!==id);save();render();}
+  function toggleDone(id){const t=getTask(id);if(t){t.done=!t.done;save();render();}}
+
+  // ---- drag & drop ----
+  let dragId=null;          // task being dragged
+  let clusterDragId=null;   // cluster being reordered
+  const prefersReduce=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // FLIP: animate displaced clusters gliding to their new spots after a reorder
+  function flipClusters(mutate){
+    if(prefersReduce()){mutate();return;}
+    const board=$("#board");
+    const first={};
+    board.querySelectorAll(".cluster").forEach(el=>{first[el.dataset.cluster]=el.getBoundingClientRect();});
+    mutate();
+    $("#board").querySelectorAll(".cluster").forEach(el=>{
+      const f=first[el.dataset.cluster]; if(!f) return;
+      const l=el.getBoundingClientRect();
+      const dx=f.left-l.left, dy=f.top-l.top;
+      if(dx||dy){
+        el.style.transition="none";
+        el.style.transform=`translate(${dx}px,${dy}px)`;
+        el.getBoundingClientRect();
+        requestAnimationFrame(()=>{el.style.transition="";el.style.transform="";});
+      }
+    });
+  }
+
+  document.addEventListener("dragstart",e=>{
+    const grip=e.target.closest("[data-cgrip]");
+    if(grip){
+      clusterDragId=grip.dataset.cgrip;
+      const col=grip.closest(".cluster"); if(col) col.classList.add("cluster-dragging");
+      e.dataTransfer.effectAllowed="move";
+      try{e.dataTransfer.setData("text/plain","cluster:"+clusterDragId);}catch(_){}
+      return;
+    }
+    const card=e.target.closest(".card");
+    if(!card) return;
+    dragId=card.dataset.id;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed="move";
+    try{e.dataTransfer.setData("text/plain",dragId);}catch(_){}
+  });
+  document.addEventListener("dragend",e=>{
+    const card=e.target.closest(".card");
+    if(card)card.classList.remove("dragging");
+    dragId=null; clusterDragId=null;
+    document.querySelectorAll(".dragover,.cluster-over,.cluster-dragging").forEach(el=>el.classList.remove("dragover","cluster-over","cluster-dragging"));
+  });
+
+  function overZone(e){
+    const cluster=e.target.closest(".cluster");
+    const tray=e.target.closest(".tray");
+    const stash=e.target.closest("#coldStore,#dumpBin");
+    return cluster||tray||stash;
+  }
+  document.addEventListener("dragover",e=>{
+    // cluster reordering
+    if(clusterDragId){
+      const col=e.target.closest(".cluster");
+      e.preventDefault(); e.dataTransfer.dropEffect="move";
+      document.querySelectorAll(".cluster-over").forEach(el=>{if(el!==col)el.classList.remove("cluster-over");});
+      if(col && col.dataset.cluster!==clusterDragId) col.classList.add("cluster-over");
+      return;
+    }
+    const zone=overZone(e);
+    if(!zone) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect="move";
+    document.querySelectorAll(".dragover").forEach(el=>{if(el!==zone)el.classList.remove("dragover");});
+    zone.classList.add("dragover");
+  });
+  document.addEventListener("dragleave",e=>{
+    if(clusterDragId){
+      const col=e.target.closest(".cluster");
+      if(col && !col.contains(e.relatedTarget)) col.classList.remove("cluster-over");
+      return;
+    }
+    const zone=overZone(e);
+    if(zone && !zone.contains(e.relatedTarget)) zone.classList.remove("dragover");
+  });
+  document.addEventListener("drop",e=>{
+    // cluster reordering drop
+    if(clusterDragId){
+      e.preventDefault();
+      const col=e.target.closest(".cluster");
+      document.querySelectorAll(".cluster-over,.cluster-dragging").forEach(el=>el.classList.remove("cluster-over","cluster-dragging"));
+      const fromId=clusterDragId; clusterDragId=null;
+      if(!col) return;
+      const toId=col.dataset.cluster;
+      if(!toId || toId===fromId) return;
+      const r=col.getBoundingClientRect();
+      const after = e.clientX > r.left + r.width/2;
+      flipClusters(()=>{
+        const arr=state.clusters;
+        const fromIdx=arr.findIndex(c=>c.id===fromId);
+        if(fromIdx<0) return;
+        const [moved]=arr.splice(fromIdx,1);
+        let insert=arr.findIndex(c=>c.id===toId);
+        if(after) insert+=1;
+        arr.splice(insert,0,moved);
+        save(); render();
+      });
+      return;
+    }
+    const zone=overZone(e);
+    if(!zone||!dragId) return;
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    const t=getTask(dragId);
+    if(!t) return;
+    if(zone.id==="coldStore"){ coldTask(dragId); return; }
+    if(zone.id==="dumpBin"){ binTask(dragId); return; }
+    const targetCluster = zone.classList.contains("tray") ? null : zone.dataset.cluster;
+    // determine insert position based on card dropped onto
+    const overCard=e.target.closest(".card");
+    // reassign cluster
+    t.cluster = targetCluster;
+    // compute ordering: place relative to sibling tasks in same cluster
+    const siblings=state.tasks.filter(x=>x.cluster===targetCluster && x.id!==t.id).sort((a,b)=>(a.order||0)-(b.order||0));
+    if(overCard && overCard.dataset.id!==t.id){
+      const overId=overCard.dataset.id;
+      const idx=siblings.findIndex(s=>s.id===overId);
+      const before = idx<=0 ? (siblings[0]?siblings[0].order-1:0) : ((siblings[idx-1].order+siblings[idx].order)/2);
+      t.order = idx===-1 ? (siblings.length?siblings[siblings.length-1].order+1:0) : before;
+    }else{
+      t.order = siblings.length? siblings[siblings.length-1].order+1 : 0;
+    }
+    save();render();
+  });
+
+  // ---- fluid cluster drag (pointer-based: ghost follows cursor, others glide live) ----
+  let cdrag=null;
+  document.addEventListener('pointerdown', e=>{
+    const grip=e.target.closest('.cluster-grip'); if(!grip) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    const col=grip.closest('.cluster'); if(!col) return;
+    e.preventDefault();
+    const r=col.getBoundingClientRect();
+    const ghost=col.cloneNode(true);
+    ghost.classList.add('cluster-ghost');
+    ghost.style.cssText='position:fixed;left:0;top:0;width:'+r.width+'px;margin:0;pointer-events:none;z-index:9999;'+
+      'box-shadow:var(--sh-3);opacity:.97;transition:none;transform:translate('+r.left+'px,'+r.top+'px) rotate(1.4deg)';
+    document.body.appendChild(ghost);
+    col.classList.add('cluster-dragging');
+    document.body.style.userSelect='none';
+    try{window.getSelection().removeAllRanges();}catch(_){}
+    cdrag={id:col.dataset.cluster, ghost, offX:e.clientX-r.left, offY:e.clientY-r.top};
+    try{grip.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  document.addEventListener('pointermove', e=>{
+    if(!cdrag) return;
+    cdrag.ghost.style.transform='translate('+(e.clientX-cdrag.offX)+'px,'+(e.clientY-cdrag.offY)+'px) rotate(1.4deg)';
+    const stack=document.elementsFromPoint(e.clientX,e.clientY);
+    // over a stash section? (drop to cold store / bin)
+    let stash=null;
+    for(const n of stack){ const s=n.closest?n.closest('#coldStore,#dumpBin'):null; if(s){stash=s;break;} }
+    cdrag.dropStash = stash ? stash.id : null;
+    $("#coldStore").classList.toggle('dragover', cdrag.dropStash==='coldStore');
+    $("#dumpBin").classList.toggle('dragover', cdrag.dropStash==='dumpBin');
+    if(stash) return;   // hovering a section: don't reorder
+    let over=null;
+    for(const n of stack){
+      const c=n.closest?n.closest('.cluster'):null;
+      if(c && !c.classList.contains('cluster-ghost') && c.dataset.cluster!==cdrag.id){over=c;break;}
+    }
+    if(!over) return;
+    const arr=state.clusters;
+    const fromIdx=arr.findIndex(c=>c.id===cdrag.id);
+    const overIdx=arr.findIndex(c=>c.id===over.dataset.cluster);
+    if(fromIdx<0||overIdx<0) return;
+    const r=over.getBoundingClientRect();
+    // horizontal-first grid: use X within the same row, fall back to Y across rows
+    const sameRow = e.clientY>=r.top && e.clientY<=r.bottom;
+    const after = sameRow ? (e.clientX > r.left+r.width/2) : (e.clientY > r.top+r.height/2);
+    let insert=overIdx+(after?1:0);
+    if(insert>fromIdx) insert--;
+    if(insert<0) insert=0;
+    if(insert===fromIdx) return;
+    flipClusters(()=>{ const [m]=arr.splice(fromIdx,1); arr.splice(insert,0,m); save(); render(); });
+    const el=[...document.querySelectorAll('.cluster')].find(c=>c.dataset.cluster===cdrag.id);
+    if(el) el.classList.add('cluster-dragging');
+  });
+  function endCDrag(){
+    if(!cdrag) return;
+    const drop=cdrag.dropStash, id=cdrag.id;
+    if(cdrag.ghost) cdrag.ghost.remove();
+    const el=[...document.querySelectorAll('.cluster')].find(c=>c.dataset.cluster===id);
+    if(el) el.classList.remove('cluster-dragging');
+    document.querySelectorAll("#coldStore,#dumpBin").forEach(s=>s.classList.remove('dragover'));
+    document.body.style.userSelect='';
+    cdrag=null;
+    if(drop==='coldStore') coldCluster(id);
+    else if(drop==='dumpBin') binCluster(id);
+  }
+  document.addEventListener('pointerup', endCDrag);
+  document.addEventListener('pointercancel', endCDrag);
+
+  // ---- fluid stash drag: pull tasks/clusters OUT of cold store & bin, or move between them ----
+  let sdrag=null;
+  document.addEventListener('pointerdown', e=>{
+    if(cdrag) return;
+    if(e.target.closest('.stash-btn')) return;      // let action buttons click through
+    const item=e.target.closest('.stash-item');
+    if(!item || !item.dataset.sid) return;
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    sdrag={kind:item.dataset.skind, id:item.dataset.sid, place:item.dataset.splace,
+           item, startX:e.clientX, startY:e.clientY, ghost:null, dropZone:null, active:false};
+  });
+  document.addEventListener('pointermove', e=>{
+    if(!sdrag) return;
+    if(!sdrag.active){
+      if(Math.abs(e.clientX-sdrag.startX)<6 && Math.abs(e.clientY-sdrag.startY)<6) return;
+      sdrag.active=true;
+      const r=sdrag.item.getBoundingClientRect();
+      const ghost=sdrag.item.cloneNode(true);
+      ghost.classList.add('stash-ghost');
+      const acts=ghost.querySelector('.si-actions'); if(acts) acts.remove();
+      ghost.style.cssText='position:fixed;left:0;top:0;width:'+r.width+'px;margin:0;pointer-events:none;z-index:9999;'+
+        'box-shadow:var(--sh-3);opacity:.97;background:var(--panel);border:1px solid var(--line);transition:none;'+
+        'transform:translate('+r.left+'px,'+r.top+'px) rotate(1.2deg)';
+      document.body.appendChild(ghost);
+      sdrag.ghost=ghost;
+      sdrag.offX=e.clientX-r.left; sdrag.offY=e.clientY-r.top;
+      sdrag.item.classList.add('sdragging');
+      document.body.style.userSelect='none';
+      try{window.getSelection().removeAllRanges();}catch(_){}
+      try{sdrag.item.setPointerCapture(e.pointerId);}catch(_){}
+    }
+    e.preventDefault();
+    sdrag.ghost.style.transform='translate('+(e.clientX-sdrag.offX)+'px,'+(e.clientY-sdrag.offY)+'px) rotate(1.2deg)';
+    const stack=document.elementsFromPoint(e.clientX,e.clientY);
+    let zone=null;
+    for(const n of stack){
+      if(!n.closest) continue;
+      const z=n.closest('#coldStore,#dumpBin,.cluster,.tray');
+      if(z && !z.classList.contains('cluster-ghost')){ zone=z; break; }
+    }
+    document.querySelectorAll('.dragover').forEach(el=>{ if(el!==zone) el.classList.remove('dragover'); });
+    sdrag.dropZone=zone;
+    if(zone) zone.classList.add('dragover');
+  });
+  function endSDrag(){
+    if(!sdrag) return;
+    const s=sdrag; sdrag=null;
+    if(!s.active) return;                 // was a tap, not a drag
+    if(s.ghost) s.ghost.remove();
+    if(s.item) s.item.classList.remove('sdragging');
+    const zone=s.dropZone;
+    document.querySelectorAll('.dragover').forEach(el=>el.classList.remove('dragover'));
+    document.body.style.userSelect='';
+    if(zone) applyStashDrop(s.kind, s.id, s.place, zone);
+  }
+  document.addEventListener('pointerup', endSDrag);
+  document.addEventListener('pointercancel', endSDrag);
+
+  function activateCluster(id){const c=state.clusters.find(x=>x.id===id);if(c){c.status="active";c.binnedAt=null;save();render();}}
+  function applyStashDrop(kind, id, place, zone){
+    const zid=zone.id;
+    if(kind==='cluster'){
+      const c=state.clusters.find(x=>x.id===id); if(!c) return;
+      if(zid==='coldStore'){ if(place!=='cold'){ c.status='cold'; c.binnedAt=null; justFrozenId=id; coldOpen=true; save(); render(); } return; }
+      if(zid==='dumpBin'){ if(place!=='bin'){ c.status='binned'; try{c.binnedAt=Date.now();}catch(e){c.binnedAt=0;} binOpen=true; save(); render(); } return; }
+      activateCluster(id); return;        // dropped on the board / a cluster / tray → back to active
+    }
+    const t=getTask(id); if(!t) return;
+    if(zid==='coldStore'){ if(place!=='cold'){ t.cold=true; t.binned=false; t.binnedAt=null; justFrozenId=id; coldOpen=true; save(); render(); } return; }
+    if(zid==='dumpBin'){ if(place!=='bin'){ t.binned=true; t.cold=false; try{t.binnedAt=Date.now();}catch(e){t.binnedAt=0;} binOpen=true; save(); render(); } return; }
+    // dropped on a cluster or the floating tray → restore the task there
+    t.cold=false; t.binned=false; t.binnedAt=null;
+    t.cluster = zone.classList.contains('tray') ? null : (zone.dataset.cluster||null);
+    const siblings=state.tasks.filter(x=>x.cluster===t.cluster && x.id!==t.id).sort((a,b)=>(a.order||0)-(b.order||0));
+    t.order = siblings.length ? siblings[siblings.length-1].order+1 : 0;
+    save(); render();
+  }
+
+  // ---- click delegation ----
+  document.addEventListener("click",e=>{
+    const act=e.target.closest("[data-act]");
+    if(act){
+      const card=act.closest(".card"); const id=card&&card.dataset.id;
+      const a=act.dataset.act;
+      if(a==="check"){toggleDone(id);return;}
+      if(a==="del"){binTask(id);return;}
+      if(a==="edit"){openTask(id);return;}
+    }
+    // cluster menu toggle
+    const cm=e.target.closest("[data-cmenu]");
+    if(cm){
+      const id=cm.dataset.cmenu;
+      const menu=document.querySelector(`[data-menu="${id}"]`);
+      const wasOpen=menu.classList.contains("open");
+      document.querySelectorAll(".menu.open").forEach(m=>m.classList.remove("open"));
+      if(!wasOpen)menu.classList.add("open");
+      e.stopPropagation();
+      return;
+    }
+    const ca=e.target.closest("[data-cact]");
+    if(ca){clusterAction(ca.dataset.cact,ca.dataset.cid);return;}
+    // deadline row → open task
+    const dopen=e.target.closest("[data-open]");
+    if(dopen){openTask(dopen.dataset.open);return;}
+    // category filter
+    const flt=e.target.closest("[data-filter]");
+    if(flt){activeCategory=flt.dataset.filter==="all"?null:flt.dataset.filter;render();return;}
+    // cold store / dumping bin
+    const sh=e.target.closest("[data-stash]");
+    if(sh){ if(sh.dataset.stash==="cold"){coldOpen=!coldOpen;$("#coldStore").classList.toggle("open",coldOpen);} else {binOpen=!binOpen;$("#dumpBin").classList.toggle("open",binOpen);} return; }
+    const sa=e.target.closest("[data-cold-resume],[data-cold-bin],[data-cold-resume-t],[data-cold-bin-t],[data-bin-restore-c],[data-bin-del-c],[data-bin-restore-t],[data-bin-del-t],[data-bin-empty]");
+    if(sa){
+      const d=sa.dataset;
+      if(d.coldResume!==undefined) resumeCluster(d.coldResume);
+      else if(d.coldBin!==undefined) binCluster(d.coldBin);
+      else if(d.coldResumeT!==undefined) resumeTask(d.coldResumeT);
+      else if(d.coldBinT!==undefined) binTask(d.coldBinT);
+      else if(d.binRestoreC!==undefined) restoreClusterFromBin(d.binRestoreC);
+      else if(d.binDelC!==undefined) deleteClusterForever(d.binDelC);
+      else if(d.binRestoreT!==undefined) restoreTask(d.binRestoreT);
+      else if(d.binDelT!==undefined) deleteTaskForever(d.binDelT);
+      else if(d.binEmpty!==undefined) emptyBinForever();
+      return;
+    }
+    // app menu actions
+    const ap=e.target.closest("[data-app]");
+    if(ap){appMenuAction(ap.dataset.app);document.querySelectorAll(".menu.open").forEach(m=>m.classList.remove("open"));return;}
+    // close menus
+    document.querySelectorAll(".menu.open").forEach(m=>m.classList.remove("open"));
+  });
+
+  // cluster name inline edit
+  document.addEventListener("blur",e=>{
+    const nm=e.target.closest(".cluster-name");
+    if(nm){
+      const c=state.clusters.find(x=>x.id===nm.dataset.cid);
+      if(c){const v=nm.textContent.trim();if(v){c.name=v;save();}else{nm.textContent=c.name;}}
+    }
+  },true);
+  document.addEventListener("keydown",e=>{
+    if(e.target.classList&&e.target.classList.contains("cluster-name")&&e.key==="Enter"){e.preventDefault();e.target.blur();}
+  });
+
+  function clusterAction(act,id){
+    document.querySelectorAll(".menu.open").forEach(m=>m.classList.remove("open"));
+    const idx=state.clusters.findIndex(c=>c.id===id);
+    if(idx<0)return;
+    if(act==="left"&&idx>0){[state.clusters[idx-1],state.clusters[idx]]=[state.clusters[idx],state.clusters[idx-1]];save();render();}
+    if(act==="right"&&idx<state.clusters.length-1){[state.clusters[idx+1],state.clusters[idx]]=[state.clusters[idx],state.clusters[idx+1]];save();render();}
+    if(act==="edit"){openClusterModal(id);}
+    if(act==="cold"){coldCluster(id);}
+    if(act==="bin"){binCluster(id);}
+  }
+
+  // ---- task modal ----
+  function openTask(id){
+    const t=getTask(id); if(!t)return;
+    editingTaskId=id;
+    $("#taskModalTitle").textContent="Edit task";
+    $("#mTitle").value=t.title||"";
+    $("#mDate").value=t.deadline||"";
+    $("#mNotes").value=t.notes||"";
+    setPrio(t.priority||"none");
+    const sel=$("#mCluster");
+    sel.innerHTML=`<option value="">🗒 Floating (unsorted)</option>`+state.clusters.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+    sel.value=t.cluster||"";
+    renderMilestoneEditor(t);
+    $("#taskOverlay").classList.add("open");
+    setTimeout(()=>$("#mTitle").focus(),30);
+  }
+  // ---- milestones (edited live on the task) ----
+  function renderMilestoneEditor(t){
+    const host=$("#mMilestones"); if(!host) return;
+    const ms=t.milestones||(t.milestones=[]);
+    if(!ms.length){ host.innerHTML=`<div class="ms-empty">No milestones yet. Add steps to track progress.</div>`; return; }
+    host.innerHTML=ms.map(m=>`<div class="ms-row" data-msid="${m.id}">
+        <input class="mch" type="checkbox" ${m.done?"checked":""} data-msact="toggle">
+        <input class="mtitle ${m.done?"done":""}" type="text" value="${esc(m.title).replace(/"/g,'&quot;')}" data-msact="rename">
+        <button class="icon-btn" data-msact="del" title="Remove">✕</button>
+      </div>`).join("");
+  }
+  function addMilestone(){
+    const t=getTask(editingTaskId); if(!t) return;
+    const v=$("#mMsInput").value.trim(); if(!v) return;
+    (t.milestones||(t.milestones=[])).push({id:uid(),title:v,done:false});
+    $("#mMsInput").value="";
+    save(); renderMilestoneEditor(t); render();
+  }
+  $("#mMsAdd").onclick=addMilestone;
+  $("#mMsInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addMilestone();}});
+  $("#mMilestones").addEventListener("click",e=>{
+    const t=getTask(editingTaskId); if(!t) return;
+    const row=e.target.closest("[data-msid]"); if(!row) return;
+    const m=(t.milestones||[]).find(x=>x.id===row.dataset.msid); if(!m) return;
+    const act=e.target.closest("[data-msact]"); if(!act) return;
+    if(act.dataset.msact==="toggle"){ m.done=!m.done; save(); renderMilestoneEditor(t); render(); }
+    else if(act.dataset.msact==="del"){ t.milestones=t.milestones.filter(x=>x.id!==m.id); save(); renderMilestoneEditor(t); render(); }
+  });
+  $("#mMilestones").addEventListener("input",e=>{
+    const t=getTask(editingTaskId); if(!t) return;
+    const row=e.target.closest("[data-msid]"); if(!row) return;
+    if(e.target.dataset.msact==="rename"){ const m=(t.milestones||[]).find(x=>x.id===row.dataset.msid); if(m){ m.title=e.target.value; save(); render(); } }
+  });
+  function setPrio(v){document.querySelectorAll("#mPrio .prio-opt").forEach(o=>o.dataset.on=(o.dataset.v===v)?"1":"0");}
+  function currentPrio(){const on=document.querySelector('#mPrio .prio-opt[data-on="1"]');return on?on.dataset.v:"none";}
+  document.querySelectorAll("#mPrio .prio-opt").forEach(o=>o.addEventListener("click",()=>setPrio(o.dataset.v)));
+  $("#mSave").onclick=()=>{
+    const t=getTask(editingTaskId); if(!t)return;
+    t.title=$("#mTitle").value.trim()||t.title;
+    t.deadline=$("#mDate").value||"";
+    t.notes=$("#mNotes").value;
+    t.priority=currentPrio();
+    const nc=$("#mCluster").value||null;
+    if(nc!==t.cluster){t.cluster=nc;const sib=state.tasks.filter(x=>x.cluster===nc&&x.id!==t.id);t.order=sib.reduce((m,s)=>Math.max(m,s.order||0),0)+1;}
+    save();render();closeTask();
+  };
+  $("#mDelete").onclick=()=>{const id=editingTaskId;binTask(id);closeTask();};
+  $("#mCancel").onclick=closeTask;
+  function closeTask(){$("#taskOverlay").classList.remove("open");editingTaskId=null;}
+
+  // ---- categories ----
+  function getCategory(id){return id?state.categories.find(c=>c.id===id):null;}
+  let clusterCatSel=null;
+
+  // ---- cluster modal ----
+  function buildColorSwatches(sel){
+    const wrap=$("#cColors");wrap.innerHTML="";
+    COLORS.forEach(col=>{
+      const d=document.createElement("div");
+      d.className="sw"+(col===sel?" on":"");
+      d.style.background=col;d.dataset.color=col;
+      d.onclick=()=>{wrap.querySelectorAll(".sw").forEach(x=>x.classList.remove("on"));d.classList.add("on");wrap.dataset.sel=col;};
+      wrap.appendChild(d);
+    });
+    wrap.dataset.sel=sel;
+  }
+  function buildCategoryChips(sel){
+    clusterCatSel=sel||null;
+    const wrap=$("#cCategory");wrap.innerHTML="";
+    const mk=(id,name,color)=>{
+      const chip=document.createElement("div");
+      const on=(id===clusterCatSel);
+      chip.className="cat-chip"+(on?" on":"");
+      if(on&&color){chip.style.background=color;}
+      chip.innerHTML=(color?`<span class="d" style="background:${on?'#fff':color}"></span>`:"")+esc(name);
+      chip.onclick=()=>{clusterCatSel=id;buildCategoryChips(id);};
+      wrap.appendChild(chip);
+    };
+    mk(null,"None",null);
+    state.categories.forEach(c=>mk(c.id,c.name,c.color));
+  }
+  function openClusterModal(id){
+    editingClusterId=id||null;
+    if(id){
+      const c=state.clusters.find(x=>x.id===id);
+      $("#clusterModalTitle").textContent="Edit cluster";
+      $("#cName").value=c.name;
+      buildColorSwatches(c.color);
+      buildCategoryChips(c.category||null);
+    }else{
+      $("#clusterModalTitle").textContent="New cluster";
+      $("#cName").value="";
+      buildColorSwatches(COLORS[state.clusters.length%COLORS.length]);
+      buildCategoryChips(null);
+    }
+    $("#clusterOverlay").classList.add("open");
+    setTimeout(()=>$("#cName").focus(),30);
+  }
+  $("#cSave").onclick=()=>{
+    const name=$("#cName").value.trim();
+    const color=$("#cColors").dataset.sel||COLORS[0];
+    if(!name){$("#cName").focus();return;}
+    if(editingClusterId){
+      const c=state.clusters.find(x=>x.id===editingClusterId);c.name=name;c.color=color;c.category=clusterCatSel;
+    }else{
+      state.clusters.push({id:uid(),name,color,category:clusterCatSel,status:"active",binnedAt:null});
+    }
+    save();render();$("#clusterOverlay").classList.remove("open");editingClusterId=null;
+  };
+  $("#cCancel").onclick=()=>{$("#clusterOverlay").classList.remove("open");editingClusterId=null;};
+  $("#cManageCats").onclick=()=>openCategoryModal(true);
+
+  // ---- manage categories modal ----
+  let catReturnToCluster=false;
+  function renderCatList(){
+    const host=$("#catList");host.innerHTML="";
+    if(!state.categories.length){host.innerHTML=`<div style="color:var(--muted);font-size:13px;padding:6px 2px">No categories yet. Add one below.</div>`;}
+    state.categories.forEach(cat=>{
+      const row=document.createElement("div");row.className="cat-row";
+      row.innerHTML=`<span class="dot" style="background:${cat.color}" data-catdot="${cat.id}" title="Click to change colour"></span>
+        <input type="text" value="${esc(cat.name)}" data-catname="${cat.id}">
+        <button class="icon-btn" data-catdel="${cat.id}" title="Delete">✕</button>`;
+      host.appendChild(row);
+    });
+  }
+  function openCategoryModal(fromCluster){
+    catReturnToCluster=!!fromCluster;
+    renderCatList();
+    $("#categoryOverlay").classList.add("open");
+  }
+  $("#catAdd").onclick=()=>{
+    const name=$("#catNewName").value.trim();if(!name)return;
+    const used=state.categories.length;
+    state.categories.push({id:uid(),name,color:COLORS[used%COLORS.length]});
+    $("#catNewName").value="";save();renderCatList();
+  };
+  $("#catNewName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#catAdd").click();}});
+  $("#catClose").onclick=()=>{
+    $("#categoryOverlay").classList.remove("open");
+    render();
+    if(catReturnToCluster){buildCategoryChips(clusterCatSel);}
+  };
+  // category list interactions (delegated)
+  $("#catList").addEventListener("click",e=>{
+    const dot=e.target.closest("[data-catdot]");
+    if(dot){const cat=getCategory(dot.dataset.catdot);const i=COLORS.indexOf(cat.color);cat.color=COLORS[(i+1)%COLORS.length];dot.style.background=cat.color;save();return;}
+    const del=e.target.closest("[data-catdel]");
+    if(del){const id=del.dataset.catdel;const cat=getCategory(id);const n=state.clusters.filter(c=>c.category===id).length;
+      askConfirm("Delete category?",`"${cat.name}" will be removed.${n?` ${n} cluster${n>1?"s":""} will lose this label.`:""}`,()=>{
+        state.clusters.forEach(c=>{if(c.category===id)c.category=null;});
+        state.categories=state.categories.filter(c=>c.id!==id);
+        if(clusterCatSel===id)clusterCatSel=null;
+        if(activeCategory===id)activeCategory=null;
+        save();renderCatList();
+      });return;}
+  });
+  $("#catList").addEventListener("change",e=>{
+    const nm=e.target.closest("[data-catname]");
+    if(nm){const cat=getCategory(nm.dataset.catname);const v=nm.value.trim();if(v){cat.name=v;save();}else{nm.value=cat.name;}}
+  });
+
+  // ---- confirm modal ----
+  function askConfirm(title,msg,cb){
+    $("#confirmTitle").textContent=title;$("#confirmMsg").textContent=msg||"";
+    const yes=$("#confirmYes");
+    if(cb){yes.style.display="";yes.textContent="Delete";$("#confirmNo").textContent="Cancel";}
+    else{yes.style.display="none";$("#confirmNo").textContent="OK";}
+    confirmCb=cb;$("#confirmOverlay").classList.add("open");
+  }
+  $("#confirmYes").onclick=()=>{$("#confirmOverlay").classList.remove("open");if(confirmCb)confirmCb();confirmCb=null;};
+  $("#confirmNo").onclick=()=>{$("#confirmOverlay").classList.remove("open");confirmCb=null;};
+
+  // close overlays on backdrop click
+  document.querySelectorAll(".overlay").forEach(ov=>ov.addEventListener("mousedown",e=>{if(e.target===ov){ov.classList.remove("open");render();}}));
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){const any=document.querySelector(".overlay.open");document.querySelectorAll(".overlay.open").forEach(o=>o.classList.remove("open"));if(any)render();}});
+
+  // ---- toolbar ----
+  $("#quickForm").addEventListener("submit",e=>{e.preventDefault();const v=$("#quickInput").value;addTask(v);$("#quickInput").value="";});
+  $("#searchInput").addEventListener("input",e=>{search=e.target.value.trim();render();});
+  $("#addClusterBtn").onclick=()=>openClusterModal(null);
+  $("#sortBtn").onclick=()=>{
+    sortMode=sortMode==="smart"?"manual":"smart";
+    {const sl=$("#sortLabel");if(sl)sl.textContent=sortMode==="smart"?"Smart order":"Manual order";}
+    save();render();
+  };
+  {const sl=$("#sortLabel");if(sl)sl.textContent=sortMode==="smart"?"Smart order":"Manual order";}
+
+  // overflow menu
+  $("#menuBtn").onclick=(e)=>{
+    const m=$("#appMenu");const open=m.classList.contains("open");
+    document.querySelectorAll(".menu.open").forEach(x=>x.classList.remove("open"));
+    if(!open)m.classList.add("open");
+    e.stopPropagation();
+  };
+  function appMenuAction(a){
+    if(a==="ics")exportICS();
+    else if(a==="theme")cycleTheme();
+    else if(a==="cats")openCategoryModal(false);
+    else if(a==="backup")openBackup();
+    else if(a==="sync")openSync();
+    else if(a==="install")doInstall();
+    else if(a==="export")exportData();
+    else if(a==="import")$("#importFile").click();
+    else if(a==="notify")toggleNotify();
+  }
+
+  // ---- install / PWA ----
+  let deferredPrompt=null;
+  function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;}
+  function updateInstallVisibility(){
+    const item=$("#installItem"); if(!item)return;
+    if(isStandalone()) item.classList.add("hidden"); else item.classList.remove("hidden");
+  }
+  window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;updateInstallVisibility();});
+  window.addEventListener('appinstalled',()=>{deferredPrompt=null;updateInstallVisibility();});
+  async function doInstall(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      try{await deferredPrompt.userChoice;}catch(e){}
+      deferredPrompt=null; updateInstallVisibility(); return;
+    }
+    const ua=navigator.userAgent||"";
+    const iOS=/iphone|ipad|ipod/i.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    const onFile=location.protocol==='file:';
+    let html;
+    if(onFile){
+      html="This copy is running from a file on your computer. To install it as an app it needs to be opened from a web address first. Host the folder (the included guide lists free options), open the https link, then use Install again.";
+    }else if(iOS){
+      html="On iPhone or iPad, open this in <b>Safari</b>, tap the <b>Share</b> button, then choose <b>Add to Home Screen</b>. It gets its own icon and opens full-screen.";
+    }else{
+      html="Use your browser's <b>Install</b> option — look for an install icon in the address bar, or open the browser menu and choose <b>Install Slow Spider</b>. Works in Chrome and Edge on desktop and Android.";
+    }
+    $("#installBody").innerHTML="<p style='color:var(--muted);font-size:14px;line-height:1.55'>"+html+"</p>";
+    $("#installOverlay").classList.add("open");
+  }
+  $("#installClose").onclick=()=>$("#installOverlay").classList.remove("open");
+
+  // ---- theme (Auto / Light / Dark) ----
+  let themePref='auto';
+  try{ themePref=localStorage.getItem('slowspider.theme')||'auto'; }catch(e){}
+  function applyTheme(){
+    const el=document.documentElement;
+    if(themePref==='auto') el.removeAttribute('data-theme');
+    else el.setAttribute('data-theme',themePref);
+    const lbl=$("#themeState"); if(lbl) lbl.textContent=themePref.charAt(0).toUpperCase()+themePref.slice(1);
+  }
+  function cycleTheme(){
+    themePref = themePref==='auto'?'light':themePref==='light'?'dark':'auto';
+    try{ localStorage.setItem('slowspider.theme',themePref); }catch(e){}
+    applyTheme();
+  }
+
+  function exportData(){
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="slowspider-backup.json";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  $("#exportLink").onclick=exportData;
+  $("#importLink").onclick=()=>$("#importFile").click();
+  $("#importFile").addEventListener("change",e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const d=JSON.parse(r.result);
+        if(d&&d.clusters&&d.tasks){state=migrate(d);sortMode=state.sortMode||"smart";primeSig();save();render();{const sl=$("#sortLabel");if(sl)sl.textContent=sortMode==="smart"?"Smart order":"Manual order";}}
+      }catch(err){askConfirm("Import failed","That file could not be read as an organizer backup.",null);}
+      e.target.value="";
+    };
+    r.readAsText(f);
+  });
+
+  // ---- Backup & sync (cloud file + assistant handoff) ----
+  const FS_SUPPORTED = ('showSaveFilePicker' in window);
+  let fileHandle=null, autoTimer=null, lastAutoWrite=null;
+
+  function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('organizerDB',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+  async function idbSet(k,v){try{const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}catch(e){}}
+  async function idbGet(k){try{const db=await idb();return new Promise((res)=>{const tx=db.transaction('kv','readonly');const rq=tx.objectStore('kv').get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(null);});}catch(e){return null;}}
+  async function idbDel(k){try{const db=await idb();return new Promise((res)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').delete(k);tx.oncomplete=()=>res();tx.onerror=()=>res();});}catch(e){}}
+
+  async function connectBackupFile(){
+    if(!FS_SUPPORTED)return;
+    try{
+      const h=await window.showSaveFilePicker({suggestedName:'slowspider-backup.json',types:[{description:'Organizer backup',accept:{'application/json':['.json']}}]});
+      fileHandle=h; await idbSet('backupHandle',h);
+      await writeToFile(true); updateBackupUI();
+    }catch(e){/* cancelled */}
+  }
+  async function ensurePermission(request){
+    if(!fileHandle)return false;
+    const opts={mode:'readwrite'};
+    try{
+      if((await fileHandle.queryPermission(opts))==='granted')return true;
+      if(request && (await fileHandle.requestPermission(opts))==='granted')return true;
+    }catch(e){}
+    return false;
+  }
+  async function writeToFile(request){
+    if(!fileHandle)return false;
+    if(!(await ensurePermission(request)))return false;
+    try{
+      const w=await fileHandle.createWritable();
+      await w.write(JSON.stringify(state,null,2));
+      await w.close();
+      lastAutoWrite=new Date(); updateBackupUI(); return true;
+    }catch(e){return false;}
+  }
+  function scheduleAutoBackup(){
+    if(!fileHandle)return;
+    clearTimeout(autoTimer);
+    autoTimer=setTimeout(()=>{writeToFile(false);},700);
+  }
+  async function disconnectBackup(){fileHandle=null;lastAutoWrite=null;await idbDel('backupHandle');updateBackupUI();}
+
+  function fmtTime(d){try{return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return "";}}
+  function updateBackupUI(){
+    const stEl=$("#bkAutoState"),conn=$("#bkConnect"),recon=$("#bkReconnect"),disc=$("#bkDisconnect"),uns=$("#bkUnsupported");
+    if(!stEl)return;
+    if(!FS_SUPPORTED){uns.classList.remove("hidden");conn.classList.add("hidden");recon.classList.add("hidden");disc.classList.add("hidden");stEl.textContent="Not available in this browser";return;}
+    if(!fileHandle){stEl.textContent="Not connected";stEl.className="bk-state";conn.classList.remove("hidden");recon.classList.add("hidden");disc.classList.add("hidden");return;}
+    conn.classList.add("hidden");disc.classList.remove("hidden");
+    const name=fileHandle.name||"backup file";
+    fileHandle.queryPermission({mode:'readwrite'}).then(p=>{
+      if(p==='granted'){recon.classList.add("hidden");stEl.className="bk-state ok";stEl.textContent="Syncing to "+name+(lastAutoWrite?(" · saved "+fmtTime(lastAutoWrite)):"");}
+      else{recon.classList.remove("hidden");stEl.className="bk-state warn";stEl.textContent="Connected to "+name+" — click Reconnect to allow saving";}
+    }).catch(()=>{});
+  }
+
+  function openBackup(){
+    $("#bkData").value=JSON.stringify(state,null,2);
+    $("#bkApplyState").textContent="";$("#bkApplyState").className="bk-state";
+    updateBackupUI();
+    $("#backupOverlay").classList.add("open");
+  }
+  function loadFromText(txt){
+    try{
+      const d=JSON.parse(txt);
+      if(d&&Array.isArray(d.clusters)&&Array.isArray(d.tasks)){
+        state=migrate(d); sortMode=state.sortMode||"smart"; primeSig(); save(); render();
+        {const sl=$("#sortLabel");if(sl)sl.textContent=sortMode==="smart"?"Smart order":"Manual order";}
+        updateNotifyLabel();
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  $("#bkConnect").onclick=connectBackupFile;
+  $("#bkReconnect").onclick=async()=>{await writeToFile(true);updateBackupUI();};
+  $("#bkDisconnect").onclick=disconnectBackup;
+  $("#bkExport").onclick=exportData;
+  $("#bkImport").onclick=()=>$("#importFile").click();
+  $("#bkClose").onclick=()=>$("#backupOverlay").classList.remove("open");
+  $("#bkReset").onclick=()=>{$("#bkData").value=JSON.stringify(state,null,2);$("#bkApplyState").textContent="";$("#bkApplyState").className="bk-state";};
+  $("#bkCopy").onclick=()=>{
+    const ta=$("#bkData"); ta.focus(); ta.select();
+    const done=()=>{const s=$("#bkApplyState");s.className="bk-state ok";s.textContent="Copied ✓";};
+    const fail=()=>{const s=$("#bkApplyState");s.className="bk-state";s.textContent="Press ⌘/Ctrl+C to copy";};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ta.value).then(done).catch(()=>{try{document.execCommand('copy')?done():fail();}catch(e){fail();}});}
+    else{try{document.execCommand('copy')?done():fail();}catch(e){fail();}}
+  };
+  $("#bkApply").onclick=()=>{
+    const s=$("#bkApplyState");
+    if(loadFromText($("#bkData").value)){s.className="bk-state ok";s.textContent="Applied ✓";}
+    else{s.className="bk-state warn";s.textContent="That isn't valid organizer data";}
+  };
+
+  // ================= Cloud sync (Supabase, invite-only) =================
+  const SB_URL="https://divobideoqybsoqjnenm.supabase.co";
+  const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpdm9iaWRlb3F5YnNvcWpuZW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3ODcxOTEsImV4cCI6MjA5OTM2MzE5MX0.mWxs7nHeQvz1xEcg5VDarCBh79X0tJ2yA03mW3NvZ5A";
+  let sb=null, sess=null, syncing=false, syncAgain=false, syncTimer=null, rtChan=null, pendingEmail="";
+  function nowMs(){ try{return Date.now();}catch(e){return 0;} }
+
+  // ---- pure merge: per-entity last-write-wins with tombstones ----
+  function mergeDocs(a,b){
+    const out={version:1, tomb:{t:{},c:{},k:{}}};
+    for(const tk of ["t","c","k"]){
+      const ta=(a.tomb&&a.tomb[tk])||{}, tb=(b.tomb&&b.tomb[tk])||{}, o=out.tomb[tk];
+      for(const id in ta) o[id]=Math.max(ta[id]||0, o[id]||0);
+      for(const id in tb) o[id]=Math.max(tb[id]||0, o[id]||0);
+    }
+    for(const [tk,ak] of SYNC_TYPES){
+      const map={};
+      const put=e=>{ const x=map[e.id]; if(!x || (e.updatedAt||0)>(x.updatedAt||0)) map[e.id]=Object.assign({},e); };
+      (a[ak]||[]).forEach(put);          // local first, so ties keep local
+      (b[ak]||[]).forEach(put);
+      const arr=[], tb=out.tomb[tk];
+      for(const id in map){ const e=map[id]; const td=tb[id]; if(td!=null && td>=(e.updatedAt||0)) continue; arr.push(e); }
+      if(tk==="c"||tk==="k") arr.sort((x,y)=>(x.pos||0)-(y.pos||0) || (x.updatedAt||0)-(y.updatedAt||0));
+      out[ak]=arr;
+    }
+    const sa=a.settingsUpdatedAt||0, sbv=b.settingsUpdatedAt||0;
+    if(sbv>sa){ out.sortMode=b.sortMode; out.notify=!!b.notify; out.settingsUpdatedAt=sbv; }
+    else{ out.sortMode=a.sortMode; out.notify=!!a.notify; out.settingsUpdatedAt=sa; }
+    if(!out.sortMode) out.sortMode=a.sortMode||b.sortMode||"smart";
+    return out;
+  }
+  function canonical(d){
+    const o={s:d.sortMode||"smart", n:!!d.notify};
+    for(const [tk,ak] of SYNC_TYPES){
+      o[ak]=(d[ak]||[]).slice().sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0).map(e=>{const c=Object.assign({},e);delete c.updatedAt;return c;});
+    }
+    o.tomb=d.tomb||{};
+    return JSON.stringify(o);
+  }
+  function cloneCurrent(){ return JSON.parse(JSON.stringify(state)); }
+
+  // ---- adopt a merged doc as the live state ----
+  function adoptDoc(doc){
+    state=migrate(doc);
+    sortMode=state.sortMode||"smart";
+    try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+    primeSig();
+    render();
+    const sl=$("#sortLabel"); if(sl) sl.textContent=sortMode==="smart"?"Smart order":"Manual order";
+    updateNotifyLabel();
+  }
+
+  // ---- sync driver: fetch remote, merge, adopt if changed, upload if differs ----
+  function syncBusy(){ return !!(cdrag || sdrag || document.querySelector(".overlay.open")); }
+  async function syncNow(){
+    if(!sb||!sess) return;
+    if(syncing){ syncAgain=true; return; }
+    if(syncBusy()){ scheduleSyncSoon(600); return; }   // don't disrupt an open modal / active drag
+    syncing=true; setSyncBadge("syncing");
+    try{
+      const remote=await fetchRemote();
+      const rdoc=(remote&&remote.doc&&remote.doc.clusters)?remote.doc:null;
+      const merged=rdoc?mergeDocs(cloneCurrent(),rdoc):cloneCurrent();
+      if(canonical(merged)!==canonical(state)) adoptDoc(merged);
+      if(!rdoc || canonical(merged)!==canonical(rdoc)) await uploadDoc(merged);
+      setSyncBadge("ok");
+    }catch(e){
+      setSyncBadge("err");
+    }finally{
+      syncing=false;
+      if(syncAgain){ syncAgain=false; setTimeout(syncNow,300); }
+    }
+  }
+  async function fetchRemote(){
+    const {data,error}=await sb.from("organizer").select("doc,updated_at").eq("user_id",sess.user.id).maybeSingle();
+    if(error) throw error;
+    return data;
+  }
+  async function uploadDoc(doc){
+    const payload={user_id:sess.user.id, doc:doc, updated_at:new Date().toISOString()};
+    const {error}=await sb.from("organizer").upsert(payload,{onConflict:"user_id"});
+    if(error) throw error;
+  }
+  function scheduleSync(){ if(!sb||!sess) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncNow,1200); }
+  function scheduleSyncSoon(ms){ if(!sb||!sess) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncNow, ms||400); }
+
+  // ---- realtime + focus/interval fallbacks ----
+  function startRealtime(){
+    if(!sb||!sess||rtChan) return;
+    try{
+      rtChan=sb.channel("org-"+sess.user.id)
+        .on("postgres_changes",{event:"*",schema:"public",table:"organizer",filter:"user_id=eq."+sess.user.id},()=>{ scheduleSyncSoon(300); })
+        .subscribe();
+    }catch(e){}
+  }
+  function stopRealtime(){ if(rtChan){ try{sb.removeChannel(rtChan);}catch(e){} rtChan=null; } }
+
+  // ---- sign-in badge in the app menu ----
+  function setSyncBadge(_st){ renderSyncItem(); }
+  function renderSyncItem(){
+    const it=$("#syncItem"); if(!it) return;
+    if(sess){ it.textContent="✓ Synced · "+(sess.user.email||"account"); }
+    else { it.textContent="☁ Sign in to sync…"; }
+  }
+
+  // ---- auth UI ----
+  function setSyncErr(msg,ok){ const e=$("#syncErr"); if(!e)return; e.textContent=msg||""; e.className="bk-state"+(msg?(ok?" ok":" warn"):""); }
+  function friendlyAuthErr(e){
+    const m=(e&&e.message||"").toLowerCase();
+    if(m.includes("signups not allowed")||m.includes("not allowed")||m.includes("user not found")||m.includes("invalid"))
+      return "That email isn't invited yet, or the code was wrong. Ask the owner to invite it, then try again.";
+    if(m.includes("expired")) return "That code expired. Tap Back and send a fresh one.";
+    if(m.includes("rate")||m.includes("too many")) return "Too many attempts just now. Wait a minute and try again.";
+    return (e&&e.message)?e.message:"Something went wrong. Check your connection and try again.";
+  }
+  function openSync(){
+    setSyncErr("");
+    if(sess) showSignedIn(); else openSyncFresh();
+    $("#syncOverlay").classList.add("open");
+  }
+  function openSyncFresh(){
+    $("#syncSignedIn").classList.add("hidden"); $("#syncStep2").classList.add("hidden");
+    $("#syncStep1").classList.remove("hidden");
+    if(!sb){ setSyncErr("Can't reach the sync service right now — you may be offline. Your tasks are still saved on this device."); }
+  }
+  function showSignedIn(){
+    $("#syncStep1").classList.add("hidden"); $("#syncStep2").classList.add("hidden");
+    $("#syncSignedIn").classList.remove("hidden");
+    $("#syncWho").textContent=sess?sess.user.email:"";
+  }
+  function wireSyncButtons(){
+    const cancel=()=>$("#syncOverlay").classList.remove("open");
+    $("#syncCancel").onclick=cancel; $("#syncDone").onclick=cancel;
+    $("#syncBack").onclick=()=>{ setSyncErr(""); openSyncFresh(); };
+    $("#syncSend").onclick=async()=>{
+      const email=($("#syncEmail").value||"").trim();
+      if(!email||email.indexOf("@")<0){ setSyncErr("Enter the email you were invited with."); return; }
+      if(!sb){ setSyncErr("Can't reach the sync service — check your connection."); return; }
+      setSyncErr(""); const b=$("#syncSend"); b.disabled=true; b.textContent="Sending…";
+      try{
+        const {error}=await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false}});
+        if(error) throw error;
+        pendingEmail=email; $("#syncEmailEcho").textContent=email;
+        $("#syncStep1").classList.add("hidden"); $("#syncStep2").classList.remove("hidden");
+        const ci=$("#syncCode"); if(ci){ci.value="";ci.focus();}
+      }catch(e){ setSyncErr(friendlyAuthErr(e)); }
+      finally{ b.disabled=false; b.textContent="Send code"; }
+    };
+    $("#syncVerify").onclick=async()=>{
+      const token=($("#syncCode").value||"").replace(/\D/g,"").trim();
+      if(token.length<6){ setSyncErr("Enter the 6-digit code from the email."); return; }
+      if(!sb){ setSyncErr("Can't reach the sync service — check your connection."); return; }
+      setSyncErr(""); const b=$("#syncVerify"); b.disabled=true; b.textContent="Verifying…";
+      try{
+        const {data,error}=await sb.auth.verifyOtp({email:pendingEmail, token, type:"email"});
+        if(error) throw error;
+        sess=data.session; renderSyncItem(); startRealtime();
+        setSyncErr("Signed in ✓", true);
+        await syncNow();
+        showSignedIn();
+      }catch(e){ setSyncErr(friendlyAuthErr(e)); }
+      finally{ b.disabled=false; b.textContent="Verify & sign in"; }
+    };
+    $("#syncSignOut").onclick=async()=>{
+      try{ if(sb) await sb.auth.signOut(); }catch(e){}
+      sess=null; stopRealtime(); renderSyncItem(); openSyncFresh(); setSyncErr("Signed out. Your tasks stay on this device.", true);
+    };
+  }
+
+  async function initSupabase(){
+    if(!window.supabase || !window.supabase.createClient){ renderSyncItem(); return; }  // offline / blocked
+    try{
+      sb=window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:false}});
+    }catch(e){ sb=null; renderSyncItem(); return; }
+    try{ const {data}=await sb.auth.getSession(); sess=(data&&data.session)?data.session:null; }catch(e){ sess=null; }
+    sb.auth.onAuthStateChange((_ev,s)=>{
+      sess=s||null; renderSyncItem();
+      if(sess){ startRealtime(); scheduleSyncSoon(200); } else { stopRealtime(); }
+    });
+    renderSyncItem();
+    if(sess){ startRealtime(); syncNow(); }
+  }
+  wireSyncButtons();
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") scheduleSyncSoon(300); });
+  window.addEventListener("online",()=>scheduleSyncSoon(300));
+  setInterval(()=>{ if(sb&&sess&&document.visibilityState==="visible"&&!syncBusy()) syncNow(); }, 60000);
+
+  render();
+  primeSig();
+  updateNotifyLabel();
+  fireReminder(false);
+  updateInstallVisibility();
+  applyTheme();
+  renderSyncItem();
+  (async function(){
+    if(!FS_SUPPORTED){updateBackupUI();return;}
+    const h=await idbGet('backupHandle');
+    if(h){fileHandle=h;updateBackupUI();}
+  })();
+  // start cloud sync once the page (and the deferred Supabase lib) are ready
+  if(document.readyState==="loading") window.addEventListener("DOMContentLoaded",initSupabase);
+  else initSupabase();
+
+  // read-only debug hook (pure merge helpers) — handy for support/testing, exposes no data
+  try{ window.__ss={mergeDocs:mergeDocs, canonical:canonical}; }catch(e){}
+})();
+
+// Register the service worker (only when served over http/https — not from a local file).
+if('serviceWorker' in navigator &&
+   (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>

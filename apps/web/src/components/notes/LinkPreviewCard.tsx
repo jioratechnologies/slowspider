@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, Eye, EyeOff, Globe, Loader2 } from "lucide-react";
-import type { LinkPreview } from "@/lib/board-actions";
+import { previewLink, type LinkPreview } from "@/lib/board-actions";
 
 export default function LinkPreviewCard({
   url,
@@ -27,15 +27,7 @@ export default function LinkPreviewCard({
     let live = true;
     setLoading(true);
 
-    fetch("/api/v1/notes/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: cleanUrl }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to load preview");
-        return res.json();
-      })
+    previewLink(cleanUrl)
       .then((json) => {
         if (live && json) setData(json);
       })

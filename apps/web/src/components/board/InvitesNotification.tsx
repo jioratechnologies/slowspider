@@ -6,7 +6,7 @@ import { Bell, Building2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { listMyPendingInvites, acceptWorkspaceInvite, declineMyInvite } from "@/lib/workspace-actions";
-import type { PendingInviteForUser } from "@/lib/services/workspace";
+import type { PendingInviteForUser } from "@/lib/workspace-actions";
 
 // GitHub-style invite bell — catches the case where someone signs up directly instead of
 // clicking the invite link, so the invite doesn't just sit invisible until they think to

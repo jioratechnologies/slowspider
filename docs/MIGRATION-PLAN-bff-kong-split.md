@@ -45,11 +45,13 @@ So there is already a clean REST seam (`/api/v1`) — this is a real advantage. 
 
 ```
 apps/
-  web/        # current Next.js app, UI only after migration
-  backend/    # new NestJS service — owns /v1 API, Prisma, Redis, storage
-  mobile/     # existing Expo app, unchanged except API base URL
+  web/        # Next.js app — UI + SSR only (Phase 3, done). Server Actions call apps/backend
+              # through Kong via src/lib/backend-client.ts; no local Prisma/service layer left.
+  backend/    # NestJS service — owns /v1 API, Prisma, Redis, storage
+  mobile/     # existing Expo app — src/api.ts points at Kong (:8000), /v1/** paths (Phase 4/3)
 packages/
-  shared-types/   # DTOs / API contracts shared by web + backend + mobile
+  shared-types/   # DTOs / API contracts shared by web + backend + mobile (not done yet — see
+                  # note below; each client still hand-copies its own response interfaces)
   db/             # optional: Prisma schema + generated client as its own package
   realtime/       # NATS pub/sub helpers + Yjs-NATS CRDT provider, shared by backend + web + mobile
 infra/
@@ -57,7 +59,7 @@ infra/
   nats/       # NATS server config, JetStream stream defs, subject/account auth rules
 ```
 
-Move `src/app/api/v1/**` route handlers → `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron). Move `src/lib/services/*`, `src/lib/note-media.ts`, `prisma/` into `apps/backend`. `packages/shared-types` holds the response/DTO shapes currently duplicated between `src/lib/api` and `apps/mobile/src/api.ts` (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`) so both clients import one definition instead of hand-copying interfaces.
+`src/app/api/v1/**` route handlers were moved to `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron) in Phase 1, then deleted from `apps/web` in Phase 3 once Server Actions were cut over to call the backend instead. `src/lib/services/*` and `prisma/` were likewise ported to `apps/backend` in Phase 1 and deleted from `apps/web` in Phase 3. `src/lib/note-media.ts` stayed in `apps/web` — it's pure client-side browser-to-Supabase-Storage code, never part of the in-process data layer being moved. `packages/shared-types` was never built out — `apps/web`, `apps/backend`, and `apps/mobile` each still define their own copies of the response/DTO shapes (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`); still a real opportunity for a follow-up phase, not attempted here.
 
 ## Realtime & collaboration (NATS + CRDT)
 
@@ -126,15 +128,21 @@ Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right 
 **Phase 2 — Kong in front of backend** ✅ done
 - `infra/kong/kong.yml` — DB-less declarative config (no separate Kong Postgres to run/back up — single container, single YAML file, lowest-ops option for a solo maintainer). One service → `backend:3001`, routes for `/v1/*` and `/cron/*`, CORS + a generous `rate-limiting` plugin (300/min, local policy) as a basic gateway-level guard on top of the app's own Redis-based login rate limit.
 - `docker-compose.yml` at repo root runs `backend` (built from `apps/backend/Dockerfile`, multi-stage Node 22) + `kong` (image `kong:3.9`), Kong's proxy on `:8000`, admin API bound to `127.0.0.1:8001` only. `docker compose up -d --build` — verified live: `curl http://localhost:8000/v1/board` → `401 Not signed in.`, `curl -X POST http://localhost:8000/v1/auth/login` with bad creds → real `400 Wrong email or password.` from Supabase, proving the whole path (Kong → backend → Supabase) works end to end.
-- Not yet done: pointing `apps/mobile` at Kong (`EXPO_PUBLIC_API_URL`) for a dev/staging build parity check — do this before Phase 3.
+- `apps/mobile` pointed at Kong (`EXPO_PUBLIC_API_URL` default + `/v1/**` paths, dropping the `/api` prefix) alongside Phase 3 — see Phase 3 below. Not yet done: an actual dev/staging build parity check running the Expo app against it (out of scope for the sandboxed environment Phase 3 was done in — no mobile toolchain available there).
 
-**Phase 3 — cut Next.js over**
-- Swap Next.js's own data fetching (currently same-process Prisma calls / internal fetches) to call the backend through Kong.
-- Delete `src/app/api/v1/**` and the now-unused service files from the web app once backend is verified equivalent.
+**Phase 3 — cut Next.js over** ✅ done
+- Added `apps/web/src/lib/backend-client.ts` — a small `fetch` wrapper around `GATEWAY_URL` (default `http://localhost:8000`) that mirrors `apps/mobile/src/api.ts`'s `request()`: bearer token + `x-workspace-id` header for authenticated calls, no auth for login/signup/reset, parses the same `{ok,data}`/`{ok,error}` envelope and throws on `ok:false`. Token comes from the same SSR cookie session `src/lib/supabase/server.ts` already manages (`supabase.auth.getSession()`).
+- Rewired every Server Action in `auth-actions.ts`, `board-actions.ts`, `workspace-actions.ts`, and `src/app/page.tsx` (the SSR board load) to call `apps/backend`'s `/v1/**` routes through `backend-client.ts` instead of the in-process `src/lib/services/*`. Login/signup/reset no longer do their own local Redis rate-limit check — the backend's `AuthController` already enforces the identical Redis-keyed limit, so the local pre-check was dropped as redundant rather than kept as a duplicate. `completeSignup` no longer calls `createDefaultWorkspace` separately either — the backend's `/v1/auth/signup/complete` already does that server-side.
+- `apps/backend`'s `WorkspaceService.listPendingInvitesForEmail` / `declineInvite` existed since Phase 1 but, per their own comments, were never wired to a route. Added `GET /v1/workspace/my-invites` and `POST /v1/workspace/my-invites/:id/decline` to `WorkspaceController` to close that gap, since `workspace-actions.ts`'s `listMyPendingInvites`/`declineMyInvite` needed them.
+- `src/lib/note-media.ts` was **kept**, not deleted — despite being named for deletion in the original plan, it's pure client-side code (browser → Supabase Storage directly via the browser's own session, no Next.js server hop, no Prisma/service-layer involvement) and is still used by `TaskAttachmentsSection.tsx`, `NoteMedia.tsx`, `NotesPanel.tsx`, and `Board.tsx`. Deleting it would have broken working upload UI for no reason — it was never part of the in-process data layer this phase removes.
+- Deleted `src/app/api/v1/**`, `src/app/api/cron/**`, `src/lib/services/*`, `src/lib/api/handler.ts`, `src/lib/rate-limit.ts`, `src/lib/db.ts`, `src/lib/redis.ts`, `src/lib/queries.ts` (superseded by `GET /v1/board`, which already does the same purge-bin + board-data + sort-mode fetch server-side), `src/lib/email.ts` + `src/lib/otp.ts` (only ever used by the now-deleted `services/account.ts`/`services/workspace.ts`), `apps/web/prisma/`, `apps/web/prisma.config.ts`, and `apps/web/scripts/` (one-off Prisma migration/fix scripts, already broken by the `db.ts` deletion).
+- `apps/mobile/src/api.ts`'s `BASE` default changed from `http://localhost:3000` to `http://localhost:8000` (Kong) and every route path dropped the `/api` prefix (`/api/v1/board` → `/v1/board`, etc.) — the backend and Kong serve `/v1/**`, not `/api/v1/**`. Not run/tested — no mobile toolchain in this environment, per scope.
+- Removed `@prisma/client`, `prisma`, `ioredis`, `resend`, `dotenv` from `apps/web/package.json` (verified each had zero remaining references first) and the now-meaningless `db:*` scripts; kept `server-only` (still used by `backend-client.ts` and `supabase/server.ts`). Ran `npm install` at the workspace root to update the lockfile — `apps/backend` still depends on all of those, so they remain hoisted, just no longer as `apps/web`'s own dependencies.
+- Verified live: `apps/web` (`next build`) and `apps/backend` (`nest build`) both build clean, `tsc --noEmit` clean on both, `eslint` clean on every changed file. Built and ran the worktree's own `apps/backend` image standalone against real Supabase (`GET /v1/board` unauthenticated → real `401 Not signed in.`; bad-password login → real `400 Wrong email or password.` from `auth.getUser`/`signInWithPassword`; the two new `my-invites` routes correctly reach `SupabaseAuthGuard` — `401`/`Invalid or expired token.` for a bogus bearer, not a 404), then repeated the same checks through the worktree's actual `docker compose up` Kong container on `:8000` — full `Kong → backend → Supabase` chain live. Started `apps/web`'s real `next dev` server and confirmed `GET /` renders the real `SignIn` page (200) — proving the rewritten `page.tsx` executes cleanly end-to-end for the unauthenticated path. Could not exercise a *successful* authenticated login/board/mutation flow — no browser in this environment and no test-account credentials available (`credentials.txt` was removed from git in Phase 2 and no other test credentials exist in this worktree) — so the happy-path login → session → board fetch → mutation chain is verified by code-level trace against the live-tested backend endpoints, not by an actual successful login.
 
 **Phase 4 — cleanup**
-- Remove Prisma/Redis/storage deps from `apps/web`'s `package.json` (it no longer touches them directly).
-- Point production mobile build at Kong's production URL.
+- ~~Remove Prisma/Redis/storage deps from `apps/web`'s `package.json`~~ done as part of Phase 3 above.
+- Point production mobile build at Kong's production URL (local dev default done in Phase 3 — this is the prod/staging URL specifically).
 - Decide whether to move JWT verification into Kong (see Auth section).
 
 **Phase 5 — realtime (NATS + CRDT)**
@@ -162,4 +170,4 @@ Phases 5 and 6 can run in parallel with each other (and largely independent of P
 
 ## Note (unrelated, flagging while in here)
 
-`credentials.txt` at repo root is currently staged for the initial commit (`git status` shows `A  credentials.txt`) and contains a plaintext email/password pair. `.env.local` is correctly gitignored, but this file isn't. Worth confirming it's meant to be committed before that first commit lands.
+~~`credentials.txt` at repo root is currently staged for the initial commit...~~ resolved: removed from the repo in the Phase 2 commit. No longer present.

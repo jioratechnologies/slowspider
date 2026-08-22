@@ -1,13 +1,14 @@
 # Slow Spider — Android app
 
 Expo / React Native client. It holds no business logic of its own: everything goes through
-the same `/api/v1` REST adapter the web app sits beside, authenticated with a Supabase
-access token (`Authorization: Bearer …`, plus `X-Workspace-Id`).
+apps/backend's `/v1` REST API via Kong, authenticated with a Supabase access token
+(`Authorization: Bearer …`, plus `X-Workspace-Id`) — the same gateway apps/web's Server
+Actions call.
 
 ## Running it
 
 ```bash
-cp .env.example .env          # point EXPO_PUBLIC_API_URL at your running Next.js server
+cp .env.example .env          # point EXPO_PUBLIC_API_URL at your running Kong gateway (defaults to http://localhost:8000)
 npm install
 npm run android
 ```

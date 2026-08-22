@@ -1,10 +1,12 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
-// The mobile client is a pure consumer of the same /api/v1 REST adapter the web app's
-// Server Actions sit next to — one auth scheme (Supabase access token), one service layer,
-// no duplicated business logic.
-const BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+// The mobile client is a pure consumer of apps/backend's /v1 REST API, reached through Kong
+// the same way apps/web's Server Actions do (see docs/MIGRATION-PLAN-bff-kong-split.md,
+// Phase 2/3) — one auth scheme (Supabase access token), one backend, no duplicated business
+// logic. Defaults to Kong's local dev proxy port; point EXPO_PUBLIC_API_URL at the gateway's
+// URL for other environments.
+const BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // expo-secure-store has no web implementation — it throws at call time in a browser.
 // The Expo dev server's browser preview (localhost:8081) needs something that works there
@@ -92,41 +94,41 @@ async function request<T>(path: string, init: RequestInit = {}, auth = true): Pr
 export const api = {
   login: (email: string, password: string) =>
     request<{ token: string; refreshToken: string; user: { id: string; email: string } }>(
-      "/api/v1/auth/login",
+      "/v1/auth/login",
       { method: "POST", body: JSON.stringify({ email, password }) },
       false
     ),
-  board: () => request<BoardPayload>("/api/v1/board"),
+  board: () => request<BoardPayload>("/v1/board"),
   updateTask: (id: number, patch: Record<string, unknown>) =>
-    request(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    request(`/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   createTask: (input: { title: string; cluster_id: number | null; pos: number }) =>
-    request<RemoteTask>("/api/v1/tasks", { method: "POST", body: JSON.stringify(input) }),
-  deleteTaskForever: (id: number) => request(`/api/v1/tasks/${id}`, { method: "DELETE" }),
+    request<RemoteTask>("/v1/tasks", { method: "POST", body: JSON.stringify(input) }),
+  deleteTaskForever: (id: number) => request(`/v1/tasks/${id}`, { method: "DELETE" }),
   createCluster: (input: { name: string; color: string; category_id: number | null; pos: number }) =>
-    request<RemoteCluster>("/api/v1/clusters", { method: "POST", body: JSON.stringify(input) }),
+    request<RemoteCluster>("/v1/clusters", { method: "POST", body: JSON.stringify(input) }),
   updateCluster: (id: number, patch: Record<string, unknown>) =>
-    request(`/api/v1/clusters/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-  deleteClusterForever: (id: number) => request(`/api/v1/clusters/${id}`, { method: "DELETE" }),
+    request(`/v1/clusters/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteClusterForever: (id: number) => request(`/v1/clusters/${id}`, { method: "DELETE" }),
   createNote: (input: Record<string, unknown>) =>
-    request<RemoteNote>("/api/v1/notes", { method: "POST", body: JSON.stringify(input) }),
-  deleteNote: (id: number) => request(`/api/v1/notes/${id}`, { method: "DELETE" }),
+    request<RemoteNote>("/v1/notes", { method: "POST", body: JSON.stringify(input) }),
+  deleteNote: (id: number) => request(`/v1/notes/${id}`, { method: "DELETE" }),
   uploadUrl: (filename: string, sizeBytes: number) =>
-    request<{ path: string; signedUrl: string; token: string }>("/api/v1/notes/media", {
+    request<{ path: string; signedUrl: string; token: string }>("/v1/notes/media", {
       method: "POST",
       body: JSON.stringify({ filename, sizeBytes }),
     }),
-  mediaUrl: (path: string) => request<{ url: string }>(`/api/v1/notes/media?path=${encodeURIComponent(path)}`),
-  quota: () => request<{ used: number; quota: number }>("/api/v1/notes/media"),
+  mediaUrl: (path: string) => request<{ url: string }>(`/v1/notes/media?path=${encodeURIComponent(path)}`),
+  quota: () => request<{ used: number; quota: number }>("/v1/notes/media"),
   saveSortMode: (sortMode: SortMode) =>
-    request("/api/v1/settings/sort-mode", { method: "PATCH", body: JSON.stringify({ sortMode }) }),
-  workspaces: () => request<{ workspaces: RemoteWorkspace[] }>("/api/v1/workspace"),
-  createWorkspace: (name: string) => request<RemoteWorkspace>("/api/v1/workspace", { method: "POST", body: JSON.stringify({ name }) }),
-  renameWorkspace: (id: number, name: string) => request(`/api/v1/workspace/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+    request("/v1/settings/sort-mode", { method: "PATCH", body: JSON.stringify({ sortMode }) }),
+  workspaces: () => request<{ workspaces: RemoteWorkspace[] }>("/v1/workspace"),
+  createWorkspace: (name: string) => request<RemoteWorkspace>("/v1/workspace", { method: "POST", body: JSON.stringify({ name }) }),
+  renameWorkspace: (id: number, name: string) => request(`/v1/workspace/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
   addMilestone: (taskId: number, title: string, pos: number) =>
-    request<RemoteMilestone>(`/api/v1/tasks/${taskId}/milestones`, { method: "POST", body: JSON.stringify({ title, pos }) }),
+    request<RemoteMilestone>(`/v1/tasks/${taskId}/milestones`, { method: "POST", body: JSON.stringify({ title, pos }) }),
   updateMilestone: (taskId: number, id: number, patch: Record<string, unknown>) =>
-    request(`/api/v1/tasks/${taskId}/milestones/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-  deleteMilestone: (taskId: number, id: number) => request(`/api/v1/tasks/${taskId}/milestones/${id}`, { method: "DELETE" }),
+    request(`/v1/tasks/${taskId}/milestones/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteMilestone: (taskId: number, id: number) => request(`/v1/tasks/${taskId}/milestones/${id}`, { method: "DELETE" }),
 };
 
 /** Uploads bytes straight to Supabase Storage using a short-lived signed URL from our API. */

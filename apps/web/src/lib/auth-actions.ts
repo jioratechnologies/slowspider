@@ -1,18 +1,26 @@
 "use server";
 
 import { createClient } from "./supabase/server";
-import * as account from "./services/account";
-import { createDefaultWorkspace } from "./services/workspace";
-import { enforceRateLimit } from "./rate-limit";
+import { backend } from "./backend-client";
 
-// Web adapter over ./services/account.ts — the REST API adapter (src/app/api/v1/auth/*)
-// calls the exact same service functions after its own rate-limit check, then returns the
-// Supabase session tokens directly to the client instead of persisting them into cookies.
+// Web adapter over apps/backend's /v1/auth/** routes (through Kong) — used to call
+// ./services/account.ts in-process; the backend now does the credential checks, OTP
+// issuance/verification, and rate limiting itself (its AuthController enforces the same
+// Redis-backed rate limit apps/web's route handler used to, keyed identically —
+// `login:<email>` / `otp-req:<email>` — so there's no need for a local check here anymore).
+// Every login/signup/reset call still ends the same way: persist the returned Supabase
+// session into cookies via ./supabase/server.ts, exactly as before.
 
 export interface ActionResult {
   ok: boolean;
   error?: string;
   devCode?: string; // only set in dev mode, so the UI can display it instead of an inbox
+}
+
+interface AuthTokens {
+  token: string;
+  refreshToken: string;
+  user: { id: string; email: string };
 }
 
 function isDevMode(): boolean {
@@ -29,11 +37,14 @@ async function persistSession(session: { access_token: string; refresh_token: st
   if (error) throw new Error(error.message);
 }
 
+async function persistTokens(result: AuthTokens): Promise<void> {
+  await persistSession({ access_token: result.token, refresh_token: result.refreshToken });
+}
+
 // ---- signup: request email OTP ----
 export async function requestSignupOtp(email: string): Promise<ActionResult> {
   try {
-    await enforceRateLimit(`otp-req:${account.normalizeEmail(email)}`, 3, 600);
-    const { devCode } = await account.requestSignupOtp(email);
+    const { devCode } = await backend.public<{ devCode?: string }>("/v1/auth/signup/otp", { method: "POST", body: { email } });
     return { ok: true, devCode };
   } catch (e) {
     return fail(e);
@@ -42,7 +53,7 @@ export async function requestSignupOtp(email: string): Promise<ActionResult> {
 
 export async function verifySignupOtp(email: string, code: string): Promise<ActionResult> {
   try {
-    await account.verifySignupOtp(email, code);
+    await backend.public("/v1/auth/signup/verify", { method: "POST", body: { email, code } });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -51,9 +62,10 @@ export async function verifySignupOtp(email: string, code: string): Promise<Acti
 
 export async function completeSignup(email: string, password: string): Promise<ActionResult> {
   try {
-    const result = await account.completeSignup(email, password);
-    await persistSession(result.session);
-    await createDefaultWorkspace(result.id);
+    // The backend's /v1/auth/signup/complete already creates the account's default
+    // workspace server-side (AuthController.signupComplete) — no separate call needed here.
+    const result = await backend.public<AuthTokens>("/v1/auth/signup/complete", { method: "POST", body: { email, password } });
+    await persistTokens(result);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -63,21 +75,18 @@ export async function completeSignup(email: string, password: string): Promise<A
 // ---- login ----
 export async function loginAction(email: string, password: string): Promise<ActionResult> {
   try {
-    await enforceRateLimit(`login:${account.normalizeEmail(email)}`, 5, 300);
+    const result = await backend.public<AuthTokens>("/v1/auth/login", { method: "POST", body: { email, password } });
+    await persistTokens(result);
+    return { ok: true };
   } catch (e) {
     return fail(e);
   }
-  const result = await account.verifyCredentials(email, password);
-  if (!result) return { ok: false, error: "Wrong email or password." };
-  await persistSession(result.session);
-  return { ok: true };
 }
 
 // ---- forgot password: request OTP, verify, set new password ----
 export async function requestResetOtp(email: string): Promise<ActionResult> {
   try {
-    await enforceRateLimit(`otp-req:${account.normalizeEmail(email)}`, 3, 600);
-    const { devCode } = await account.requestResetOtp(email);
+    const { devCode } = await backend.public<{ devCode?: string }>("/v1/auth/reset/otp", { method: "POST", body: { email } });
     return { ok: true, devCode };
   } catch (e) {
     return fail(e);
@@ -86,7 +95,7 @@ export async function requestResetOtp(email: string): Promise<ActionResult> {
 
 export async function verifyResetOtp(email: string, code: string): Promise<ActionResult> {
   try {
-    await account.verifyResetOtp(email, code);
+    await backend.public("/v1/auth/reset/verify", { method: "POST", body: { email, code } });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -95,8 +104,8 @@ export async function verifyResetOtp(email: string, code: string): Promise<Actio
 
 export async function completeReset(email: string, password: string): Promise<ActionResult> {
   try {
-    const result = await account.completeReset(email, password);
-    await persistSession(result.session);
+    const result = await backend.public<AuthTokens>("/v1/auth/reset/complete", { method: "POST", body: { email, password } });
+    await persistTokens(result);
     return { ok: true };
   } catch (e) {
     return fail(e);

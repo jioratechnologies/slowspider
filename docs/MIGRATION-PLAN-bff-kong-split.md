@@ -61,9 +61,12 @@ packages/
   realtime/       # not built as a separate package — NatsService, the RealtimeGateway WS
                   # relay, and now YjsDocService (CRDT co-editing) all live directly in
                   # apps/backend/src/{common,realtime}/, and useRealtimeBoard.ts /
-                  # use-collab-note-text.ts directly in apps/web; nothing shared with
-                  # apps/mobile yet (out of scope — web-only for now). Would still make sense
-                  # once a mobile realtime/CRDT client is actually built.
+                  # use-collab-note-text.ts directly in apps/web; apps/android has its own
+                  # Dart port of the whole-record-sync half only (realtime_client.dart, see the
+                  # "apps/android (Flutter) follow-up" writeup below) — no shared package, and
+                  # no CRDT client on Android. apps/mobile (RN) still has neither. Would still
+                  # make sense as a real shared package once more than one non-web client needs
+                  # this and the duplication actually hurts.
 infra/
   kong/       # kong.yml (declarative config) or deck.yml — routes both REST and the /v1/realtime WS upgrade
   nats/       # nats.conf — JetStream store dir, internal-only (no websocket listener anymore, see Realtime section)
@@ -665,10 +668,93 @@ by hand — and `apps/web/src/app/page.tsx` additionally had its own fourth, one
   confirming the type-consolidation and Docker rewrite didn't change runtime behavior. `docker
   compose down` afterward.
 
+**`apps/android` (Flutter) follow-up — whole-record realtime sync** ✅ done (offline still not
+built — see Phase 6 below)
+
+Closes the specific gap `HANDOVER.md` flagged ("Flutter realtime/offline: not built. apps/android
+does plain fetch, no live sync"), for the realtime half only. Scope: port
+`apps/web/src/hooks/useRealtimeBoard.ts`'s whole-record broadcast sync (task/cluster/category/
+milestone/note create/update/delete) to Flutter — explicitly **not** the CRDT/Yjs `Note.body`
+co-editing protocol layered on the same connection on web (out of scope, per the same reasoning
+as every other non-web client so far: `packages/realtime`'s own note above already says "nothing
+shared with apps/mobile yet ... out of scope"; same is true for apps/android here).
+
+- **`apps/android/lib/core/realtime_client.dart`** (new) — `RealtimeClient`, the Android mirror
+  of `useRealtimeBoard.ts`. Connects to `GET /v1/realtime?token=<supabase_access_token>&workspaceId=<id>`
+  through Kong using `web_socket_channel` (added to `pubspec.yaml`), reusing
+  `ApiClient.base` (scheme swapped `http(s)`→`ws(s)`) so it always points at the same Kong host
+  the REST client does — no separate config. Reads the access token fresh from
+  `SessionStorage.instance.current` on every connect attempt (including reconnects), same
+  reasoning as `useRealtimeBoard.ts`'s per-connect `supabase.auth.getSession()`: a reconnect
+  after a token refresh should pick up the new token, not replay a stale one. Parses incoming
+  `{table,type,row}` JSON and ignores anything without a `table` key (the CRDT `doc-*`/
+  `awareness-*` message family `apps/backend/src/realtime/realtime.gateway.ts` also serves on
+  this same endpoint) — the one deliberate scope boundary of this pass.
+  - **Reconnect**: exponential backoff (1s, 2s, 4s, ... capped at 30s, plus a little jitter),
+    reset to the start on a successful handshake. `useRealtimeBoard.ts` uses a flat 2s retry,
+    fine for a browser tab; a phone's radio drops far more often (tunnels, elevators, airplane
+    mode, backgrounding), so backoff avoids hammering Kong/the backend during a longer outage
+    while still recovering quickly from a brief blip. A rejected upgrade (bad/expired token, not
+    a workspace member — see `RealtimeGateway.handleUpgrade`) surfaces via the `ready` future
+    rejecting rather than the stream ever emitting; routed through the same reconnect path as a
+    mid-session drop.
+- **`apps/android/lib/state/board_provider.dart`** — `BoardController` now takes a `Ref` and:
+  connects (via `_connectRealtime`, called from `reload()`) once a board fetch succeeds, scoped
+  to that fetch's `workspaceId` (so `switchWorkspace()` naturally reconnects to the new
+  workspace's change subject, same as web scopes its subscription per workspace); listens to
+  `authProvider` and disconnects immediately on sign-out, reconnecting (via a fresh `reload()`)
+  on a new sign-in — this also fixes a latent staleness issue, since `boardProvider` isn't
+  disposed on sign-out (it's a plain top-level provider, not `autoDispose`), so without this
+  listener a sign-out/sign-in-as-someone-else cycle within one app session would have kept
+  showing the previous account's board data. Incoming events are merged into `BoardState.data`
+  with the same by-`id` replace-or-append/remove logic as `Board.tsx`'s `on*Change` handlers
+  (`_applyRealtimeTaskChange`/`_applyRealtimeClusterChange`/etc.) — a task UPDATE preserves the
+  locally-held `milestones` list (the realtime payload doesn't carry it, same as web's
+  `{ ...row, milestones: existing?.milestones || [] }`), a milestone event is applied to the
+  task matching its `task_id`. Not ported: `Board.tsx`'s "skip applying if this row is open in
+  an editing modal" guard — `BoardController` has no central notion of "which task/cluster
+  screen is currently open" the way `Board.tsx`'s `editingTaskId`/`editingClusterId` state does,
+  so a task being edited on one device could have an incoming field overwritten by a
+  collaborator's concurrent edit landing mid-edit. Flagged as a known gap, not silently
+  dropped — narrower in impact than it sounds, since most fields are saved on blur/dialog-close
+  rather than live-typed the way `Note.body` co-editing is, and no CRDT anywhere on this client.
+- **Verified live, end-to-end, against a real backend** (not just `flutter analyze` — a
+  mismatched message shape would otherwise fail silently on-device with no build-time error):
+  `flutter pub get` + `flutter analyze` clean, `flutter test` (existing smoke test) still green.
+  This worktree's own `apps/backend/.env` didn't exist (same gap prior phases flagged) and
+  `docker compose up` here collided on host ports with an already-running `slowspider` stack
+  from the main checkout (real Supabase/Redis credentials, healthy) — reused that stack rather
+  than fabricate credentials or fight the port collision. Signed up a throwaway test account
+  through it (`POST /v1/auth/signup/{otp,verify,complete}` through Kong, dev OTP `123456`) to
+  get a real bearer token + real `workspaceId`, then ran a throwaway Node script (built-in
+  `WebSocket`, no extra deps — same wire protocol as `RealtimeClient`) connected to
+  `ws://localhost:8000/v1/realtime?token=...&workspaceId=...` while firing real mutations
+  through Kong (`POST`/`PATCH`/`DELETE` on `/v1/{tasks,clusters,categories,notes}` and
+  `/v1/tasks/:id/milestones`) with PowerShell. Confirmed every table × change-type combination
+  the client needs to handle arrived with the exact `{table,type,row}` shape
+  `RealtimeClient`/`BoardController` expect: tasks INSERT/UPDATE/DELETE (UPDATE/DELETE rows
+  confirmed to omit `milestones`, validating the "preserve locally-held milestones" merge
+  logic above), clusters INSERT, categories INSERT, milestones INSERT/UPDATE/DELETE, notes
+  INSERT/DELETE. All test rows deleted afterward (confirmed via a follow-up `GET /v1/board`
+  showing empty task/cluster/category/note lists for the test workspace); the throwaway
+  `@example.com` test auth account was left in place, harmless, same convention prior phases
+  used. Did not run `docker compose down` — the reused stack wasn't brought up by this pass and
+  isn't this pass's to tear down; this worktree's own (never-started, port-conflicting)
+  containers were removed via `docker compose down` here. Not verified: the actual Flutter UI
+  round-tripping a live event into a rendered widget tree — no Android device/emulator or
+  browser available in this environment (same "no device" gap `HANDOVER.md` already flags for
+  `apps/android` generally); the client/provider logic was verified via `flutter analyze`
+  type-checking against the real `web_socket_channel` types and the Node-side wire-protocol
+  test above, which exercises the identical transport, auth, and payload shape end-to-end, but
+  not `setState`/Riverpod rebuilds in an actual running app.
+
 **Phase 6 — Android offline-first**
-- Add local SQLite mirror + outbox table to `apps/mobile`.
+- Add local SQLite mirror + outbox table to `apps/mobile` and `apps/android`.
 - Switch mutation calls to write-local-then-queue instead of direct request/response.
-- Add reconnect drain logic + NATS subscription for push updates when online.
+- Add reconnect drain logic to replay the outbox once back online — the realtime subscription
+  itself (`ws.<workspaceId>.change` via `GET /v1/realtime`) is already built for both `apps/web`
+  and, as of the follow-up above, `apps/android`; only the offline-outbox/SQLite-mirror half of
+  this phase remains, for both mobile clients.
 
 Phases 5 and 6 can run in parallel with each other (and largely independent of Phase 3/4) once Phase 2 (Kong + backend) is stable, since both build on the backend's REST API existing behind Kong.
 

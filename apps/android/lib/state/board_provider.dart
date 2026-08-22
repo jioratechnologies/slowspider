@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_client.dart';
+import '../core/realtime_client.dart';
 import '../core/session_storage.dart';
 import '../models/models.dart';
+import 'auth_provider.dart';
 
 class BoardState {
   final BoardPayload? data;
@@ -45,14 +47,34 @@ class BoardState {
 /// Board state + mutations. Mirrors apps/mobile/src/store/BoardContext.tsx: optimistic local
 /// updates applied immediately, the real request fired in the background (errors surface via
 /// `state.error` rather than blocking the UI) — matches this pass's "fetch-on-load / pull to
-/// refresh is fine" scope (no offline outbox, no realtime).
+/// refresh is fine" scope (no offline outbox). Realtime whole-record sync (see
+/// core/realtime_client.dart, the Android mirror of apps/web/src/hooks/useRealtimeBoard.ts) is
+/// now wired in below: a collaborator's task/cluster/category/milestone/note change lands
+/// here and gets merged the same way an equivalent local mutation would, so the UI reflects it
+/// without a manual pull-to-refresh. Offline-first SQLite is still a separate, not-yet-started
+/// phase (see HANDOVER.md).
 class BoardController extends StateNotifier<BoardState> {
-  BoardController() : super(const BoardState()) {
+  BoardController(this._ref) : super(const BoardState()) {
     reload();
     loadWorkspaces();
+    // Connect/reconnect realtime as auth state changes: drop the socket immediately on
+    // sign-out, and refetch the board (which reconnects with the new session's token/
+    // workspace, see reload() below) on a fresh sign-in. This provider is created lazily on
+    // first read (typically right after the post-login redirect to '/'), but it isn't
+    // disposed on sign-out, so it can live across a sign-out/sign-in-as-someone-else cycle —
+    // this listener is what keeps the socket (and the stale board data) from surviving that.
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.status == AuthStatus.signedOut) {
+        _disconnectRealtime();
+      } else if (next.status == AuthStatus.signedIn && previous?.status != AuthStatus.signedIn) {
+        reload();
+      }
+    });
   }
 
+  final Ref _ref;
   final _api = ApiClient.instance;
+  RealtimeClient? _realtime;
 
   void _fail(Object e) => state = state.copyWith(error: e.toString());
 
@@ -63,11 +85,122 @@ class BoardController extends StateNotifier<BoardState> {
       // The server resolves the account's default workspace on first load; pin it locally
       // so switchWorkspace() means something afterward.
       await SessionStorage.instance.setActiveWorkspace(board.workspaceId);
+      _connectRealtime(board.workspaceId);
     } catch (e) {
       state = state.copyWith(error: e.toString());
     } finally {
       state = state.copyWith(loading: false, refreshing: false);
     }
+  }
+
+  // ---- Realtime (whole-record broadcast sync — see core/realtime_client.dart) ----
+
+  void _connectRealtime(int workspaceId) {
+    if (_realtime != null && _realtime!.workspaceId == workspaceId) return; // already on it
+    _realtime?.dispose();
+    _realtime = RealtimeClient(workspaceId: workspaceId, onEvent: _applyRealtimeChange)..connect();
+  }
+
+  void _disconnectRealtime() {
+    _realtime?.dispose();
+    _realtime = null;
+  }
+
+  @override
+  void dispose() {
+    _disconnectRealtime();
+    super.dispose();
+  }
+
+  /// Applies one `{table,type,row}` event to local state — the same merge-by-id logic
+  /// apps/web/src/components/board/Board.tsx's `on*Change` handlers use (see that file's
+  /// `useRealtimeBoard` call site): DELETE removes the matching row, INSERT/UPDATE replaces
+  /// it if present or appends it. Silently ignored if the board hasn't loaded yet (a stray
+  /// event arriving before the first `reload()` resolves shouldn't happen in practice, since
+  /// the socket only connects after a board fetch succeeds, but is a harmless no-op either
+  /// way).
+  void _applyRealtimeChange(String table, String type, Map<String, dynamic> row) {
+    final data = state.data;
+    if (data == null) return;
+    switch (table) {
+      case 'tasks':
+        _applyRealtimeTaskChange(data, type, row);
+        break;
+      case 'clusters':
+        _applyRealtimeClusterChange(data, type, row);
+        break;
+      case 'categories':
+        _applyRealtimeCategoryChange(data, type, row);
+        break;
+      case 'milestones':
+        _applyRealtimeMilestoneChange(data, type, row);
+        break;
+      case 'notes':
+        _applyRealtimeNoteChange(data, type, row);
+        break;
+    }
+  }
+
+  void _applyRealtimeTaskChange(BoardPayload data, String type, Map<String, dynamic> row) {
+    final incoming = Task.fromJson(row);
+    if (type == 'DELETE') {
+      state = state.copyWith(data: data.copyWith(tasks: data.tasks.where((t) => t.id != incoming.id).toList()));
+      return;
+    }
+    final idx = data.tasks.indexWhere((t) => t.id == incoming.id);
+    // The realtime payload for a task row doesn't carry its milestones (that's a separate
+    // table/event) — preserve whatever this client already has locally, same as Board.tsx's
+    // `{ ...row, milestones: existing?.milestones || [] }`.
+    final merged = idx >= 0 ? incoming.copyWith(milestones: data.tasks[idx].milestones) : incoming;
+    final tasks = idx >= 0 ? [for (final t in data.tasks) t.id == incoming.id ? merged : t] : [...data.tasks, merged];
+    state = state.copyWith(data: data.copyWith(tasks: tasks));
+  }
+
+  void _applyRealtimeClusterChange(BoardPayload data, String type, Map<String, dynamic> row) {
+    final incoming = Cluster.fromJson(row);
+    if (type == 'DELETE') {
+      state = state.copyWith(data: data.copyWith(clusters: data.clusters.where((c) => c.id != incoming.id).toList()));
+      return;
+    }
+    final exists = data.clusters.any((c) => c.id == incoming.id);
+    final clusters = exists ? [for (final c in data.clusters) c.id == incoming.id ? incoming : c] : [...data.clusters, incoming];
+    state = state.copyWith(data: data.copyWith(clusters: clusters));
+  }
+
+  void _applyRealtimeCategoryChange(BoardPayload data, String type, Map<String, dynamic> row) {
+    final incoming = Category.fromJson(row);
+    if (type == 'DELETE') {
+      state = state.copyWith(data: data.copyWith(categories: data.categories.where((c) => c.id != incoming.id).toList()));
+      return;
+    }
+    final exists = data.categories.any((c) => c.id == incoming.id);
+    final categories = exists ? [for (final c in data.categories) c.id == incoming.id ? incoming : c] : [...data.categories, incoming];
+    state = state.copyWith(data: data.copyWith(categories: categories));
+  }
+
+  void _applyRealtimeNoteChange(BoardPayload data, String type, Map<String, dynamic> row) {
+    final incoming = Note.fromJson(row);
+    if (type == 'DELETE') {
+      state = state.copyWith(data: data.copyWith(notes: data.notes.where((n) => n.id != incoming.id).toList()));
+      return;
+    }
+    final exists = data.notes.any((n) => n.id == incoming.id);
+    final notes = exists ? [for (final n in data.notes) n.id == incoming.id ? incoming : n] : [...data.notes, incoming];
+    state = state.copyWith(data: data.copyWith(notes: notes));
+  }
+
+  void _applyRealtimeMilestoneChange(BoardPayload data, String type, Map<String, dynamic> row) {
+    final incoming = Milestone.fromJson(row);
+    final tasks = data.tasks.map((t) {
+      if (t.id != incoming.taskId) return t;
+      if (type == 'DELETE') {
+        return t.copyWith(milestones: t.milestones.where((m) => m.id != incoming.id).toList());
+      }
+      final exists = t.milestones.any((m) => m.id == incoming.id);
+      final milestones = exists ? [for (final m in t.milestones) m.id == incoming.id ? incoming : m] : [...t.milestones, incoming];
+      return t.copyWith(milestones: milestones);
+    }).toList();
+    state = state.copyWith(data: data.copyWith(tasks: tasks));
   }
 
   Future<void> refresh() async {
@@ -330,4 +463,4 @@ class BoardController extends StateNotifier<BoardState> {
   }
 }
 
-final boardProvider = StateNotifierProvider<BoardController, BoardState>((ref) => BoardController());
+final boardProvider = StateNotifierProvider<BoardController, BoardState>((ref) => BoardController(ref));

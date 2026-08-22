@@ -97,7 +97,8 @@ to delete if doing cleanup.
 | Realtime auth fix | Done | Browsers connect to backend's own authenticated `/v1/realtime` WS, not NATS directly (NATS has zero host-exposed ports) |
 | shared-types | Done | `packages/shared-types` is the real DTO source of truth across all three apps |
 | CRDT | Done | `Note.body` (text/rich notes) supports real concurrent co-editing via Yjs, riding the same `/v1/realtime` connection |
-| Flutter app | First pass done | `apps/android` — feature-matched to what `apps/mobile` already has (auth, board, tasks, clusters, categories, notes, attachments, archive, calendar, invites). No realtime/offline yet, never run on real Android. |
+| Flutter app | First pass done | `apps/android` — feature-matched to what `apps/mobile` already has (auth, board, tasks, clusters, categories, notes, attachments, archive, calendar, invites), plus whole-record realtime sync (below). No offline-first SQLite yet, never run on real Android. |
+| Flutter realtime | Done | `apps/android` connects to the same authenticated `GET /v1/realtime` WS (through Kong) as `apps/web` — `lib/core/realtime_client.dart` + wiring in `lib/state/board_provider.dart`. Whole-record broadcast sync only (task/cluster/category/milestone/note create/update/delete); the CRDT/Yjs `Note.body` co-editing protocol on the same connection is deliberately not handled — see "Flutter realtime/offline" below. |
 
 ## Known gaps / not done
 
@@ -105,8 +106,19 @@ to delete if doing cleanup.
   still the only one verified end-to-end. `apps/android` (Flutter) builds clean but has
   never touched a real device — install the Android SDK and actually run it before trusting
   it beyond "it compiles." Don't delete `apps/mobile` until Flutter is verified at parity.
-- **Flutter realtime/offline**: not built. `apps/android` does plain fetch, no live sync,
-  no offline-first SQLite (that's a separate, not-yet-started phase for both mobile clients).
+- **Flutter offline**: not built. `apps/android` still does plain fetch-on-load / pull-to-
+  refresh for every REST mutation — no local SQLite mirror, no offline outbox (that's a
+  separate, not-yet-started phase for both mobile clients — see
+  `docs/MIGRATION-PLAN-bff-kong-split.md`'s Phase 6). **Realtime is done**, though: a
+  collaborator's task/cluster/category/milestone/note change now shows up live on Android the
+  same way it already did on web, via the same authenticated `GET /v1/realtime` WS through
+  Kong (`apps/android/lib/core/realtime_client.dart`, wired into
+  `apps/android/lib/state/board_provider.dart`). Reconnects with exponential backoff (unlike
+  web's flat 2s retry — mobile networks drop more) and connects/disconnects as auth/workspace
+  state changes. The CRDT/Yjs `Note.body` live-text-merging protocol riding the same
+  connection on web was explicitly out of scope for this pass and isn't handled here — those
+  `doc-*`/`awareness-*` messages are silently ignored (Android's note editor still does a
+  plain PATCH-on-save, not live co-editing).
 - **CRDT awareness/presence** (live cursors, who's-editing indicator): transport exists,
   no UI built.
 - **VPS self-host migration**: blocked, no real server to point at. Currently everything

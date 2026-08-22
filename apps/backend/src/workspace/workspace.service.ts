@@ -163,8 +163,8 @@ export class WorkspaceService {
     return { workspaceId: invite.workspace_id };
   }
 
-  /** Pending invites addressed to this email — not wired to a route yet (matches apps/web,
-   * where this is used by a Server Action, not the /api/v1 REST surface being ported here). */
+  /** Pending invites addressed to this email — exposed via GET /v1/workspace/my-invites
+   * (added in Phase 3; apps/web's Server Action version called this in-process before). */
   async listPendingInvitesForEmail(email: string): Promise<PendingInviteForUser[]> {
     const e = email.trim().toLowerCase();
     const { data, error } = await this.db()

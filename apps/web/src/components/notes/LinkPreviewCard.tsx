@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, Eye, EyeOff, Globe, Loader2 } from "lucide-react";
-import type { LinkPreview } from "@/lib/services/link-preview";
+import type { LinkPreview } from "@/lib/board-actions";
 
 export default function LinkPreviewCard({
   url,

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { listCollaborators, inviteCollaborator, removeCollaborator, revokeCollaboratorInvite } from "@/lib/workspace-actions";
-import type { MemberRow, InviteRow } from "@/lib/services/workspace";
+import type { MemberRow, InviteRow } from "@/lib/workspace-actions";
 
 export default function CollaboratorsModal({
   open,

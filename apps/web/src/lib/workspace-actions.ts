@@ -2,7 +2,13 @@
 
 import { cookies } from "next/headers";
 import { createClient } from "./supabase/server";
-import * as workspace from "./services/workspace";
+import { backend, getAccessToken } from "./backend-client";
+
+// Used to call ./services/workspace.ts in-process; now calls apps/backend's /v1/workspace/**
+// routes through Kong instead (same endpoints apps/mobile/src/api.ts already uses, plus two
+// small additions — GET /v1/workspace/my-invites and POST /v1/workspace/my-invites/:id/decline
+// — added to apps/backend alongside this change since the underlying service methods already
+// existed there but weren't wired to a route yet).
 
 const WORKSPACE_COOKIE = "active_workspace_id";
 
@@ -14,16 +20,13 @@ async function requireUser(): Promise<{ id: string; email: string }> {
   if (!user) throw new Error("Not signed in.");
   return { id: user.id, email: user.email || "" };
 }
-async function requireUserId(): Promise<string> {
-  return (await requireUser()).id;
-}
 
-async function requireActiveWorkspaceId(userId: string): Promise<number> {
+async function requireAuth(): Promise<{ userId: string; token: string; workspaceId?: number }> {
+  const { id: userId } = await requireUser();
+  const token = await getAccessToken();
   const cookieStore = await cookies();
   const fromCookie = Number(cookieStore.get(WORKSPACE_COOKIE)?.value);
-  const id = fromCookie || (await workspace.getDefaultWorkspaceId(userId));
-  if (!id) throw new Error("No workspace found for this account.");
-  return id;
+  return { userId, token, workspaceId: fromCookie || undefined };
 }
 
 export interface ActionResult {
@@ -35,24 +38,53 @@ function fail(e: unknown): ActionResult {
   return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
 }
 
+// ---- types (previously re-exported from ./services/workspace.ts) ----
+export interface Workspace {
+  id: number;
+  name: string;
+  owner_id: string;
+  created_at: string;
+}
+export interface WorkspaceRef extends Workspace {
+  role: "owner" | "editor";
+}
+export interface MemberRow {
+  userId: string;
+  email: string | null;
+  role: "owner" | "editor";
+  joinedAt: string;
+}
+export interface InviteRow {
+  id: number;
+  workspace_id: number;
+  email: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+export interface PendingInviteForUser {
+  id: number;
+  workspaceId: number;
+  workspaceName: string;
+  invitedByEmail: string | null;
+  token: string;
+  createdAt: string;
+}
+
 export async function inviteCollaborator(email: string): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
-    const workspaceId = await requireActiveWorkspaceId(userId);
-    await workspace.inviteMember(workspaceId, userId, email);
+    const { token, workspaceId } = await requireAuth();
+    await backend.auth("/v1/workspace/invite", { token, workspaceId }, { method: "POST", body: { email } });
     return { ok: true };
   } catch (e) {
     return fail(e);
   }
 }
 
-export async function listCollaborators(): Promise<
-  { ok: true; members: workspace.MemberRow[]; invites: workspace.InviteRow[] } | { ok: false; error: string }
-> {
+export async function listCollaborators(): Promise<{ ok: true; members: MemberRow[]; invites: InviteRow[] } | { ok: false; error: string }> {
   try {
-    const userId = await requireUserId();
-    const workspaceId = await requireActiveWorkspaceId(userId);
-    const result = await workspace.listMembers(workspaceId, userId);
+    const { token, workspaceId } = await requireAuth();
+    const result = await backend.auth<{ members: MemberRow[]; invites: InviteRow[] }>("/v1/workspace/members", { token, workspaceId });
     return { ok: true, ...result };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
@@ -61,9 +93,8 @@ export async function listCollaborators(): Promise<
 
 export async function removeCollaborator(targetUserId: string): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
-    const workspaceId = await requireActiveWorkspaceId(userId);
-    await workspace.removeMember(workspaceId, userId, targetUserId);
+    const { token, workspaceId } = await requireAuth();
+    await backend.auth(`/v1/workspace/members/${targetUserId}`, { token, workspaceId }, { method: "DELETE" });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -72,9 +103,8 @@ export async function removeCollaborator(targetUserId: string): Promise<ActionRe
 
 export async function revokeCollaboratorInvite(inviteId: number): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
-    const workspaceId = await requireActiveWorkspaceId(userId);
-    await workspace.revokeInvite(workspaceId, userId, inviteId);
+    const { token, workspaceId } = await requireAuth();
+    await backend.auth(`/v1/workspace/invite/${inviteId}`, { token, workspaceId }, { method: "DELETE" });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -83,23 +113,25 @@ export async function revokeCollaboratorInvite(inviteId: number): Promise<Action
 
 export async function acceptWorkspaceInvite(token: string): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
-    const { workspaceId } = await workspace.acceptInvite(token, userId);
+    const { token: accessToken, workspaceId } = await requireAuth();
+    const result = await backend.auth<{ workspaceId: number }>(
+      "/v1/workspace/accept",
+      { token: accessToken, workspaceId },
+      { method: "POST", body: { token } }
+    );
     const cookieStore = await cookies();
-    cookieStore.set(WORKSPACE_COOKIE, String(workspaceId), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+    cookieStore.set(WORKSPACE_COOKIE, String(result.workspaceId), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
     return { ok: true };
   } catch (e) {
     return fail(e);
   }
 }
 
-export async function listMyPendingInvites(): Promise<
-  { ok: true; invites: workspace.PendingInviteForUser[] } | { ok: false; error: string }
-> {
+export async function listMyPendingInvites(): Promise<{ ok: true; invites: PendingInviteForUser[] } | { ok: false; error: string }> {
   try {
-    const { email } = await requireUser();
-    const invites = await workspace.listPendingInvitesForEmail(email);
-    return { ok: true, invites };
+    const { token, workspaceId } = await requireAuth();
+    const result = await backend.auth<{ invites: PendingInviteForUser[] }>("/v1/workspace/my-invites", { token, workspaceId });
+    return { ok: true, invites: result.invites };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
   }
@@ -107,21 +139,19 @@ export async function listMyPendingInvites(): Promise<
 
 export async function declineMyInvite(inviteId: number): Promise<ActionResult> {
   try {
-    const { email } = await requireUser();
-    await workspace.declineInvite(inviteId, email);
+    const { token, workspaceId } = await requireAuth();
+    await backend.auth(`/v1/workspace/my-invites/${inviteId}/decline`, { token, workspaceId }, { method: "POST" });
     return { ok: true };
   } catch (e) {
     return fail(e);
   }
 }
 
-export async function listMyWorkspacesAction(): Promise<
-  { ok: true; workspaces: workspace.WorkspaceRef[] } | { ok: false; error: string }
-> {
+export async function listMyWorkspacesAction(): Promise<{ ok: true; workspaces: WorkspaceRef[] } | { ok: false; error: string }> {
   try {
-    const userId = await requireUserId();
-    const workspaces = await workspace.listMyWorkspaces(userId);
-    return { ok: true, workspaces };
+    const { token, workspaceId } = await requireAuth();
+    const result = await backend.auth<{ workspaces: WorkspaceRef[] }>("/v1/workspace", { token, workspaceId });
+    return { ok: true, workspaces: result.workspaces };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
   }
@@ -129,10 +159,10 @@ export async function listMyWorkspacesAction(): Promise<
 
 export async function createWorkspaceAction(name: string): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
     const trimmed = name.trim();
     if (!trimmed) throw new Error("Give the workspace a name.");
-    const ws = await workspace.createDefaultWorkspace(userId, trimmed);
+    const { token, workspaceId: activeWorkspaceId } = await requireAuth();
+    const ws = await backend.auth<Workspace>("/v1/workspace", { token, workspaceId: activeWorkspaceId }, { method: "POST", body: { name: trimmed } });
     const cookieStore = await cookies();
     cookieStore.set(WORKSPACE_COOKIE, String(ws.id), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
     return { ok: true };
@@ -143,10 +173,10 @@ export async function createWorkspaceAction(name: string): Promise<ActionResult>
 
 export async function renameWorkspaceAction(workspaceId: number, name: string): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
     const trimmed = name.trim();
     if (!trimmed) throw new Error("Give the workspace a name.");
-    await workspace.renameWorkspace(workspaceId, userId, trimmed);
+    const { token, workspaceId: activeWorkspaceId } = await requireAuth();
+    await backend.auth(`/v1/workspace/${workspaceId}`, { token, workspaceId: activeWorkspaceId }, { method: "PATCH", body: { name: trimmed } });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -155,9 +185,9 @@ export async function renameWorkspaceAction(workspaceId: number, name: string): 
 
 export async function switchWorkspaceAction(workspaceId: number): Promise<ActionResult> {
   try {
-    const userId = await requireUserId();
-    const mine = await workspace.listMyWorkspaces(userId);
-    if (!mine.some((w) => w.id === workspaceId)) throw new Error("You don't have access to that workspace.");
+    const { token, workspaceId: activeWorkspaceId } = await requireAuth();
+    const mine = await backend.auth<{ workspaces: WorkspaceRef[] }>("/v1/workspace", { token, workspaceId: activeWorkspaceId });
+    if (!mine.workspaces.some((w) => w.id === workspaceId)) throw new Error("You don't have access to that workspace.");
     const cookieStore = await cookies();
     cookieStore.set(WORKSPACE_COOKIE, String(workspaceId), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
     return { ok: true };

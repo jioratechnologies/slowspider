@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { switchWorkspaceAction, createWorkspaceAction, renameWorkspaceAction } from "@/lib/workspace-actions";
-import type { WorkspaceRef } from "@/lib/services/workspace";
+import type { WorkspaceRef } from "@/lib/workspace-actions";
 
 function stopMenuTypeahead(e: React.KeyboardEvent) {
   e.stopPropagation();

@@ -24,7 +24,7 @@ import {
 import InvitesNotification from "./InvitesNotification";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import ConstantsConverterModal from "../research/ConstantsConverterModal";
-import type { WorkspaceRef } from "@/lib/services/workspace";
+import type { WorkspaceRef } from "@/lib/workspace-actions";
 import {
   DropdownMenu,
   DropdownMenuContent,

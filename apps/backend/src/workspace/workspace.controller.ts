@@ -63,4 +63,21 @@ export class WorkspaceController {
     await this.workspace.removeMember(ctx.workspaceId, ctx.userId, userId);
     return { removed: true };
   }
+
+  // GET /v1/workspace/my-invites — pending invites addressed to the caller's own email
+  // (shown as a notification for someone who signs up directly instead of clicking the
+  // invite link). Newly wired up here for Phase 3 (apps/web's Server Action version of this
+  // called WorkspaceService.listPendingInvitesForEmail in-process; that service method was
+  // already ported in Phase 1 but, per its own comment, wasn't yet exposed as a route).
+  @Get("my-invites")
+  async myInvites(@CurrentUser() ctx: ApiContext) {
+    return { invites: await this.workspace.listPendingInvitesForEmail(ctx.email) };
+  }
+
+  // POST /v1/workspace/my-invites/:id/decline — same rationale as GET my-invites above.
+  @Post("my-invites/:id/decline")
+  async declineMyInvite(@CurrentUser() ctx: ApiContext, @Param("id") id: string) {
+    await this.workspace.declineInvite(Number(id), ctx.email);
+    return { declined: true };
+  }
 }

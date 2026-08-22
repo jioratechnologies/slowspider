@@ -34,7 +34,7 @@ import ScientificCalculator from "../research/ScientificCalculator";
 import ConstantsConverterModal from "../research/ConstantsConverterModal";
 import MobileBottomBar from "./MobileBottomBar";
 import { useRealtimeBoard } from "@/hooks/useRealtimeBoard";
-import type { WorkspaceRef } from "@/lib/services/workspace";
+import type { WorkspaceRef } from "@/lib/workspace-actions";
 
 export default function Board({
   userId,

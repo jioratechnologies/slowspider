@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allows plain HTTP to Kong's local dev proxy (http://localhost:8000, or 10.0.2.2 from the
+  Android emulator) — Android blocks cleartext traffic by default since API 28. Scoped to
+  loopback/dev hosts only; a production build pointed at a real gateway URL should use HTTPS
+  and can drop this file (or scope it to that host specifically) instead of the blanket
+  cleartextTrafficPermitted default below.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

@@ -12,16 +12,14 @@ apps/
   web/        Next.js 16 — UI + SSR only. Server Actions call apps/backend through Kong.
   backend/    NestJS — owns all /v1 REST logic, Postgres (via Supabase-js), Redis, NATS,
               the realtime WebSocket relay. Source of truth for business logic.
-  mobile/     Expo/React Native — the CURRENT Android+iOS client. Still fully working,
-              still the one actually feature-complete. Not deleted yet on purpose (see
-              "Android: RN vs Flutter" below).
-  android/    Flutter — the NEW Android client, first pass. Builds and analyzes clean but
-              has never been run on an actual Android device/emulator (no Android SDK on
-              this dev machine) — see "Known gaps" below.
+  android/    Flutter — the Android client. apps/mobile (Expo/React Native) has been
+              deleted — Flutter is now the only Android client, see "Android: RN vs
+              Flutter" below for what that means risk-wise.
 packages/
-  shared-types/   Canonical DTOs (Task, Cluster, Note, Workspace, etc.), consumed by web,
-                  backend, and mobile via npm workspaces. Real source of truth as of the
-                  last phase — don't redefine these types locally in an app again.
+  shared-types/   Canonical DTOs (Task, Cluster, Note, Workspace, etc.), consumed by web
+                  and backend via npm workspaces (TypeScript only — apps/android is Dart,
+                  doesn't consume this package; its own lib/models/models.dart is a
+                  separate, manually-kept-in-sync copy).
 infra/
   kong/kong.yml       Kong declarative config (DB-less, single file, no admin DB to run).
   nats/nats.conf      NATS server config — fully internal to Docker network, not exposed
@@ -41,8 +39,8 @@ cd ../..
 docker compose up -d --build
 ```
 
-Kong's proxy is on `http://localhost:8000` — every client (web, mobile, android) talks to
-this, not directly to the backend's own port.
+Kong's proxy is on `http://localhost:8000` — every client (web, android) talks to this,
+not directly to the backend's own port.
 
 **Web app**:
 
@@ -64,9 +62,6 @@ flutter run -d chrome        # works today, no Android SDK needed
 Defaults to hitting Kong at `http://localhost:8000` (override with
 `--dart-define=API_BASE_URL=...`). Web/Windows-desktop targets work now; a real Android
 device/emulator needs the Android SDK installed first (`flutter doctor` will say so).
-
-**RN app** (`apps/mobile`) — unchanged from before this migration started, see its own
-README/AGENTS.md.
 
 ## Environment variables
 
@@ -102,10 +97,10 @@ to delete if doing cleanup.
 
 ## Known gaps / not done
 
-- **Android: RN vs Flutter.** Decision made to move to Flutter, but `apps/mobile` (RN) is
-  still the only one verified end-to-end. `apps/android` (Flutter) builds clean but has
-  never touched a real device — install the Android SDK and actually run it before trusting
-  it beyond "it compiles." Don't delete `apps/mobile` until Flutter is verified at parity.
+- **Android: Flutter is now the only client** — `apps/mobile` (RN) has been deleted.
+  `apps/android` builds clean and analyzes clean but has never touched a real device — no
+  Android SDK on this dev machine. Install it and actually run this before trusting the
+  app beyond "it compiles." There is no RN fallback anymore if something's broken.
 - **Flutter offline**: not built. `apps/android` still does plain fetch-on-load / pull-to-
   refresh for every REST mutation — no local SQLite mirror, no offline outbox (that's a
   separate, not-yet-started phase for both mobile clients — see

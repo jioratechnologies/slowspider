@@ -1,0 +1,8 @@
+{
+  "name": "@slowspider/shared-types",
+  "version": "0.0.1",
+  "private": true,
+  "description": "DTO/API contract types shared by apps/web, apps/backend and apps/mobile — see docs/MIGRATION-PLAN-bff-kong-split.md (Phase 0: extract packages/shared-types).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Category, Cluster, Milestone, Note, Task } from "@/lib/types";
+import type { NoteDocClientMsg, NoteDocServerMsg } from "@slowspider/shared-types";
 
 type ChangeType = "INSERT" | "UPDATE" | "DELETE";
 
@@ -20,6 +21,33 @@ type ChangeEvent =
   | { table: "categories"; type: ChangeType; row: Category }
   | { table: "milestones"; type: ChangeType; row: Milestone }
   | { table: "notes"; type: ChangeType; row: Note };
+
+// A `{table,...}` whole-record change event vs. a `{type: "doc-*"|"awareness-*",...}` CRDT
+// message (see @slowspider/shared-types's NoteDocServerMsg) are told apart by which
+// discriminant key is present — see onmessage below.
+type IncomingMsg = ChangeEvent | NoteDocServerMsg;
+
+/**
+ * The subset of the realtime WS connection exposed for CRDT co-editing (see
+ * docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section — "True concurrent co-editing").
+ * Deliberately rides the *same* WebSocket useRealtimeBoard already owns rather than opening a
+ * second connection — see useCollabNoteText (lib/yjs/use-collab-note-text.ts), the sole
+ * consumer of this.
+ */
+export interface RealtimeDocChannel {
+  /** Sends a doc-subscribe/doc-update/doc-unsubscribe/awareness-update message. Silently
+   * dropped if the socket isn't open right now — onOpen below is how a caller resubscribes
+   * after a reconnect. */
+  sendDoc: (msg: NoteDocClientMsg) => void;
+  /** Registers a listener for server->client doc/awareness messages scoped to one noteId.
+   * Returns an unsubscribe function. */
+  addDocListener: (noteId: number, listener: (msg: NoteDocServerMsg) => void) => () => void;
+  /** Registers a callback fired every time the underlying socket (re)connects — including the
+   * first time. This is what lets a currently-open collaborative editor re-send its
+   * doc-subscribe after a network blip, since the backend's in-memory Yjs doc state for this
+   * connection is gone the moment the socket drops. */
+  addOpenListener: (listener: () => void) => () => void;
+}
 
 // SECURITY FIX (see docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section): this used to
 // connect straight to NATS's websocket listener, gated only by a single shared bearer token
@@ -46,11 +74,19 @@ const RECONNECT_DELAY_MS = 2000;
 // collaborator's edit show up without a manual refresh. Same `RealtimeBoardHandlers`
 // interface, same handler routing by table name, same call site in Board.tsx as the old
 // direct-NATS version — only the transport/auth underneath changed.
-export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHandlers) {
+//
+// Also the single owner of the `/v1/realtime` WebSocket, so CRDT co-editing (see
+// RealtimeDocChannel above) shares this same connection instead of opening a second one — the
+// returned object is how a collaborative note editor mounted elsewhere in the tree reaches it.
+export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHandlers): RealtimeDocChannel {
   const handlersRef = useRef(handlers);
   useEffect(() => {
     handlersRef.current = handlers;
   });
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const docListenersRef = useRef<Map<number, Set<(msg: NoteDocServerMsg) => void>>>(new Map());
+  const openListenersRef = useRef<Set<() => void>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -78,14 +114,31 @@ export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHan
 
       const socket = new WebSocket(url);
       ws = socket;
+      wsRef.current = socket;
+
+      socket.onopen = () => {
+        for (const listener of openListenersRef.current) listener();
+      };
 
       socket.onmessage = (msg) => {
-        let event: ChangeEvent;
+        let event: IncomingMsg;
         try {
-          event = JSON.parse(msg.data as string) as ChangeEvent;
+          event = JSON.parse(msg.data as string) as IncomingMsg;
         } catch {
           return; // malformed payload — skip it rather than take down the whole connection
         }
+
+        if (!("table" in event)) {
+          // CRDT doc/awareness message — dispatch to whichever collaborative editor (if any)
+          // currently has this noteId open. No listener registered (nobody has it open right
+          // now) is a normal, silent no-op. (Both message families happen to carry a `type`
+          // field with disjoint value sets — INSERT/UPDATE/DELETE vs. doc-sync/doc-update/...
+          // — so `table` is the only reliable structural discriminant between them.)
+          const listeners = docListenersRef.current.get(event.noteId);
+          if (listeners) for (const listener of listeners) listener(event);
+          return;
+        }
+
         const h = handlersRef.current;
         switch (event.table) {
           case "tasks":
@@ -107,6 +160,7 @@ export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHan
       };
 
       socket.onclose = () => {
+        if (wsRef.current === socket) wsRef.current = null;
         if (cancelled) return;
         // Connection dropped (network blip, backend restart, rejected/expired token, ...) —
         // reconnect with a fixed delay instead of leaving live sync silently dead until the
@@ -128,7 +182,38 @@ export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHan
     return () => {
       cancelled = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      wsRef.current = null;
       ws?.close();
     };
   }, [workspaceId]);
+
+  const sendDoc = useCallback((msg: NoteDocClientMsg) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  }, []);
+
+  const addDocListener = useCallback((noteId: number, listener: (msg: NoteDocServerMsg) => void) => {
+    let set = docListenersRef.current.get(noteId);
+    if (!set) {
+      set = new Set();
+      docListenersRef.current.set(noteId, set);
+    }
+    set.add(listener);
+    return () => {
+      set!.delete(listener);
+      if (set!.size === 0) docListenersRef.current.delete(noteId);
+    };
+  }, []);
+
+  const addOpenListener = useCallback((listener: () => void) => {
+    openListenersRef.current.add(listener);
+    // Already connected by the time this is called (e.g. editor opened well after mount) —
+    // fire immediately so the caller doesn't wait for the next reconnect to subscribe.
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) listener();
+    return () => {
+      openListenersRef.current.delete(listener);
+    };
+  }, []);
+
+  return useMemo(() => ({ sendDoc, addDocListener, addOpenListener }), [sendDoc, addDocListener, addOpenListener]);
 }

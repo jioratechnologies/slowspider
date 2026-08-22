@@ -115,7 +115,7 @@ export async function deleteCategory(id: number): Promise<void> {
 }
 
 // ---- notes ----
-export async function insertNote(input: Omit<Note, "id" | "workspace_id" | "created_by" | "created_at">): Promise<Note> {
+export async function insertNote(input: Omit<Note, "id" | "workspace_id" | "created_by" | "created_at" | "yjs_state">): Promise<Note> {
   const { token, workspaceId } = await requireWorkspaceContext();
   return backend.auth<Note>("/v1/notes", { token, workspaceId }, { method: "POST", body: input });
 }

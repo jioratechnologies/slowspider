@@ -593,7 +593,10 @@ export default function Board({
   // merged into local state. Server payload wins (last-write-wins), except a row that's
   // currently open in an editing modal is left alone until the modal closes, so a
   // collaborator's edit can't yank a field out from under whoever is mid-type.
-  useRealtimeBoard(workspaceId, {
+  // docChannel rides this same connection for CRDT co-editing of Note.body (kind text/rich) —
+  // see TaskNotesModal/NotesPanel/CollaborativeNoteEditor and
+  // docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section. Not a second WebSocket.
+  const docChannel = useRealtimeBoard(workspaceId, {
     onTaskChange: (type, row) => {
       if (type === "DELETE") {
         setTasks((prev) => prev.filter((t) => t.id !== row.id));
@@ -797,6 +800,7 @@ export default function Board({
         notes={editingNotesTaskId != null ? textNotesForTask(editingNotesTaskId) : []}
         currentUserId={userId}
         storageUsed={storageUsed}
+        docChannel={docChannel}
         onClose={() => setEditingNotesTaskId(null)}
         onAddNote={addNote}
         onDeleteNote={deleteNote}

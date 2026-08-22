@@ -55,23 +55,47 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
    * each handler expects off `row` (full row for INSERT/UPDATE, at least `{id}` for DELETE).
    */
   publishChange(workspaceId: number, table: string, type: ChangeType, row: unknown): void {
+    this.publishJSON(`ws.${workspaceId}.change`, { table, type, row });
+  }
+
+  /**
+   * Publishes a Yjs binary update (already base64-encoded by the caller) for one note's
+   * collaborative-editing doc, on `ws.<workspaceId>.doc.<noteId>.update` — the CRDT co-editing
+   * subject from docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section. `originId` tags
+   * which WS connection produced this update so realtime.gateway.ts's per-connection relay can
+   * skip forwarding it back to the connection that just sent it (NATS delivers to every
+   * subscriber on the subject, including the publisher's own subscription if it has one).
+   */
+  publishDocUpdate(workspaceId: number, noteId: number, update: string, originId: string): void {
+    this.publishJSON(`ws.${workspaceId}.doc.${noteId}.update`, { update, originId });
+  }
+
+  /** Same pattern as publishDocUpdate, for Yjs awareness (cursor/presence) payloads — a
+   * separate subject so a client can subscribe to text updates without awareness noise or
+   * vice versa, though realtime.gateway.ts currently subscribes to both together per note. */
+  publishAwarenessUpdate(workspaceId: number, noteId: number, update: string, originId: string): void {
+    this.publishJSON(`ws.${workspaceId}.doc.${noteId}.awareness`, { update, originId });
+  }
+
+  private publishJSON(subject: string, payload: unknown): void {
     if (!this.connection) return; // not connected — see onModuleInit's warning/error above
     try {
-      const payload = JSON.stringify({ table, type, row });
-      this.connection.publish(`ws.${workspaceId}.change`, this.sc.encode(payload));
+      this.connection.publish(subject, this.sc.encode(JSON.stringify(payload)));
     } catch (err) {
-      this.logger.warn(`Failed to publish NATS change event on ws.${workspaceId}.change: ${(err as Error).message}`);
+      this.logger.warn(`Failed to publish NATS message on ${subject}: ${(err as Error).message}`);
     }
   }
 
   /**
    * Subscribes to a subject on the backend's own trusted server-to-server NATS connection
-   * and invokes `handler` for each decoded `{table, type, row}` message. Used exclusively by
-   * realtime.gateway.ts to relay one workspace's change events to one authenticated browser
-   * WebSocket connection — never called with client-supplied subjects. Returns an
-   * unsubscribe function; safe to call even if NATS never connected (no-op subscription).
+   * and invokes `handler` for each decoded JSON message. Used exclusively by
+   * realtime.gateway.ts (whole-record change relay, and now the per-note Yjs update/awareness
+   * relay) — never called with client-supplied subjects. Returns an unsubscribe function;
+   * safe to call even if NATS never connected (no-op subscription). Generic over the decoded
+   * payload shape so the same method serves both the `{table,type,row}` change events and the
+   * `{update,originId}` doc/awareness events without a second near-identical method.
    */
-  subscribe(subject: string, handler: (event: { table: string; type: ChangeType; row: unknown }) => void): () => void {
+  subscribe<T>(subject: string, handler: (event: T) => void): () => void {
     if (!this.connection) {
       this.logger.warn(`Cannot subscribe to ${subject} — not connected to NATS.`);
       return () => {};
@@ -81,7 +105,7 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
     (async () => {
       for await (const msg of sub) {
         try {
-          handler(JSON.parse(this.sc.decode(msg.data)) as { table: string; type: ChangeType; row: unknown });
+          handler(JSON.parse(this.sc.decode(msg.data)) as T);
         } catch (err) {
           this.logger.warn(`Failed to decode NATS message on ${subject}: ${(err as Error).message}`);
         }

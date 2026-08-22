@@ -10,9 +10,11 @@ import {
   Loader2,
   Mic,
   Paperclip,
+  Pencil,
   Table as TableIcon,
   Trash2,
   Type,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,16 +24,24 @@ import { sanitizeHtml } from "@/lib/sanitize-html";
 import { formatBytes } from "@/lib/note-media";
 import { uploadMedia } from "@/lib/note-media";
 import { STORAGE_QUOTA_BYTES, type Note, type NoteKind, type NoteVisibility } from "@/lib/types";
+import type { RealtimeDocChannel } from "@/hooks/useRealtimeBoard";
 import NoteMedia from "./NoteMedia";
 import VoiceRecorder from "./VoiceRecorder";
 import LinkPreviewCard from "./LinkPreviewCard";
+import CollaborativeNoteEditor from "./CollaborativeNoteEditor";
 import MathRenderer, { MathQuickBar } from "../research/MathRenderer";
 import ArxivPaperCard, { isArxivUrl } from "../research/ArxivPaperCard";
 import DataChartNote from "../research/DataChartNote";
 import WhiteboardCanvas from "../research/WhiteboardCanvas";
 import JupyterViewer from "../research/JupyterViewer";
 
-export type NewNote = Omit<Note, "id" | "workspace_id" | "created_by" | "created_at">;
+// Kinds that get real-time co-editing (Y.Text-backed) rather than plain create/delete — see
+// docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section. Scoped narrowly per that spec:
+// not every text-ish kind (code/link/table stay read-only-after-create here, matching how
+// they already behave — no edit affordance existed for any note kind before this change).
+const COLLAB_KINDS = new Set<NoteKind>(["text", "rich"]);
+
+export type NewNote = Omit<Note, "id" | "workspace_id" | "created_by" | "created_at" | "yjs_state">;
 
 // Both text notes and media notes live here.
 // Task-level raw attachments (not annotated) live in TaskAttachmentsSection.
@@ -57,6 +67,7 @@ export default function NotesPanel({
   currentUserId,
   storageUsed,
   parentLabel,
+  docChannel,
   onAdd,
   onDelete,
 }: {
@@ -64,10 +75,15 @@ export default function NotesPanel({
   currentUserId: string;
   storageUsed: number;
   parentLabel: string;
+  /** Realtime connection for CRDT co-editing of text/rich notes' body — see
+   * CollaborativeNoteEditor. Rides the existing /v1/realtime socket, not a new connection. */
+  docChannel: RealtimeDocChannel;
   onAdd: (note: NewNote) => Promise<void>;
   onDelete: (id: number) => void;
 }) {
   const [kind, setKind] = useState<NoteKind>("text");
+  // Only one note's live editor is open at a time in this panel.
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [visibility, setVisibility] = useState<NoteVisibility>("workspace");
   const [body, setBody] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
@@ -334,7 +350,15 @@ export default function NotesPanel({
           </div>
         )}
         {sorted.map((n) => (
-          <NoteRow key={n.id} note={n} mine={n.created_by === currentUserId} onDelete={() => onDelete(n.id)} />
+          <NoteRow
+            key={n.id}
+            note={n}
+            mine={n.created_by === currentUserId}
+            editing={editingNoteId === n.id}
+            docChannel={docChannel}
+            onToggleEdit={() => setEditingNoteId((cur) => (cur === n.id ? null : n.id))}
+            onDelete={() => onDelete(n.id)}
+          />
         ))}
       </div>
 
@@ -354,7 +378,22 @@ export default function NotesPanel({
   );
 }
 
-function NoteRow({ note, mine, onDelete }: { note: Note; mine: boolean; onDelete: () => void }) {
+function NoteRow({
+  note,
+  mine,
+  editing,
+  docChannel,
+  onToggleEdit,
+  onDelete,
+}: {
+  note: Note;
+  mine: boolean;
+  editing: boolean;
+  docChannel: RealtimeDocChannel;
+  onToggleEdit: () => void;
+  onDelete: () => void;
+}) {
+  const collabEditable = COLLAB_KINDS.has(note.kind);
   return (
     <div className="group relative rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] p-3 transition-all hover:bg-zinc-50/70 dark:hover:bg-white/[0.04]">
       <div className="mb-2 flex items-center gap-2">
@@ -371,6 +410,19 @@ function NoteRow({ note, mine, onDelete }: { note: Note; mine: boolean; onDelete
         <span className="ml-auto text-[11px] text-zinc-400 dark:text-zinc-500">
           {new Date(note.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
         </span>
+        {collabEditable && (
+          <button
+            type="button"
+            className={cn(
+              "rounded-md p-1 transition-all hover:text-emerald-600 hover:bg-emerald-500/10",
+              editing ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 opacity-0 group-hover:opacity-100"
+            )}
+            title={editing ? "Close live editor" : "Edit live — changes sync to everyone with this note open"}
+            onClick={onToggleEdit}
+          >
+            {editing ? <X className="size-3.5" /> : <Pencil className="size-3.5" />}
+          </button>
+        )}
         {mine && (
           <button
             type="button"
@@ -382,7 +434,7 @@ function NoteRow({ note, mine, onDelete }: { note: Note; mine: boolean; onDelete
           </button>
         )}
       </div>
-      <NoteBody note={note} />
+      {editing ? <CollaborativeNoteEditor key={note.id} noteId={note.id} docChannel={docChannel} /> : <NoteBody note={note} />}
     </div>
   );
 }

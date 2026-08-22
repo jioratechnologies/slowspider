@@ -3,12 +3,14 @@ import { NotebookPen, X } from "lucide-react";
 import NotesPanel, { type NewNote } from "../notes/NotesPanel";
 import type { Note, Task } from "@/lib/types";
 import { isTextNote } from "@/lib/types";
+import type { RealtimeDocChannel } from "@/hooks/useRealtimeBoard";
 
 export default function TaskNotesModal({
   task,
   notes,
   currentUserId,
   storageUsed,
+  docChannel,
   onClose,
   onAddNote,
   onDeleteNote,
@@ -17,6 +19,7 @@ export default function TaskNotesModal({
   notes: Note[];
   currentUserId: string;
   storageUsed: number;
+  docChannel: RealtimeDocChannel;
   onClose: () => void;
   onAddNote: (note: NewNote) => Promise<void>;
   onDeleteNote: (id: number) => void;
@@ -52,6 +55,7 @@ export default function TaskNotesModal({
             currentUserId={currentUserId}
             storageUsed={storageUsed}
             parentLabel="task"
+            docChannel={docChannel}
             onAdd={(n) => onAddNote({ ...n, task_id: task!.id, cluster_id: null })}
             onDelete={onDeleteNote}
           />

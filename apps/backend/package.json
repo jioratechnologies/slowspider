@@ -15,11 +15,11 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
-    "@slowspider/shared-types": "*",
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
     "@prisma/client": "^7.9.1",
+    "@slowspider/shared-types": "*",
     "@supabase/supabase-js": "^2.112.3",
     "dotenv": "^17.4.2",
     "ioredis": "^6.0.0",
@@ -27,7 +27,8 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.19.0",
     "rxjs": "^7.8.1",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",

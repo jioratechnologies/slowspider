@@ -246,7 +246,12 @@ export class BoardService {
   }
 
   // ---- notes ----
-  async insertNote(token: string, workspaceId: number, userId: string, input: Omit<Note, "id" | "workspace_id" | "created_by" | "created_at">): Promise<Note> {
+  async insertNote(
+    token: string,
+    workspaceId: number,
+    userId: string,
+    input: Omit<Note, "id" | "workspace_id" | "created_by" | "created_at" | "yjs_state">
+  ): Promise<Note> {
     if (input.size_bytes > 0) {
       const used = await this.storage.storageUsed(token, userId);
       if (used + input.size_bytes > STORAGE_QUOTA_BYTES) {

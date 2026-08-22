@@ -68,7 +68,59 @@ export interface Note {
   duration_ms: number | null;
   pos: number;
   created_at: string;
+  /** CRDT co-editing (Realtime section of docs/MIGRATION-PLAN-bff-kong-split.md) — base64
+   * Y.encodeStateAsUpdate(doc) snapshot for text/rich notes, written by
+   * apps/backend/src/realtime/yjs-doc.service.ts. `body` stays the plain-text mirror kept in
+   * sync on every snapshot, so this field is purely additive — null/undefined until a note
+   * has been opened in the collaborative editor at least once. Optional (not just nullable)
+   * so existing Note literals across apps/web/apps/mobile that predate this field (including
+   * apps/mobile, deliberately untouched by this change) don't need updating to keep
+   * typechecking. */
+  yjs_state?: string | null;
 }
+
+// ---- CRDT co-editing over the existing /v1/realtime WebSocket (additive message envelope,
+// see docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section) — shared so apps/web and
+// apps/backend agree on the wire shape instead of hand-duplicating it on each side. These
+// ride the *same* connection as the existing `{table,type,row}` change events; a client tells
+// them apart by the `type` discriminant below vs. the change event's `table` field.
+export interface NoteDocSubscribeMsg {
+  type: "doc-subscribe";
+  noteId: number;
+}
+export interface NoteDocUnsubscribeMsg {
+  type: "doc-unsubscribe";
+  noteId: number;
+}
+export interface NoteDocUpdateMsg {
+  type: "doc-update";
+  noteId: number;
+  /** base64 Y.encodeUpdate(doc) delta. */
+  update: string;
+}
+export interface NoteDocSyncMsg {
+  type: "doc-sync";
+  noteId: number;
+  /** base64 Y.encodeStateAsUpdate(doc) — full state, sent once right after doc-subscribe so
+   * the client can bootstrap/catch up instead of needing full history replay. */
+  state: string;
+}
+export interface NoteDocErrorMsg {
+  type: "doc-error";
+  noteId: number;
+  error: string;
+}
+export interface NoteAwarenessUpdateMsg {
+  type: "awareness-update";
+  noteId: number;
+  /** base64 awarenessProtocol.encodeAwarenessUpdate(...) payload. */
+  update: string;
+}
+/** Client -> server messages on the /v1/realtime socket, for the note currently open in the
+ * collaborative editor. */
+export type NoteDocClientMsg = NoteDocSubscribeMsg | NoteDocUnsubscribeMsg | NoteDocUpdateMsg | NoteAwarenessUpdateMsg;
+/** Server -> client messages on the same socket. */
+export type NoteDocServerMsg = NoteDocSyncMsg | NoteDocUpdateMsg | NoteDocErrorMsg | NoteAwarenessUpdateMsg;
 
 export interface Milestone {
   id: number;

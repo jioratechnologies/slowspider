@@ -58,11 +58,12 @@ packages/
                   # from @slowspider/shared-types (via a thin re-export barrel at each app's
                   # old import path) instead of hand-copying their own interfaces.
   db/             # optional: Prisma schema + generated client as its own package
-  realtime/       # not built (Phase 5 only did whole-record live sync — NatsService and the
-                  # RealtimeGateway WS relay live directly in apps/backend/src/{common,realtime}/,
-                  # and useRealtimeBoard.ts directly in apps/web; nothing shared with
-                  # apps/mobile yet). Would still make sense once a Yjs-NATS CRDT provider or a
-                  # mobile realtime client is actually built.
+  realtime/       # not built as a separate package — NatsService, the RealtimeGateway WS
+                  # relay, and now YjsDocService (CRDT co-editing) all live directly in
+                  # apps/backend/src/{common,realtime}/, and useRealtimeBoard.ts /
+                  # use-collab-note-text.ts directly in apps/web; nothing shared with
+                  # apps/mobile yet (out of scope — web-only for now). Would still make sense
+                  # once a mobile realtime/CRDT client is actually built.
 infra/
   kong/       # kong.yml (declarative config) or deck.yml — routes both REST and the /v1/realtime WS upgrade
   nats/       # nats.conf — JetStream store dir, internal-only (no websocket listener anymore, see Realtime section)
@@ -79,12 +80,7 @@ Two distinct kinds of "realtime" here — keep them separate, don't over-build t
 - Clients (web + mobile, when online) receive their active workspace's events and apply the payload directly or trigger a targeted refetch. No CRDT needed for this path — it's broadcast + last-write-wins, which is what's already implied by the existing REST semantics.
 - **Transport, as actually built**: clients do *not* subscribe to NATS directly. `apps/backend` exposes `GET /v1/realtime?token=<supabase_access_token>&workspaceId=<id>` — a WebSocket endpoint that verifies the token and workspace membership at connect time, then internally subscribes to that one `ws.<workspaceId>.change` NATS subject (over the backend's own trusted connection) and relays events to that one client connection only. NATS stays the fan-out backbone between backend instances/workers; it's just no longer exposed to anything outside the Docker network. See the realtime-auth-fix writeup at the end of Phase 5 below for the full design and why the original "clients subscribe to NATS directly" plan was replaced.
 
-**2. True concurrent co-editing** (two people typing in the same note body / task title at once) — needs CRDT.
-- Use **Yjs** for the document model. Each collaborative field (e.g. `Note.body`) gets a Yjs doc.
-- Yjs updates are binary deltas — publish them to a per-document NATS subject (e.g. `ws.<workspaceId>.doc.<noteId>.update`) and apply on receipt. There's no official Yjs-NATS provider, so this is a small custom provider (subscribe → `Y.applyUpdate`, local change → publish encoded update) — expect ~1 focused module, not a big lift, since the pattern is identical to existing `y-websocket`/`y-redis` providers, just swapping transport.
-- Awareness (live cursors/who's-editing-what) rides a companion subject the same way, using Yjs's `awareness` protocol.
-- **Persistence**: JetStream retains recent updates for replay to reconnecting clients, but keep a periodic snapshot of each Yjs doc's state (`Y.encodeStateAsUpdate`) written to Postgres (or Redis) so a fresh client doesn't need full history and JetStream retention can stay short.
-- Scope this to the specific fields that need it (note body, maybe task title/description) — not every field in the schema. Most of the schema (positions, colors, booleans, dates) is fine as whole-record last-write-wins.
+**2. True concurrent co-editing** (two people typing in the same note body / task title at once) — needs CRDT. ✅ done (`Note.body`, kind `text`/`rich` only — see the CRDT co-editing writeup at the end of Phase 5 below for what was actually built, transport choice, persistence encoding, and verification, including a concrete two-editor convergence test).
 
 **Auth on the realtime path**: scope per workspace so a client can only receive events for
 workspaces they're a member of. **Resolved** (see the realtime-auth-fix writeup at the end
@@ -391,6 +387,200 @@ snapshot persistence — was not touched. No Yjs dependency was added anywhere. 
 live sync (this phase) already covers most of the app (task moved, cluster renamed, note
 added/edited/deleted, etc. all broadcast and land as last-write-wins); true concurrent
 co-editing of a single field by two people at once remains a distinct follow-up phase.
+Built in the follow-up below.
+
+**Phase 5 follow-up — CRDT co-editing of `Note.body` (Yjs)** ✅ done (text sync + persistence;
+awareness/presence skipped — see below)
+
+Scope, per the field-list open question at the end of this doc: `Note.body`, and only for
+`kind: "text"` and `kind: "rich"` notes (the long-form written fields) — not task
+title/description, and not any other note kind. `body` today is a plain string column edited
+via a plain `<textarea>`/`contenteditable` in `apps/web` (no existing structured rich-text
+editor), so the CRDT model is a single `Y.Text` per note, not a `Y.XmlFragment` — building a
+richer CRDT schema for a field that's currently just a string would have been solving a
+problem the app doesn't have yet.
+
+- **Transport — rides the existing `/v1/realtime` connection, no second WebSocket.** Per this
+  section's own corrected framing above (browsers talk to `apps/backend`'s authenticated relay,
+  never to NATS directly), CRDT sync had to go through that same connection/auth gate rather
+  than inventing a parallel NATS-facing auth story. `apps/backend/src/realtime/realtime.gateway.ts`
+  now also reads client-sent messages (previously push-only) — a small JSON envelope
+  (`@slowspider/shared-types`'s `NoteDoc*Msg` types) distinguishes `doc-subscribe`/
+  `doc-update`/`doc-unsubscribe`/`awareness-update` (client→server) and `doc-sync`/`doc-update`/
+  `doc-error`/`awareness-update` (server→client) from the existing `{table,type,row}` change
+  events by the presence of a `table` key. Subscriptions are per-note, not per-workspace: a
+  client only receives another note's update stream if it has that note open (`doc-subscribe`),
+  so a workspace with many notes doesn't fan every edit out to every connected client — each
+  open note gets its own NATS subject, `ws.<workspaceId>.doc.<noteId>.update` (text) and
+  `ws.<workspaceId>.doc.<noteId>.awareness` (presence), both relayed by the same per-connection
+  subscribe/forward pattern the whole-record change relay already used.
+- **Custom Yjs/NATS provider, as scoped — one module.**
+  `apps/backend/src/realtime/yjs-doc.service.ts` (`YjsDocService`) is the backend's own
+  authoritative Yjs participant per open note (in-memory `Map<noteId, Y.Doc>`, refcounted
+  across however many connections currently have that note open). It's not a dumb relay: it
+  applies every client update to its own doc (synchronously, in-process — see below) so it can
+  periodically snapshot the merged result into Postgres. `NatsService` gained
+  `publishDocUpdate`/`publishAwarenessUpdate` and its `subscribe()` was generalized (`subscribe<T>`)
+  to serve both the existing change events and the new doc/awareness payloads without a second
+  near-identical method.
+  - **Echo guard, per this doc's own question.** Two independent guards, belt-and-suspenders:
+    (1) each WS connection gets a random `connId` at connect time; every `doc-update`/
+    `awareness-update` it publishes is tagged with that id, and the per-connection NATS
+    subscribe callback skips forwarding a message back to the connection whose id matches —
+    so a client never receives its own edit echoed back. (2) Client-side
+    (`apps/web/src/lib/yjs/use-collab-note-text.ts`), every locally-applied Yjs transaction is
+    tagged with a local origin marker, and the doc's `update` event only publishes when the
+    origin matches — an update applied via an incoming `doc-sync`/`doc-update` (tagged
+    `"remote"`) is never re-published. Either guard alone would be sufficient (re-applying an
+    already-applied Yjs update is a no-op — CRDT updates are idempotent — so a missed guard
+    would be wasteful, not incorrect), but both were cheap to add and make the intent explicit.
+  - **Why the backend doesn't loop its own publishes back through NATS to update its own doc**
+    (a real alternative design, and the one a naive "everything is a NATS peer" reading of the
+    spec above would suggest): `YjsDocService.applyUpdate()` is called directly and
+    synchronously from the gateway's message handler, in-process — not via subscribing to its
+    own NATS publish. Every WS connection on a `docker-compose` deployment (this repo's actual
+    shape — one `backend` service, not horizontally scaled) is handled by the same process, so
+    there's no need to round-trip through NATS just to apply an update to a doc this instance
+    already has in memory. NATS is used purely to fan the raw update bytes out to *other*
+    connections. Documented as a deliberate, disclosed simplification in `yjs-doc.service.ts`'s
+    own header comment, including why it stays correct (not just "works for now") even with
+    more than one backend instance: every instance that has a given note open applies the same
+    set of updates via the NATS relay, and Yjs updates are commutative/idempotent, so every
+    instance's independent debounced flush writes equivalent content — the only race is "whose
+    write lands last," which is harmless here.
+- **Persistence encoding.** `notes.yjs_state` — a new nullable `text` column (migration
+  `add_notes_yjs_state`, applied directly against the live Supabase project via the Supabase
+  MCP, since this backend's Prisma is schema-reference-only per this doc's own baseline notes;
+  `prisma/schema.prisma` updated to match, schema-reference-only as everywhere else). Holds
+  base64-encoded `Y.encodeStateAsUpdate(doc)` — base64 over a `text` column rather than `bytea`,
+  since Supabase-js/PostgREST round-trips `bytea` as an awkward hex string by default and this
+  avoids that entirely. **`body` stays the plain-text mirror** (`Y.Text.toString()`), written in
+  the same snapshot — this was a deliberate reading of "write it into `Note.body`" in this
+  section's original scoping: overloading `body` itself with the binary/base64 state would have
+  broken every existing reader of `body` (other note kinds' rendering, `apps/mobile`, a plain
+  `GET /v1/board` response) the moment this shipped, so `yjs_state` is a new, purely additive
+  field instead (added to `packages/shared-types`'s `Note` interface as expected — see that
+  package's own note on why it's `yjs_state?: string | null`, optional rather than required, so
+  `apps/mobile`'s existing `Note`-shaped literals don't need updating for a feature this pass
+  doesn't touch there). Snapshots are debounced (1.5s after the last update) and always flushed
+  immediately when the last connection editing a note closes ("every note-close," per this
+  section's own phrasing) — also republishes the merged row on the *existing* whole-record
+  `notes` change subject (`NatsService.publishChange`), so a note preview/card elsewhere in the
+  UI picks up the merged text too, for free, without a second event type.
+- **Backward compatibility (seed from existing plain-text `body`).** `YjsDocService.open()`
+  checks `yjs_state` first; if null (every note that existed before this shipped, and every
+  note that's never been opened in the collaborative editor since), it seeds the new `Y.Text`
+  from the note's current `body` instead. Opening a pre-existing note without editing it leaves
+  it completely untouched (the in-memory doc is never marked dirty, so the debounced flush never
+  fires) — verified concretely, see below.
+- **Awareness: transport built, client UI skipped — lower priority than correct text merging,
+  per this task's own instruction.** The relay half of awareness exists end-to-end
+  (`awareness-update` message type, `ws.<workspaceId>.doc.<noteId>.awareness` NATS subject,
+  same per-connection subscribe/forward/echo-guard pattern as text updates) and is exercised by
+  the same gateway code path the text-sync test below drives. What's **not** built: the
+  client-side `y-protocols/awareness` state (cursor position, who's-editing presence) and any
+  UI for it — `apps/web` never sends or listens for `awareness-update` today. Skipped, not
+  attempted-and-failed: correct text merging was verified first and thoroughly (below), and
+  awareness would have been additional, lower-priority scope on top of that per this task's own
+  framing. Wiring it up is a bounded follow-up (the hard part — auth-gated, per-note-scoped
+  transport — already exists).
+- **Frontend.** `apps/web/src/hooks/useRealtimeBoard.ts` now doubles as the owner of a shared
+  `RealtimeDocChannel` (`sendDoc`/`addDocListener`/`addOpenListener`) alongside its existing
+  whole-record-change job, so CRDT sync rides the one connection it already owns — returned
+  from the hook and threaded down through `Board.tsx` → `TaskNotesModal` → `NotesPanel` as a
+  prop (matching this codebase's existing prop-drilling style; no new Context introduced).
+  `apps/web/src/lib/yjs/use-collab-note-text.ts` is the client half of the custom provider
+  (local edit → encode → send; incoming message → `Y.applyUpdate`), using a small
+  common-prefix/common-suffix diff (same minimal approach `y-textarea` itself uses) to turn a
+  whole-value textarea `onChange` into a small `Y.Text` delta instead of replacing the entire
+  doc on every keystroke. `apps/web/src/components/notes/CollaborativeNoteEditor.tsx` binds
+  this to a plain shadcn `Textarea` — explicitly **not** a rich-text editor framework
+  (TipTap/ProseMirror/Slate), matching how `body` is actually edited today and this task's own
+  explicit scope guard — plus best-effort caret-position preservation when a remote update
+  rewrites the text while focused (shift the caret by the same edit the text itself underwent,
+  rather than letting the browser default it to the end). Wired into `NotesPanel.tsx`'s
+  `NoteRow`: existing notes previously had no edit affordance at all (the composer only ever
+  created new notes) — a pencil icon on `text`/`rich` notes now toggles the live collaborative
+  editor in place of the read-only render.
+- **`packages/shared-types`**: `Note` gained `yjs_state`, and a new
+  `NoteDocSubscribeMsg`/`NoteDocUnsubscribeMsg`/`NoteDocUpdateMsg`/`NoteDocSyncMsg`/
+  `NoteDocErrorMsg`/`NoteAwarenessUpdateMsg` message union (`NoteDocClientMsg`/`NoteDocServerMsg`)
+  so `apps/web` and `apps/backend` share one definition of the wire envelope instead of
+  hand-duplicating it, per this package's own stated purpose.
+- **Known limitation, not solved here (documented, not silently accepted):** a REST client that
+  `PATCH`es a note's `body` directly (`PATCH /v1/notes/:id` — unchanged by this pass) writes
+  `body` without touching `yjs_state`. The next collaborative-editor session for that note
+  resumes from the older `yjs_state` (if one exists), which would silently not reflect that
+  direct-PATCH edit. Not currently reachable from `apps/web`'s UI (the only body-editing path
+  now goes through the collaborative editor once a note exists), so no user-facing regression
+  today, but worth flagging for anything that talks to the REST API directly (a future mobile
+  client, scripts, etc.) — solving it properly (e.g. comparing `updated_at`, or invalidating
+  `yjs_state` on a direct PATCH) was out of scope for this pass.
+
+**Verified — concretely, not just "the code looks right."** Both apps build/typecheck clean
+(`next build`+`tsc --noEmit` on `apps/web`, `nest build` on `apps/backend`, `tsc` on
+`packages/shared-types`; `apps/mobile`'s own `tsc --noEmit` unaffected — `yjs_state` is
+optional specifically so this stays true — modulo the same pre-existing, environment-only
+failures prior phases already recorded there, e.g. missing native module type declarations).
+
+This environment has the same credentials gap prior phases flagged (no
+`SUPABASE_SERVICE_ROLE_KEY`/`REDIS_URL` for a real `apps/backend/.env`) — but unlike prior
+phases, a real Supabase project (`slowspider`, via the Supabase MCP) was reachable for
+DB-level work, and that materially changed what could actually be proven:
+
+- **Schema migration** (`add_notes_yjs_state`) applied directly to the live project.
+- **The actual concurrent-edit convergence test — the entire point of using a CRDT — run for
+  real**, using an integration harness (not a unit test of one function) that imports and runs
+  the real compiled `RealtimeGateway`, `YjsDocService`, and `NatsService` classes, a real
+  `nats:2-alpine` container (Docker), real `ws` WebSocket client connections, and the real
+  `yjs` package end to end — not mocked. The only stubbed pieces, both isolated to the
+  pre-existing Phase-5 auth dependency this pass didn't change: `SupabaseService.anon().auth.getUser()`
+  (fixed fake users for two fixed test tokens, instead of verifying a real Supabase-issued JWT
+  — obtaining one requires either `SUPABASE_SERVICE_ROLE_KEY`, which isn't available here, or
+  writing directly to `auth.users`, which this environment's own safety rules correctly refused
+  as out of bounds) and `WorkspaceService.isMember()` (stubbed true — unrelated, unchanged
+  code). Concretely: client **A** (`token-a`) and client **B** (`token-b`) both opened the same
+  pre-existing plain-text note (`body: "Hello world"`, no `yjs_state` yet — exercising the
+  seed-from-body path in the same run). **A** inserted `"[A-said-hi] "` at position 0; **B**
+  inserted `" [B-said-bye]"` at the end; fired back-to-back with no coordination between them.
+  After propagation, both clients' independent local `Y.Doc`s converged to the identical string
+  `"[A-said-hi] Hello world [B-said-bye]"` — both edits present, original text intact, neither
+  clobbered the other (the last-write-wins path this whole section exists to avoid would have
+  kept only one side's insert). After the debounce window, the harness's in-memory note store
+  (standing in for Postgres in this run) showed `body` had been snapshotted to that exact
+  merged string.
+- **The Postgres round-trip specifically, against the real live database** (separate from the
+  harness run above, to close the gap the harness's fake note store couldn't): inserted a real
+  `notes` row (`body: "Hello world"`, `yjs_state: null` — i.e. exactly the shape of any note
+  that predates this feature) into the live project via the Supabase MCP, then wrote the *exact*
+  `body`/`yjs_state` values `YjsDocService.flush()` had produced in the harness run above
+  (the real base64 `Y.encodeStateAsUpdate` bytes, not a synthetic stand-in) via a real `UPDATE`,
+  then read it back with a real `SELECT`. Independently re-decoded the retrieved `yjs_state`
+  with the real `yjs` package in a fresh process (`Y.applyUpdate` into a brand-new `Y.Doc`) —
+  confirms the stored base64 is genuine, correctly-encoded Yjs state, not just a string that
+  happens to match, and that it decodes back to the identical merged text. Test row deleted
+  afterward; no other rows touched.
+- **Backward compatibility**, same harness run: a client opening a *different*,
+  never-before-touched pre-existing note (plain `body`, `yjs_state: null`) correctly seeded its
+  local doc from that plain text; closing without editing left the stored row completely
+  unchanged (`body` identical, `yjs_state` still `null`) — opening a note in the collaborative
+  editor is not itself a mutation.
+- **Kind guard**: `doc-subscribe` against a `kind: "link"` note was rejected with a `doc-error`
+  (`"Note kind \"link\" doesn't support collaborative editing."`), never reaching a
+  `doc-sync` — confirms the `text`/`rich`-only scope is enforced server-side, not just assumed
+  client-side.
+- **What was *not* run, honestly**: the full real signup-through-Kong-through-browser happy
+  path this task's verification section describes (dev OTP `123456`, two real browser tabs)
+  — blocked by the same missing `SUPABASE_SERVICE_ROLE_KEY`/`REDIS_URL` gap prior phases
+  already hit (`WorkspaceService.isMember()`, used by `RealtimeGateway`'s connect-time auth
+  gate, requires the service-role client; `AccountService.completeSignup` requires it too, plus
+  Redis for OTP storage). That auth gate is unchanged, pre-existing Phase-5 code, not something
+  this pass modified — the integration test above deliberately isolated the actually-new code
+  (the CRDT sync/persistence path) from that pre-existing, still-unverified-live gap rather than
+  letting one block testing the other. `docker compose` was not brought up in this pass (no
+  functional `apps/backend/.env` to bring it up with, per the same gap) — nothing to
+  `docker compose down`; the standalone `nats:2-alpine` test container used for the harness
+  above was stopped and removed after the run.
 
 **`packages/shared-types` follow-up — actually wiring it up** ✅ done
 
@@ -489,7 +679,7 @@ Phases 5 and 6 can run in parallel with each other (and largely independent of P
 - ~~**NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.~~ Resolved in Phase 5: self-hosted, single `nats:2-alpine` container + JetStream volume via `docker-compose.yml`, same reasoning as Kong. ~~**Still open**: per-workspace NATS subject authorization~~ Resolved in the Phase 5 follow-up (realtime auth fix): not via NATS's own decentralized JWT auth, but by removing browser access to NATS entirely and relaying through the backend's own authenticated `GET /v1/realtime` WebSocket endpoint instead — see that writeup for the full design and its verification gap (no real Supabase credentials were available in the environment that built it; the connect-time reject-on-bad-auth path was verified over a real Kong→backend network round trip, but the full real-account happy path was not).
 - **iOS timeline**: not urgent now, but confirms the "one backend, N clients" shape is worth the Kong investment.
 - **Storage**: staying on Supabase Storage (S3-compatible) is the lowest-friction option since `note-media.ts` already targets it — only revisit if there's a reason to move to raw AWS S3.
-- **Which fields actually need CRDT**: confirm the exact field list (likely `Note.body` at minimum — task title/description TBD) before building the Yjs provider, since scope here directly drives Phase 5 effort.
+- ~~**Which fields actually need CRDT**: confirm the exact field list (likely `Note.body` at minimum — task title/description TBD) before building the Yjs provider, since scope here directly drives Phase 5 effort.~~ Resolved in the CRDT co-editing follow-up at the end of Phase 5: `Note.body` only, and only for `kind: "text"`/`"rich"` notes — task title/description confirmed out of scope.
 
 ## Note (unrelated, flagging while in here)
 

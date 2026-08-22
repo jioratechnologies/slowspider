@@ -207,6 +207,13 @@ model Note {
   pos         Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  // CRDT co-editing (see docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section) — base64
+  // Y.encodeStateAsUpdate(doc) snapshot for text/rich notes only, periodically flushed by
+  // apps/backend/src/realtime/yjs-doc.service.ts. `body` above stays the plain-text mirror
+  // (Y.Text.toString()) kept in sync on every flush, so every existing reader of `body`
+  // (REST responses, other note kinds, mobile) is unaffected — this column is additive.
+  // Null for a note that has never been opened in the collaborative editor yet.
+  yjsState    String?  @map("yjs_state")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   task      Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)

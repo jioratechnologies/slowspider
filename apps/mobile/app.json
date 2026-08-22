@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Slow Spider",
+    "slug": "slow-spider",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jioratech.slowspider"
+    },
+    "android": {
+      "package": "com.jioratech.slowspider",
+      "adaptiveIcon": {
+        "backgroundColor": "#09090B",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Slow Spider uses the microphone to record voice notes on your tasks."
+        }
+      ],
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Slow Spider attaches photos and videos you pick to your task notes."
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

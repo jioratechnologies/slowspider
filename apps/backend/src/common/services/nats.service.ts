@@ -49,9 +49,10 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
   /**
    * Publishes a whole-record change event on the per-workspace live-sync subject
    * (`ws.<workspaceId>.change`), payload `{table, type, row}`. This is what
-   * apps/web/src/hooks/useRealtimeBoard.ts subscribes to and dispatches back out to the
-   * matching `on*Change` handler — see that file for the exact shape each handler expects
-   * off `row` (full row for INSERT/UPDATE, at least `{id}` for DELETE).
+   * apps/backend/src/realtime/realtime.gateway.ts subscribes to (server-to-server, over
+   * this same trusted connection) and relays out to whichever browser WebSocket
+   * connections are authenticated for that workspace — see that file for the exact shape
+   * each handler expects off `row` (full row for INSERT/UPDATE, at least `{id}` for DELETE).
    */
   publishChange(workspaceId: number, table: string, type: ChangeType, row: unknown): void {
     if (!this.connection) return; // not connected — see onModuleInit's warning/error above
@@ -61,5 +62,32 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
     } catch (err) {
       this.logger.warn(`Failed to publish NATS change event on ws.${workspaceId}.change: ${(err as Error).message}`);
     }
+  }
+
+  /**
+   * Subscribes to a subject on the backend's own trusted server-to-server NATS connection
+   * and invokes `handler` for each decoded `{table, type, row}` message. Used exclusively by
+   * realtime.gateway.ts to relay one workspace's change events to one authenticated browser
+   * WebSocket connection — never called with client-supplied subjects. Returns an
+   * unsubscribe function; safe to call even if NATS never connected (no-op subscription).
+   */
+  subscribe(subject: string, handler: (event: { table: string; type: ChangeType; row: unknown }) => void): () => void {
+    if (!this.connection) {
+      this.logger.warn(`Cannot subscribe to ${subject} — not connected to NATS.`);
+      return () => {};
+    }
+
+    const sub = this.connection.subscribe(subject);
+    (async () => {
+      for await (const msg of sub) {
+        try {
+          handler(JSON.parse(this.sc.decode(msg.data)) as { table: string; type: ChangeType; row: unknown });
+        } catch (err) {
+          this.logger.warn(`Failed to decode NATS message on ${subject}: ${(err as Error).message}`);
+        }
+      }
+    })();
+
+    return () => sub.unsubscribe();
   }
 }

@@ -99,14 +99,21 @@ export class WorkspaceService {
     if (!data || data.owner_id !== userId) throw new Error("Only the workspace owner can do that.");
   }
 
-  private async requireMember(workspaceId: number, userId: string): Promise<void> {
+  /** Public so callers that need a boolean rather than a thrown error (e.g. the realtime
+   * WS gateway's connect-time auth check, realtime/realtime.gateway.ts) can reuse the exact
+   * same membership check that requireMember() below is built on. */
+  async isMember(workspaceId: number, userId: string): Promise<boolean> {
     const { data } = await this.db()
       .from("workspace_members")
       .select("user_id")
       .eq("workspace_id", workspaceId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (!data) throw new Error("You don't have access to this workspace.");
+    return !!data;
+  }
+
+  private async requireMember(workspaceId: number, userId: string): Promise<void> {
+    if (!(await this.isMember(workspaceId, userId))) throw new Error("You don't have access to this workspace.");
   }
 
   private generateToken(): string {

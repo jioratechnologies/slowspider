@@ -10,12 +10,15 @@ services:
       - "3001"
     restart: unless-stopped
 
-  # Realtime backbone (Phase 5, whole-record live sync only — see
-  # docs/MIGRATION-PLAN-bff-kong-split.md). Backend publishes here over the plain client
-  # protocol (internal-network only, not exposed); apps/web connects straight to the
-  # websocket listener below, bypassing Kong, same as Supabase Realtime did before it.
-  # NATS_AUTH_TOKEN is read from apps/backend/.env — see infra/nats/nats.conf for the
-  # known simplification this single shared token implies (no per-workspace auth yet).
+  # Realtime backbone (Phase 5, whole-record live sync — see
+  # docs/MIGRATION-PLAN-bff-kong-split.md). Fully internal to the Docker network as of the
+  # realtime-auth fix: only apps/backend ever speaks NATS now (its NatsService publisher, and
+  # RealtimeGateway's server-to-server subscriber for the /v1/realtime WS relay). Browsers no
+  # longer connect to NATS directly — no port here is published to the host at all, so there
+  # is nothing for the internet (or anything outside this compose network) to reach.
+  # NATS_AUTH_TOKEN is read from apps/backend/.env — kept as defense-in-depth even though the
+  # socket is no longer reachable from outside the Docker network at all (see
+  # infra/nats/nats.conf).
   nats:
     image: nats:2-alpine
     command: ["-c", "/etc/nats/nats.conf"]
@@ -25,9 +28,7 @@ services:
       - ./infra/nats/nats.conf:/etc/nats/nats.conf:ro
       - nats-data:/data/jetstream
     ports:
-      - "4222:4222" # NATS client protocol — exposed for local debugging (nats CLI / node scripts)
-      - "8080:8080" # NATS websocket — apps/web (running outside Docker in dev) connects here directly
-      - "8222:8222" # HTTP monitoring/health endpoint
+      - "127.0.0.1:8222:8222" # HTTP monitoring/health endpoint — localhost-only, same pattern as Kong's admin API
     restart: unless-stopped
 
   kong:

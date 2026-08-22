@@ -6,10 +6,11 @@ import { WorkspaceModule } from "./workspace/workspace.module";
 import { BoardModule } from "./board/board.module";
 import { NotesModule } from "./notes/notes.module";
 import { CronModule } from "./cron/cron.module";
+import { RealtimeModule } from "./realtime/realtime.module";
 import { SupabaseAuthGuard } from "./common/guards/supabase-auth.guard";
 
 @Module({
-  imports: [CommonModule, WorkspaceModule, AuthModule, BoardModule, NotesModule, CronModule],
+  imports: [CommonModule, WorkspaceModule, AuthModule, BoardModule, NotesModule, CronModule, RealtimeModule],
   providers: [
     // Global guard — port of withApiAuth() in apps/web's src/lib/api/handler.ts. Routes
     // opt out with @Public() (auth login/signup/reset, cron/cold-storage).

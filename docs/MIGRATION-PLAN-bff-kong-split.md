@@ -20,24 +20,26 @@ So there is already a clean REST seam (`/api/v1`) — this is a real advantage. 
         Android app ───▶│             │
         (future) iOS ──▶│  Kong (API  │───▶  Backend (NestJS, Node/TS)
                         │  Gateway)   │      - all business logic       ──▶ publishes events
-        Web (Next.js) ─▶│             │      - talks to Postgres, Redis, S3
-        BFF calls   ───▶│             │
-                        └─────────────┘
-                                                                              │
-   Web / Android ── direct WS connect (bypasses Kong) ──▶  NATS  ◀───────────┘
-   (live updates, presence, CRDT doc sync)          (+ JetStream for durability)
+        Web (Next.js) ─▶│             │      - talks to Postgres, Redis, S3      │
+        BFF calls   ───▶│             │      - authenticated WS relay ◀──────────┘
+                        └─────────────┘        (GET /v1/realtime)  │
+                              ▲                                    │ server-to-server only
+     Web / Android ── WS through Kong ───────────────────────────▶┘         ▼
+     (live updates; auth = same Supabase token + workspace-membership  NATS (internal only,
+      check every REST call already goes through)                     not exposed to host)
+                                                                    (+ JetStream for durability)
 
                  shared: Postgres (Supabase) · Redis (Upstash) · S3 (Supabase Storage)
 ```
 
-- **Backend (NestJS)** — single source of truth for business logic. Owns Prisma client, Redis client, storage client. Exposes REST (keep `/v1` versioning). This is what `/api/v1/*` route handlers become, moved out of Next.js. On every mutation, also publishes a domain event to NATS (see Realtime section).
+- **Backend (NestJS)** — single source of truth for business logic. Owns Prisma client, Redis client, storage client. Exposes REST (keep `/v1` versioning). This is what `/api/v1/*` route handlers become, moved out of Next.js. On every mutation, also publishes a domain event to NATS (see Realtime section). Also the *only* thing that ever speaks to NATS — it terminates the browser's realtime WebSocket connection itself and relays events through, rather than letting browsers reach NATS directly (see Realtime section for why that changed from the original plan).
 - **Web (Next.js)** — becomes a thin BFF + SSR/UI layer. Either:
   - (a) calls backend through Kong like every other client, or
   - (b) keeps a couple of Next-only concerns (cookie session, SSR data fetching) as a real BFF that itself calls the backend.
   Given the app already uses Bearer-token auth end-to-end (not cookie sessions calling internal routes), **(a) is simpler** — Next.js stops hosting `/api/v1/*` entirely and just becomes a client of Kong, same as mobile.
 - **Android (apps/mobile is Expo/RN, i.e. Android+iOS today)** — offline-first (see Offline section), plus live-update subscriber when online.
-- **Kong** — entry point for all *request/response* API traffic. Owns: routing to backend service, rate limiting, CORS, JWT/key-auth verification, request logging. Realtime traffic (NATS WS) connects directly, not through Kong — same reasoning as Supabase Realtime's direct-client-WS pattern, just with a self-run NATS server instead of a managed one.
-- **NATS** — realtime backbone. Domain-event fanout (task/cluster/note/workspace changes) for live multi-device sync, plus CRDT update/awareness subjects for co-edited text fields. JetStream gives durable replay so a client that reconnects after a drop catches up instead of missing updates.
+- **Kong** — entry point for **all** client traffic, request/response *and* realtime WebSocket alike. Owns: routing to backend service, rate limiting, CORS, JWT/key-auth verification, request logging. The realtime WS endpoint (`GET /v1/realtime`) is proxied through Kong too, same as every other client-facing route — see the realtime-auth-fix writeup at the end of Phase 5 for why this replaced the original "NATS WS bypasses Kong" plan.
+- **NATS** — realtime backbone, internal only. Domain-event fanout (task/cluster/note/workspace changes) for live multi-device sync, plus (if CRDT is ever built) update/awareness subjects for co-edited text fields. JetStream gives durable replay so a client that reconnects after a drop catches up instead of missing updates. No longer reachable from outside the Docker network — only `apps/backend` connects to it, both to publish (`NatsService`) and, per browser WS connection, to subscribe on that client's behalf (`RealtimeGateway`).
 - **Shared infra** — same Postgres, same Redis, same storage bucket. No data migration needed, only connection-string plumbing into the new backend service.
 - **Polyglot-ready**: Kong and NATS are both language-agnostic. A future Python service (e.g. for ML/parsing work) is just another Kong upstream and/or NATS publisher/subscriber — no change to this shape needed when that day comes.
 
@@ -53,13 +55,14 @@ packages/
   shared-types/   # DTOs / API contracts shared by web + backend + mobile (not done yet — see
                   # note below; each client still hand-copies its own response interfaces)
   db/             # optional: Prisma schema + generated client as its own package
-  realtime/       # not built (Phase 5 only did whole-record live sync — NatsService lives
-                  # directly in apps/backend/src/common/, and useRealtimeBoard.ts directly in
-                  # apps/web; nothing shared with apps/mobile yet). Would still make sense once
-                  # a Yjs-NATS CRDT provider or a mobile NATS client is actually built.
+  realtime/       # not built (Phase 5 only did whole-record live sync — NatsService and the
+                  # RealtimeGateway WS relay live directly in apps/backend/src/{common,realtime}/,
+                  # and useRealtimeBoard.ts directly in apps/web; nothing shared with
+                  # apps/mobile yet). Would still make sense once a Yjs-NATS CRDT provider or a
+                  # mobile realtime client is actually built.
 infra/
-  kong/       # kong.yml (declarative config) or deck.yml
-  nats/       # nats.conf — JetStream store dir, websocket listener, shared-token auth (Phase 5)
+  kong/       # kong.yml (declarative config) or deck.yml — routes both REST and the /v1/realtime WS upgrade
+  nats/       # nats.conf — JetStream store dir, internal-only (no websocket listener anymore, see Realtime section)
 ```
 
 `src/app/api/v1/**` route handlers were moved to `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron) in Phase 1, then deleted from `apps/web` in Phase 3 once Server Actions were cut over to call the backend instead. `src/lib/services/*` and `prisma/` were likewise ported to `apps/backend` in Phase 1 and deleted from `apps/web` in Phase 3. `src/lib/note-media.ts` stayed in `apps/web` — it's pure client-side browser-to-Supabase-Storage code, never part of the in-process data layer being moved. `packages/shared-types` was never built out — `apps/web`, `apps/backend`, and `apps/mobile` each still define their own copies of the response/DTO shapes (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`); still a real opportunity for a follow-up phase, not attempted here.
@@ -70,7 +73,8 @@ Two distinct kinds of "realtime" here — keep them separate, don't over-build t
 
 **1. Whole-record live sync** (task moved, cluster renamed, note added, workspace membership changed) — the common case for most of the app.
 - Backend publishes to a subject namespaced per workspace after every successful mutation, e.g. `ws.<workspaceId>.task.updated`, `ws.<workspaceId>.cluster.created`.
-- Clients (web + mobile, when online) subscribe to `ws.<workspaceId>.>` for their active workspace and apply the payload directly or trigger a targeted refetch. No CRDT needed for this path — it's broadcast + last-write-wins, which is what's already implied by the existing REST semantics.
+- Clients (web + mobile, when online) receive their active workspace's events and apply the payload directly or trigger a targeted refetch. No CRDT needed for this path — it's broadcast + last-write-wins, which is what's already implied by the existing REST semantics.
+- **Transport, as actually built**: clients do *not* subscribe to NATS directly. `apps/backend` exposes `GET /v1/realtime?token=<supabase_access_token>&workspaceId=<id>` — a WebSocket endpoint that verifies the token and workspace membership at connect time, then internally subscribes to that one `ws.<workspaceId>.change` NATS subject (over the backend's own trusted connection) and relays events to that one client connection only. NATS stays the fan-out backbone between backend instances/workers; it's just no longer exposed to anything outside the Docker network. See the realtime-auth-fix writeup at the end of Phase 5 below for the full design and why the original "clients subscribe to NATS directly" plan was replaced.
 
 **2. True concurrent co-editing** (two people typing in the same note body / task title at once) — needs CRDT.
 - Use **Yjs** for the document model. Each collaborative field (e.g. `Note.body`) gets a Yjs doc.
@@ -79,16 +83,14 @@ Two distinct kinds of "realtime" here — keep them separate, don't over-build t
 - **Persistence**: JetStream retains recent updates for replay to reconnecting clients, but keep a periodic snapshot of each Yjs doc's state (`Y.encodeStateAsUpdate`) written to Postgres (or Redis) so a fresh client doesn't need full history and JetStream retention can stay short.
 - Scope this to the specific fields that need it (note body, maybe task title/description) — not every field in the schema. Most of the schema (positions, colors, booleans, dates) is fine as whole-record last-write-wins.
 
-**Auth on NATS subjects**: scope per workspace so a client can only subscribe/publish to workspaces they're a member of — NATS decentralized JWT auth (or account/subject permissions keyed off the same JWT the backend already issues) enforces this at the NATS server, not just in app code.
-
-> **NOT implemented as of Phase 5 below.** What actually shipped is a single shared bearer
-> token (`NATS_AUTH_TOKEN`) gating the whole socket — it stops the socket being wide open to
-> the internet, but it does **not** do per-workspace authorization: anyone holding the token
-> can subscribe to *any* workspace's `ws.<id>.change` subject, not just ones they're a member
-> of. This is a known, deliberately-accepted gap (solo maintainer, pre-production) — see
-> Phase 5's writeup for the full rationale. Revisit (decentralized JWT auth, or at minimum
-> per-connection subject permissions derived from the caller's Supabase JWT) before any real
-> multi-tenant or production exposure.
+**Auth on the realtime path**: scope per workspace so a client can only receive events for
+workspaces they're a member of. **Resolved** (see the realtime-auth-fix writeup at the end
+of Phase 5 below) — not via NATS's own decentralized JWT auth as originally scoped here, but
+by removing the browser's direct connection to NATS entirely and relaying through the
+backend's own authenticated WebSocket endpoint instead, reusing the exact Supabase-token +
+workspace-membership check every REST call already goes through
+(`SupabaseAuthGuard`/`WorkspaceService.isMember`). NATS itself is no longer reachable from
+outside the Docker network — only `apps/backend` ever speaks to it now.
 
 **Ops note**: NATS (with JetStream) is a single self-contained binary — much lighter to run/monitor solo than a hand-rolled WebSocket/OT server would be, but it *is* one more stateful service to deploy and back up (JetStream stores data on disk). Budget for that in the deploy story (Phase 5 below).
 
@@ -110,7 +112,7 @@ No production DB/bucket of your own today, so Supabase (Postgres + Storage) and 
 | Redis | Upstash, via `ioredis`/`REDIS_URL` | **Already portable** — generic Redis protocol client. VPS-hosted Redis later = change `REDIS_URL` only. |
 | Auth | NextAuth + own `AuthUser` table/JWT | **Already portable** — not on Supabase Auth, no lock-in here. |
 | Storage | Supabase Storage, via `@supabase/supabase-js` storage client directly in `note-media.ts`/`board.ts` | **Not portable yet** — calls the Supabase SDK directly. |
-| Realtime | ~~Supabase Realtime, via client-side `createClient()` in `useRealtimeBoard.ts`~~ Replaced in Phase 5 — `useRealtimeBoard.ts` now subscribes to the self-hosted NATS server instead. Session bits in `src/app/page.tsx` are unrelated (a different Supabase client, still in use — see Auth section). | **Portable already** — self-hosted NATS, no managed-provider lock-in to begin with. |
+| Realtime | ~~Supabase Realtime, via client-side `createClient()` in `useRealtimeBoard.ts`~~ Replaced in Phase 5 — `useRealtimeBoard.ts` connects to `apps/backend`'s own authenticated `GET /v1/realtime` WS endpoint (through Kong), which relays events off a self-hosted, internal-only NATS server. Session bits in `src/app/page.tsx` are unrelated (a different Supabase client, still in use — see Auth section). | **Portable already** — self-hosted NATS behind the backend's own endpoint, no managed-provider lock-in, and no client (web or future mobile) needs to know NATS exists at all. |
 
 Action for Phase 1 (backend extraction): wrap storage behind a small internal interface in the backend — `getUploadUrl()`, `getFileUrl()`, `deleteFile()` — implemented against Supabase Storage today. MinIO and most self-hosted object stores speak the S3 API, so swapping the implementation later (point the S3-compatible client at the VPS's MinIO endpoint) doesn't touch any caller. This is a small amount of extra structure now that avoids a rewrite later — don't skip it just because "Supabase Storage works fine today."
 
@@ -167,18 +169,16 @@ Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right 
   `nats` service alongside `backend`/`kong`, exposing `4222` (client protocol, for
   debugging/scripts), `8080` (websocket — what `apps/web` actually connects to), and `8222`
   (HTTP monitoring) to the host.
-  - **Auth — known, deliberately-accepted simplification.** `infra/nats/nats.conf` gates the
-    whole socket with a single shared bearer token (`authorization { token: $NATS_AUTH_TOKEN }`,
-    sourced from `apps/backend/.env` for both the `nats` and `backend` docker-compose
-    services). This is **not** the per-workspace "NATS decentralized JWT auth" originally
-    scoped at the top of this Realtime section — it stops the socket being wide open to the
-    internet, but anyone holding the token can subscribe to *any* workspace's
-    `ws.<id>.change` subject, not just ones they're a member of. Flagging this prominently
-    rather than papering over it: acceptable for a solo-maintainer, pre-production app; not
-    acceptable once there's more than one mutually-untrusting tenant. Revisiting this
-    (decentralized JWT auth, or at minimum deriving per-connection subject permissions from
-    the caller's existing Supabase JWT at connect time) is the main piece of unfinished work
-    from this phase.
+  - **Auth — known, deliberately-accepted simplification at the time.** `infra/nats/nats.conf`
+    gated the whole socket with a single shared bearer token (`authorization { token:
+    $NATS_AUTH_TOKEN }`, sourced from `apps/backend/.env` for both the `nats` and `backend`
+    docker-compose services). This was **not** the per-workspace "NATS decentralized JWT
+    auth" originally scoped at the top of this Realtime section — it stopped the socket being
+    wide open to the internet, but anyone holding the token could subscribe to *any*
+    workspace's `ws.<id>.change` subject, not just ones they're a member of. Flagged
+    prominently rather than papered over at the time, and **closed in the realtime-auth-fix
+    follow-up below** — not by building NATS's own per-connection authorization, but by
+    removing the browser's direct connection to NATS entirely.
   - One nats.conf gotcha worth recording: `token: "$NATS_AUTH_TOKEN"` (quoted) does **not**
     get environment-variable-substituted by nats-server — it's taken as the literal string
     `$NATS_AUTH_TOKEN`. Unquoted (`token: $NATS_AUTH_TOKEN`) is required for substitution to
@@ -216,6 +216,10 @@ Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right 
   itself was **not** touched or removed — it's still used by `note-media.ts` for direct
   browser-to-Storage uploads, and `supabase/server.ts` is still used for the SSR auth session
   (a separate Supabase client instantiation from the one this hook used to use).
+  **Superseded by the realtime-auth-fix follow-up below**: `nats.ws` was removed again,
+  `useRealtimeBoard.ts` no longer imports it or talks to NATS directly, and neither
+  `NEXT_PUBLIC_NATS_WS_URL` nor `NEXT_PUBLIC_NATS_AUTH_TOKEN` exist anywhere in the app
+  anymore.
 - Verified live end-to-end, not just code review (a mismatched subject name or payload shape
   would otherwise fail silently at the frontend with no build-time error): `docker compose up
   -d --build` against real Supabase/Postgres/Redis; `nats` container logs confirm JetStream +
@@ -240,6 +244,144 @@ Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right 
   types and via the equivalent Node-side (`nats` package) test above, which exercises the
   identical wire protocol and payload shape, but not React state updates in an actual page.
 
+**Phase 5 follow-up — realtime auth fix (browser no longer talks to NATS directly)** ✅ done
+
+Closes the gap flagged above: a single shared `NATS_AUTH_TOKEN`, necessarily shipped to every
+browser (`NEXT_PUBLIC_`-prefixed), let anyone holding it subscribe to *any* workspace's
+`ws.<id>.change` subject. Rather than building NATS's own per-connection authorization
+(NKeys, JWT auth callout — real cryptographic machinery to learn and maintain solo), the fix
+reuses the auth the backend already has for every REST call
+(`SupabaseAuthGuard`/`WorkspaceService`): the browser now talks to the backend's own
+authenticated WebSocket endpoint, and only the backend ever talks to NATS.
+
+- **`apps/backend/src/realtime/realtime.gateway.ts`** (new) — `RealtimeGateway`, a plain
+  `Injectable` (not a `@WebSocketGateway()`-decorated class). Deliberately built on the raw
+  `ws` package (`ws: ^8.18.0` added to `apps/backend/package.json`, `@types/ws` as a
+  dev dep) run in `noServer` mode, wired onto Nest's own underlying HTTP server via its
+  `'upgrade'` event (`attach(httpServer)`, called once from `apps/backend/src/main.ts` —
+  `app.get(RealtimeGateway).attach(app.getHttpServer())` — right after `NestFactory.create()`
+  and before `app.listen()`). Considered `@nestjs/websockets` + `@nestjs/platform-ws` (the
+  officially-supported route for a plain-`ws` Nest gateway) but went with a hand-wired
+  `noServer` server instead: the one thing that actually matters here — rejecting the
+  connection **before** the WS handshake completes if auth fails, with a real HTTP status
+  (401/400/403/404), not accepting the handshake and closing a moment later — is far more
+  direct to express against Node's `'upgrade'` event than through the gateway abstraction
+  (which is built around socket.io/message-handler patterns this endpoint doesn't use; it
+  only ever pushes server→client). No new Nest package needed as a result.
+  - **Handshake** (`handleUpgrade`): parses `?token=<supabase_access_token>&workspaceId=<id>`
+    from the upgrade request's URL (browsers' native `WebSocket` API can't set custom
+    headers, so these travel as query params — a common, accepted pattern for WS auth, same
+    tradeoff cookie-based session auth makes implicitly). Missing token → `401`. Missing/non-
+    integer `workspaceId` → `400`. Token verified via `supabase.anon().auth.getUser(token)` —
+    the exact call `SupabaseAuthGuard.canActivate()` makes for every REST request — failure
+    or error → `401`. Resulting user then checked against the requested workspace via a new
+    **`WorkspaceService.isMember(workspaceId, userId)`** (extracted from the existing private
+    `requireMember()`, which now just calls it and throws — reused, not reimplemented, per
+    the brief) → not a member → `403`. Any non-matching path → `404`. Only once every check
+    passes does `wss.handleUpgrade()` run and the socket start receiving events.
+  - **Relay**: on a successful connection, subscribes (over the backend's own trusted
+    server-to-server NATS connection) to that one workspace's `ws.<workspaceId>.change`
+    subject and forwards each `{table, type, row}` message to that one browser connection
+    only; unsubscribes on socket close. This uses a new **`NatsService.subscribe(subject,
+    handler)`** method (`apps/backend/src/common/services/nats.service.ts`) returning an
+    unsubscribe function — the publish side (`publishChange`, wired into
+    `board.service.ts`/`notes.controller.ts` since Phase 5 above) is unchanged.
+  - **`apps/backend/src/realtime/realtime.module.ts`** (new) — imports `WorkspaceModule` for
+    `WorkspaceService`; `SupabaseService`/`NatsService` come from the already-`@Global()`
+    `CommonModule`. Registered in `app.module.ts`'s `imports`.
+- **`apps/web/src/hooks/useRealtimeBoard.ts`** — rewritten to use the browser's native
+  `WebSocket` API against the backend's `GET /v1/realtime` endpoint instead of `nats.ws`
+  against NATS directly. Same `RealtimeBoardHandlers` interface, same table-name→handler
+  routing, same call site in `Board.tsx` — nothing there changed, exactly as scoped. Gets the
+  Supabase access token from the *browser* client's own session
+  (`apps/web/src/lib/supabase/client.ts`'s `createClient()`, `supabase.auth.getSession()`) —
+  this hook is `"use client"` and can't use `backend-client.ts`'s server-only
+  `getAccessToken()` (that reads the SSR cookie session via a different, server-side Supabase
+  client). Reconnects on close with a fixed 2s delay, since a raw `WebSocket` has no built-in
+  reconnect the way `nats.ws`'s `connect()` did — without this, a network blip would leave
+  live sync silently dead until the next full page load, a regression from the old behavior.
+  `nats.ws` removed from `apps/web/package.json` (no longer used anywhere in the app).
+- **`infra/nats/nats.conf`** — removed the `websocket {}` listener entirely; browsers never
+  connect to NATS now. Kept the `authorization { token: $NATS_AUTH_TOKEN }` block as
+  defense-in-depth even though it's no longer the security boundary (see the file's own
+  updated comments) — cheap to keep, and the socket is fully internal now regardless.
+- **`docker-compose.yml`** — the `nats` service no longer publishes `4222` (client protocol)
+  or `8080` (websocket) to the host at all; nothing outside the Docker network can reach NATS.
+  Kept `8222` (HTTP monitoring) bound to `127.0.0.1` only, same pattern as Kong's admin API,
+  for local ops visibility.
+- **`infra/kong/kong.yml`** — tried Kong first, as scoped, and it worked with one real piece
+  of friction: added a `backend-realtime` route (`paths: [/v1/realtime]`, more specific than
+  the existing `/v1` route, so Kong's router picks it for this path) with **no** `cors` or
+  `rate-limiting` plugins (browsers don't send a CORS preflight for `wss://` connections in
+  the first place, and the rate-limiting policy is tuned for bursty REST calls, not one
+  long-lived connection — the connect-time auth check is the real guard here) — moved the
+  existing `cors`/`rate-limiting` plugins from service-level onto the two REST routes
+  explicitly so they don't also apply here. **The friction**: Kong/nginx's default
+  `read_timeout`/`write_timeout` (60s) would otherwise silently kill an idle WebSocket
+  connection — no bytes flowing between change events doesn't mean the connection is dead —
+  and force a reconnect loop every minute. Fixed by raising both to `3600000` (1 hour) at the
+  `backend` service level; harmless for the REST routes too, since a slow REST call should
+  time out for its own reasons long before that. No other Kong-specific websocket plugin was
+  needed — Kong's core proxy forwards the `Upgrade`/`Connection` headers transparently for
+  ordinary `http`/`https`-protocol routes.
+
+**Verified, with one real gap — see below.** `docker compose config`/`up -d --build` initially
+failed outright: `apps/backend/.env` does not exist in this worktree (confirmed via direct
+`ls`; no real Supabase/Postgres/Redis/Resend credentials are available anywhere in this
+worktree — checked `credentials.txt` at the repo root, which prior phases record as removed
+from git in Phase 2, and it is in fact absent here too). Per this task's own instruction to
+STOP and report rather than fabricate a result, the full real-account signup → bearer token →
+workspace id → live-mutation-over-WS flow (this phase's own verification standard, matching
+every prior phase's discipline) **was not run** and cannot be claimed as verified.
+
+What *was* verified, using a clearly-labeled, non-functional placeholder `apps/backend/.env`
+(fake Supabase URL/keys, gitignored, deleted again after testing — created solely to satisfy
+`docker compose`'s required `env_file:` and let the containers boot for infra-wiring checks):
+- `apps/backend` (`nest build`) and `apps/web` (`next build` + `tsc --noEmit`) both build
+  clean after the changes above (this part needed no credentials at all).
+- `docker compose up -d --build` — all three containers (`nats`, `backend`, `kong`) built and
+  started clean. `nats` logs show JetStream + client listener starting with **no**
+  `websocket` listener line (confirms the removed listener actually took effect, not just in
+  the config file). `backend` logs `[NatsService] Connected to NATS at nats://nats:4222` and
+  `Nest application successfully started` — the new `RealtimeModule`/`RealtimeGateway` wiring
+  doesn't break boot. `kong` reports healthy.
+- **The actual security-fix negative path — real Kong→backend network round trips**, via a
+  throwaway Node `ws`-package script hitting `ws://localhost:8000/v1/realtime` (Kong's public
+  proxy port):
+  - No `token`, no `workspaceId` → HTTP `401` before the handshake completed.
+  - No `token`, `workspaceId=1` → HTTP `401`.
+  - `token=not-a-real-token`, `workspaceId=1` → HTTP `401` (the `auth.getUser()` call against
+    the placeholder Supabase URL fails — as it must with no real Supabase reachable — and
+    that failure is treated as an auth failure, i.e. the code fails closed rather than open).
+  - `token` set, no `workspaceId` → HTTP `400`.
+  - A request to `/v1/realtime` with a mismatched path → HTTP `404` — caught one real rough
+    edge in the first pass of this testing (a non-matching-path upgrade fell through with no
+    response at all and hung until the client gave up), fixed by rejecting it explicitly
+    (`realtime.gateway.ts`'s `handleUpgrade`) rather than leaving the socket open with nothing
+    ever writing to it.
+  - None of the five cases ever reached `WebSocket`'s `open` event — every rejection happened
+    before the handshake completed, confirmed by listening for `'unexpected-response'`
+    (fires only pre-handshake, with the real HTTP status) rather than `'close'`.
+  - This proves Kong correctly proxies the WS upgrade to the backend, and that the
+    fail-closed connect-time auth gate works over the real network path (missing/invalid
+    token, missing workspace, wrong path — all rejected). **What this does *not* prove**: the
+    specific "valid token, but for a workspace the user isn't a member of" case from this
+    task's step 4, or the full happy-path event relay from step 3 — both need a real
+    Supabase-issued access token and a real `workspace_members` row, which this environment
+    doesn't have. That gap is structural (missing credentials), not a gap in the
+    implementation's logic — `isMember()` is the exact same query `requireMember()` already
+    relies on for every REST call that needs it (`listMembers`, `removeMember`, etc.).
+  - `docker compose down` afterward; the placeholder `.env` was deleted, not committed
+    (gitignored regardless).
+- **Not verified** (same class of gap as Phase 5's own "not verified" note above): an actual
+  browser round-tripping a live event into rendered UI, and the real end-to-end
+  signup-to-mutation-to-WS-delivery flow this task's own verification section asks for. Both
+  need a real Supabase project's credentials in `apps/backend/.env`, supplied by whoever runs
+  this next — the code paths involved (`RealtimeGateway`'s auth checks, `useRealtimeBoard.ts`'s
+  connect logic) are otherwise identical to the ones exercised above, just with a working
+  Supabase project standing behind `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` instead of a
+  placeholder domain.
+
 **Not built in this phase (explicitly out of scope): CRDT/Yjs co-editing.** The second half
 of the Realtime section above — Yjs docs, per-document NATS subjects, awareness, periodic
 snapshot persistence — was not touched. No Yjs dependency was added anywhere. Whole-record
@@ -258,7 +400,7 @@ Phases 5 and 6 can run in parallel with each other (and largely independent of P
 
 - **NestJS project conventions**: module-per-resource vs. feature-based folders — pick one before porting 20+ route files.
 - ~~**Kong deployment**: self-hosted (Docker/K8s) vs. Kong Konnect (managed)?~~ Resolved: self-hosted, DB-less declarative config via `docker-compose.yml` — lowest ops for a solo maintainer, no Kong admin DB to run/back up.
-- ~~**NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.~~ Resolved in Phase 5: self-hosted, single `nats:2-alpine` container + JetStream volume via `docker-compose.yml`, same reasoning as Kong. **Still open**: per-workspace NATS subject authorization (decentralized JWT auth) — Phase 5 shipped a single shared token instead, see that section's auth caveat.
+- ~~**NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.~~ Resolved in Phase 5: self-hosted, single `nats:2-alpine` container + JetStream volume via `docker-compose.yml`, same reasoning as Kong. ~~**Still open**: per-workspace NATS subject authorization~~ Resolved in the Phase 5 follow-up (realtime auth fix): not via NATS's own decentralized JWT auth, but by removing browser access to NATS entirely and relaying through the backend's own authenticated `GET /v1/realtime` WebSocket endpoint instead — see that writeup for the full design and its verification gap (no real Supabase credentials were available in the environment that built it; the connect-time reject-on-bad-auth path was verified over a real Kong→backend network round trip, but the full real-account happy path was not).
 - **iOS timeline**: not urgent now, but confirms the "one backend, N clients" shape is worth the Kong investment.
 - **Storage**: staying on Supabase Storage (S3-compatible) is the lowest-friction option since `note-media.ts` already targets it — only revisit if there's a reason to move to raw AWS S3.
 - **Which fields actually need CRDT**: confirm the exact field list (likely `Note.body` at minimum — task title/description TBD) before building the Yjs provider, since scope here directly drives Phase 5 effort.

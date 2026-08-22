@@ -8,24 +8,61 @@ _transform: true
 services:
   - name: backend
     url: http://backend:3001
+    # Kong/nginx's default read_timeout (60s) would otherwise silently kill an idle
+    # WebSocket connection on backend-realtime below (no bytes flowing between change
+    # events doesn't mean the connection is dead) and force a reconnect loop. Raised here at
+    # the service level — harmless for the REST routes too, since they never come close to
+    # it; a slow REST call should time out for its own reasons long before this.
+    read_timeout: 3600000
+    write_timeout: 3600000
     routes:
       - name: backend-api
         paths:
           - /v1
         strip_path: false
+        # /v1/realtime is matched by the more specific backend-realtime route below (Kong's
+        # router picks the longest matching path), so REST traffic is everything else here.
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods: [GET, POST, PATCH, DELETE, OPTIONS]
+              headers: [Authorization, Content-Type, X-Workspace-Id]
+              credentials: false
+          - name: rate-limiting
+            config:
+              minute: 300
+              policy: local
       - name: backend-cron
         paths:
           - /cron
         strip_path: false
-    plugins:
-      - name: cors
-        config:
-          origins:
-            - "*"
-          methods: [GET, POST, PATCH, DELETE, OPTIONS]
-          headers: [Authorization, Content-Type, X-Workspace-Id]
-          credentials: false
-      - name: rate-limiting
-        config:
-          minute: 300
-          policy: local
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods: [GET, POST, PATCH, DELETE, OPTIONS]
+              headers: [Authorization, Content-Type, X-Workspace-Id]
+              credentials: false
+          - name: rate-limiting
+            config:
+              minute: 300
+              policy: local
+      # Realtime WS relay (see docs/MIGRATION-PLAN-bff-kong-split.md's Realtime section) —
+      # apps/web connects here instead of to NATS directly. Kong's core proxy forwards the
+      # HTTP Upgrade/Connection headers transparently, no extra plugin needed for the
+      # upgrade itself. Deliberately no plugins on this route:
+      #  - cors: browsers' native WebSocket API doesn't send a CORS preflight for `wss://`
+      #    connections in the first place (Origin is sent, but enforcement — if ever
+      #    needed — belongs in the backend's own upgrade handler, not Kong).
+      #  - rate-limiting: built for bursty REST calls (300/min); a single long-lived
+      #    connection would either trivially fit under it or, worse, count reconnects
+      #    against a budget meant for something else entirely. The auth check itself
+      #    (token + workspace membership, done once per connection in
+      #    apps/backend/src/realtime/realtime.gateway.ts) is the actual guard here.
+      - name: backend-realtime
+        paths:
+          - /v1/realtime
+        strip_path: false

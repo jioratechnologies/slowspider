@@ -68,8 +68,11 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> with Single
     final textNotes = notes.where((n) => isTextNoteKind(n.kind)).toList();
     final clusters = data.clusters.where((c) => c.status == ClusterStatus.active).toList();
 
-    return Scaffold(
-      appBar: AppBar(
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(
         title: const Text('Task'),
         actions: [
           IconButton(
@@ -230,6 +233,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> with Single
               notes: textNotes,
               userId: userId,
               resetKey: task.id,
+              storageUsed: data.storageUsed,
               onAdd: controller.addNote,
               onDelete: controller.deleteNote,
             ),
@@ -248,7 +252,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> with Single
           ),
         ),
       ]),
-    );
+    ));
   }
 
   void _confirmBin(BuildContext context, BoardController controller, Task task) {

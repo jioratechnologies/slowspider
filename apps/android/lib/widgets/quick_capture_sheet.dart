@@ -9,15 +9,12 @@ import '../state/board_provider.dart';
 import 'voice_recorder.dart';
 import 'dart:io';
 
-/// Capture-first entry point behind the FAB: a title, an optional destination cluster, and
-/// any number of staged attachments. Nothing uploads until Save. Mirrors
-/// apps/mobile/src/components/QuickCaptureSheet.tsx.
 Future<void> showQuickCaptureSheet(BuildContext context, {int? defaultClusterId}) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.panel,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    backgroundColor: const Color(0xFF191A22),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => _QuickCaptureSheet(defaultClusterId: defaultClusterId),
   );
 }
@@ -119,7 +116,7 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
           'mime': f.mime,
           'size_bytes': size,
           'duration_ms': f.durationMs,
-          'pos': i,
+          'pos': i.toDouble(),
         });
       }
       if (mounted) Navigator.of(context).pop();
@@ -139,14 +136,24 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.lineStrong, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 14),
-            const Text('New task', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.ink)),
+            Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.lineStrong, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('New task', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.ink3),
+                  onPressed: () => Navigator.of(context).pop(),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _titleCtrl,
@@ -154,7 +161,10 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
               maxLines: 3,
               minLines: 1,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(labelText: 'What needs doing?'),
+              decoration: const InputDecoration(
+                labelText: 'What needs doing?',
+                hintText: 'Enter task title...',
+              ),
             ),
             if (_staged.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -170,30 +180,35 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
                     ]),
                   )),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(children: [
               VoiceRecorder(onRecorded: _stageVoice, disabled: _busy, compact: true),
-              IconButton(icon: const Icon(Icons.image_outlined), onPressed: _busy ? null : () => _stage(pickMedia)),
-              IconButton(icon: const Icon(Icons.attach_file), onPressed: _busy ? null : () => _stage(pickDocument)),
+              const SizedBox(width: 6),
+              IconButton(icon: const Icon(Icons.image_outlined, color: AppColors.muted), onPressed: _busy ? null : () => _stage(pickMedia)),
+              IconButton(icon: const Icon(Icons.attach_file, color: AppColors.muted), onPressed: _busy ? null : () => _stage(pickDocument)),
             ]),
-            const SizedBox(height: 8),
-            const Text('GOES TO', style: TextStyle(color: AppColors.muted, fontSize: 11, letterSpacing: 0.6)),
+            const SizedBox(height: 12),
+            const Text('GOES TO', style: TextStyle(color: AppColors.ink3, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
             const SizedBox(height: 8),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 6,
+              runSpacing: 6,
               children: [
-                ChoiceChip(label: const Text('Floating'), selected: _clusterId == null, onSelected: (_) => setState(() => _clusterId = null)),
-                ...clusters.map((c) => ChoiceChip(
-                      label: Text(c.name),
+                _pill(
+                  label: 'Floating',
+                  selected: _clusterId == null,
+                  onTap: () => setState(() => _clusterId = null),
+                ),
+                ...clusters.map((c) => _pill(
+                      label: c.name,
+                      colorHex: c.color,
                       selected: _clusterId == c.id,
-                      avatar: CircleAvatar(backgroundColor: colorFromHex(c.color), radius: 6),
-                      onSelected: (_) => setState(() => _clusterId = c.id),
+                      onTap: () => setState(() => _clusterId = c.id),
                     )),
               ],
             ),
             if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_error!, style: const TextStyle(color: AppColors.danger))),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -204,6 +219,50 @@ class _QuickCaptureSheetState extends ConsumerState<_QuickCaptureSheet> {
                   child: _busy ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk)) : const Text('Add task'),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill({
+    required String label,
+    String? colorHex,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF8B5CF6) : const Color(0xFF222430),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? const Color(0xFFA78BFA) : const Color(0xFF333646),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const Icon(Icons.check, size: 12, color: Colors.white),
+              const SizedBox(width: 4),
+            ] else if (colorHex != null) ...[
+              Container(width: 7, height: 7, decoration: BoxDecoration(color: colorFromHex(colorHex), shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : AppColors.ink,
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
             ),
           ],
         ),

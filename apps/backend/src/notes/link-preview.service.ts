@@ -79,29 +79,38 @@ export class LinkPreviewService {
   }
 
   async fetchLinkPreview(raw: string): Promise<LinkPreview> {
-    const url = await this.assertPublicUrl(raw);
-
-    const res = await fetch(url, {
-      redirect: "error", // a redirect could hop to a private address after the DNS check
-      signal: AbortSignal.timeout(6000),
-      headers: { "user-agent": "SlowSpiderBot/1.0 (+link preview)", accept: "text/html,application/xhtml+xml" },
-    });
-    if (!res.ok) throw new Error(`Couldn't load that link (${res.status}).`);
-    if (!(res.headers.get("content-type") || "").includes("html")) {
-      return { url: url.toString(), title: url.hostname, description: "", image: null, siteName: url.hostname };
+    let url: URL;
+    try {
+      url = await this.assertPublicUrl(raw);
+    } catch {
+      const parsed = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+      return { url: raw, title: parsed.hostname, description: "", image: null, siteName: parsed.hostname };
     }
 
-    const html = (await res.text()).slice(0, 300_000);
-    const title = this.metaTag(html, "og:title", "twitter:title") || html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || url.hostname;
-    const description = this.metaTag(html, "og:description", "twitter:description", "description") || "";
-    const image = this.metaTag(html, "og:image", "twitter:image");
+    try {
+      const res = await fetch(url, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(6000),
+        headers: { "user-agent": "SlowSpiderBot/1.0 (+link preview)", accept: "text/html,application/xhtml+xml" },
+      });
+      if (!res.ok || !(res.headers.get("content-type") || "").includes("html")) {
+        return { url: url.toString(), title: url.hostname, description: "", image: null, siteName: url.hostname };
+      }
 
-    return {
-      url: url.toString(),
-      title: this.decodeEntities(title).slice(0, 200),
-      description: this.decodeEntities(description).slice(0, 400),
-      image: image && /^https?:\/\//i.test(image) ? image : null,
-      siteName: this.metaTag(html, "og:site_name") || url.hostname,
-    };
+      const html = (await res.text()).slice(0, 300_000);
+      const title = this.metaTag(html, "og:title", "twitter:title") || html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || url.hostname;
+      const description = this.metaTag(html, "og:description", "twitter:description", "description") || "";
+      const image = this.metaTag(html, "og:image", "twitter:image");
+
+      return {
+        url: url.toString(),
+        title: this.decodeEntities(title).slice(0, 200),
+        description: this.decodeEntities(description).slice(0, 400),
+        image: image && /^https?:\/\//i.test(image) ? image : null,
+        siteName: this.metaTag(html, "og:site_name") || url.hostname,
+      };
+    } catch {
+      return { url: url.toString(), title: url.hostname, description: "", image: null, siteName: url.hostname };
+    }
   }
 }

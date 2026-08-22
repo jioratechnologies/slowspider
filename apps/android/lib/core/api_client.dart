@@ -113,7 +113,7 @@ class ApiClient {
 
   // ---- Tasks ----
 
-  Future<Task> createTask({required String title, required int? clusterId, required int pos}) async {
+  Future<Task> createTask({required String title, required int? clusterId, required double pos}) async {
     final data = await _request<Map<String, dynamic>>(
       '/v1/tasks',
       method: 'POST',
@@ -126,7 +126,7 @@ class ApiClient {
 
   Future<void> deleteTaskForever(int id) => _request<void>('/v1/tasks/$id', method: 'DELETE');
 
-  Future<Milestone> addMilestone(int taskId, String title, int pos) async {
+  Future<Milestone> addMilestone(int taskId, String title, double pos) async {
     final data = await _request<Map<String, dynamic>>(
       '/v1/tasks/$taskId/milestones',
       method: 'POST',
@@ -142,7 +142,7 @@ class ApiClient {
 
   // ---- Clusters ----
 
-  Future<Cluster> createCluster({required String name, required String color, required int? categoryId, required int pos}) async {
+  Future<Cluster> createCluster({required String name, required String color, required int? categoryId, required double pos}) async {
     final data = await _request<Map<String, dynamic>>(
       '/v1/clusters',
       method: 'POST',
@@ -155,12 +155,12 @@ class ApiClient {
 
   Future<void> deleteClusterForever(int id) => _request<void>('/v1/clusters/$id', method: 'DELETE');
 
-  Future<void> reorderClusters(List<Map<String, int>> updates) =>
+  Future<void> reorderClusters(List<Map<String, dynamic>> updates) =>
       _request<void>('/v1/clusters/reorder', method: 'POST', body: {'updates': updates});
 
   // ---- Categories ----
 
-  Future<Category> createCategory({required String name, required String color, required int pos}) async {
+  Future<Category> createCategory({required String name, required String color, required double pos}) async {
     final data = await _request<Map<String, dynamic>>(
       '/v1/categories',
       method: 'POST',

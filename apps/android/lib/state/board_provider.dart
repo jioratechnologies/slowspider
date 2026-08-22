@@ -81,7 +81,7 @@ class BoardController extends StateNotifier<BoardState> {
     final data = state.data;
     if (title.trim().isEmpty || data == null) return null;
     final siblings = data.tasks.where((t) => t.clusterId == clusterId);
-    final pos = siblings.fold<int>(0, (m, t) => t.pos > m ? t.pos : m) + 1;
+    final pos = siblings.fold<double>(0.0, (m, t) => t.pos > m ? t.pos : m) + 1.0;
     try {
       final row = await _api.createTask(title: title.trim(), clusterId: clusterId, pos: pos);
       state = state.copyWith(data: data.copyWith(tasks: [...data.tasks, row]));
@@ -105,7 +105,7 @@ class BoardController extends StateNotifier<BoardState> {
   void moveTask(int taskId, int? clusterId) {
     final data = state.data;
     final siblings = (data?.tasks ?? []).where((t) => t.clusterId == clusterId && t.id != taskId);
-    final pos = siblings.fold<int>(0, (m, t) => t.pos > m ? t.pos : m) + 1;
+    final pos = siblings.fold<double>(0.0, (m, t) => t.pos > m ? t.pos : m) + 1.0;
     patchTask(
       taskId,
       {'cluster_id': clusterId, 'pos': pos, 'cold': false, 'binned': false, 'binned_at': null},
@@ -166,7 +166,7 @@ class BoardController extends StateNotifier<BoardState> {
     final data = state.data;
     if (data == null) return;
     try {
-      final row = await _api.createCluster(name: name, color: color, categoryId: categoryId, pos: data.clusters.length);
+      final row = await _api.createCluster(name: name, color: color, categoryId: categoryId, pos: data.clusters.length.toDouble());
       state = state.copyWith(data: data.copyWith(clusters: [...data.clusters, row]));
     } catch (e) {
       _fail(e);
@@ -195,13 +195,14 @@ class BoardController extends StateNotifier<BoardState> {
   Future<void> reorderClusters(List<Cluster> newOrder) async {
     final data = state.data;
     if (data == null) return;
-    final updates = <Map<String, int>>[];
+    final updates = <Map<String, dynamic>>[];
     final byId = {for (final c in data.clusters) c.id: c};
     final reindexed = <Cluster>[];
     for (var i = 0; i < newOrder.length; i++) {
       final c = newOrder[i];
-      updates.add({'id': c.id, 'pos': i});
-      reindexed.add(c.copyWith(pos: i));
+      final pos = i.toDouble();
+      updates.add({'id': c.id, 'pos': pos});
+      reindexed.add(c.copyWith(pos: pos));
     }
     final untouched = data.clusters.where((c) => !byId.containsKey(c.id) || !newOrder.any((n) => n.id == c.id));
     state = state.copyWith(data: data.copyWith(clusters: [...reindexed, ...untouched]));
@@ -218,7 +219,7 @@ class BoardController extends StateNotifier<BoardState> {
     final data = state.data;
     if (data == null) return;
     try {
-      final row = await _api.createCategory(name: name, color: color, pos: data.categories.length);
+      final row = await _api.createCategory(name: name, color: color, pos: data.categories.length.toDouble());
       state = state.copyWith(data: data.copyWith(categories: [...data.categories, row]));
     } catch (e) {
       _fail(e);
@@ -239,7 +240,7 @@ class BoardController extends StateNotifier<BoardState> {
     final v = title.trim();
     if (v.isEmpty || data == null) return;
     final t = data.tasks.where((x) => x.id == taskId).cast<Task?>().firstWhere((_) => true, orElse: () => null);
-    final pos = (t?.milestones ?? []).fold<int>(0, (m, ms) => ms.pos > m ? ms.pos : m) + 1;
+    final pos = (t?.milestones ?? []).fold<double>(0.0, (m, ms) => ms.pos > m ? ms.pos : m) + 1.0;
     try {
       final row = await _api.addMilestone(taskId, v, pos);
       state = state.copyWith(

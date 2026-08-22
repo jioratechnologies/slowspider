@@ -146,8 +146,16 @@ export async function getStorageUsed(): Promise<number> {
   return data.used;
 }
 export async function previewLink(url: string): Promise<LinkPreview> {
-  const { token, workspaceId } = await requireWorkspaceContext(); // signed-in callers only — this fetches an arbitrary URL server-side
-  return backend.auth<LinkPreview>("/v1/notes/preview", { token, workspaceId }, { method: "POST", body: { url } });
+  try {
+    const { token, workspaceId } = await requireWorkspaceContext();
+    return await backend.auth<LinkPreview>("/v1/notes/preview", { token, workspaceId }, { method: "POST", body: { url } });
+  } catch {
+    let hostname = url;
+    try {
+      hostname = new URL(url.startsWith("http") ? url : `https://${url}`).hostname;
+    } catch (_) {}
+    return { url, title: hostname, description: "", image: null, siteName: hostname };
+  }
 }
 
 // ---- settings ----

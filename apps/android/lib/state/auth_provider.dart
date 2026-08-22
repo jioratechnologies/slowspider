@@ -36,11 +36,14 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> login(String email, String password) async {
     try {
       final res = await _api.login(email.trim(), password);
+      final userMap = res['user'] as Map<String, dynamic>?;
       final session = Session(
         accessToken: res['token'] as String,
         refreshToken: res['refreshToken'] as String?,
         workspaceId: null,
-        userId: (res['user'] as Map<String, dynamic>)['id'] as String,
+        userId: userMap?['id'] as String?,
+        email: userMap?['email'] as String? ?? email.trim(),
+        name: userMap?['name'] as String?,
       );
       await _storage.save(session);
       state = AuthState.signedIn(session);
@@ -58,11 +61,14 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> completeSignup(String email, String password) async {
     try {
       final res = await _api.signupComplete(email.trim(), password);
+      final userMap = res['user'] as Map<String, dynamic>?;
       final session = Session(
         accessToken: res['token'] as String,
         refreshToken: res['refreshToken'] as String?,
         workspaceId: null,
-        userId: (res['user'] as Map<String, dynamic>)['id'] as String,
+        userId: userMap?['id'] as String?,
+        email: userMap?['email'] as String? ?? email.trim(),
+        name: userMap?['name'] as String?,
       );
       await _storage.save(session);
       state = AuthState.signedIn(session);
@@ -80,11 +86,14 @@ class AuthController extends StateNotifier<AuthState> {
   Future<bool> completeReset(String email, String password) async {
     try {
       final res = await _api.resetComplete(email.trim(), password);
+      final userMap = res['user'] as Map<String, dynamic>?;
       final session = Session(
         accessToken: res['token'] as String,
         refreshToken: res['refreshToken'] as String?,
         workspaceId: null,
-        userId: (res['user'] as Map<String, dynamic>)['id'] as String,
+        userId: userMap?['id'] as String?,
+        email: userMap?['email'] as String? ?? email.trim(),
+        name: userMap?['name'] as String?,
       );
       await _storage.save(session);
       state = AuthState.signedIn(session);

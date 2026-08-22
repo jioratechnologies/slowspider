@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Mirrors apps/mobile/src/api.ts's Session + loadSession/saveSession/clearSession/
@@ -8,14 +9,33 @@ class Session {
   final String? refreshToken;
   final int? workspaceId;
   final String? userId;
+  final String? email;
+  final String? name;
 
-  const Session({required this.accessToken, this.refreshToken, this.workspaceId, this.userId});
+  const Session({
+    required this.accessToken,
+    this.refreshToken,
+    this.workspaceId,
+    this.userId,
+    this.email,
+    this.name,
+  });
 
-  Session copyWith({String? accessToken, String? refreshToken, int? workspaceId, String? userId}) => Session(
+  Session copyWith({
+    String? accessToken,
+    String? refreshToken,
+    int? workspaceId,
+    String? userId,
+    String? email,
+    String? name,
+  }) =>
+      Session(
         accessToken: accessToken ?? this.accessToken,
         refreshToken: refreshToken ?? this.refreshToken,
         workspaceId: workspaceId ?? this.workspaceId,
         userId: userId ?? this.userId,
+        email: email ?? this.email,
+        name: name ?? this.name,
       );
 }
 
@@ -29,6 +49,8 @@ class SessionStorage {
   static const _refreshKey = 'ss_refresh_token';
   static const _workspaceKey = 'ss_workspace_id';
   static const _userKey = 'ss_user_id';
+  static const _emailKey = 'ss_user_email';
+  static const _nameKey = 'ss_user_name';
 
   Session? _cached;
   Session? get current => _cached;
@@ -39,13 +61,45 @@ class SessionStorage {
     final refreshToken = await _storage.read(key: _refreshKey);
     final ws = await _storage.read(key: _workspaceKey);
     final userId = await _storage.read(key: _userKey);
+    var email = await _storage.read(key: _emailKey);
+    final name = await _storage.read(key: _nameKey);
+
+    if (email == null || email.isEmpty) {
+      email = extractEmailFromJwt(accessToken);
+      if (email != null && email.isNotEmpty) {
+        await _storage.write(key: _emailKey, value: email);
+      }
+    }
+
     _cached = Session(
       accessToken: accessToken,
       refreshToken: refreshToken,
       workspaceId: ws != null ? int.tryParse(ws) : null,
       userId: userId,
+      email: email,
+      name: name,
     );
     return _cached;
+  }
+
+  static String? extractEmailFromJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      var normalized = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+      while (normalized.length % 4 != 0) {
+        normalized += '=';
+      }
+      final decodedBytes = base64.decode(normalized);
+      final jsonStr = utf8.decode(decodedBytes);
+      final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final email = map['email'] as String?;
+      if (email != null && email.isNotEmpty) return email;
+      final userMeta = map['user_metadata'] as Map<String, dynamic>?;
+      return userMeta?['email'] as String?;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> save(Session session) async {
@@ -54,12 +108,13 @@ class SessionStorage {
     if (session.refreshToken != null) await _storage.write(key: _refreshKey, value: session.refreshToken);
     if (session.workspaceId != null) await _storage.write(key: _workspaceKey, value: session.workspaceId.toString());
     if (session.userId != null) await _storage.write(key: _userKey, value: session.userId);
+    if (session.email != null) await _storage.write(key: _emailKey, value: session.email);
+    if (session.name != null) await _storage.write(key: _nameKey, value: session.name);
   }
 
   Future<void> setActiveWorkspace(int workspaceId) async {
     if (_cached == null) return;
-    _cached = _cached!.copyWith(workspaceId: workspaceId);
-    await _storage.write(key: _workspaceKey, value: workspaceId.toString());
+    await save(_cached!.copyWith(workspaceId: workspaceId));
   }
 
   Future<void> clear() async {
@@ -68,5 +123,7 @@ class SessionStorage {
     await _storage.delete(key: _refreshKey);
     await _storage.delete(key: _workspaceKey);
     await _storage.delete(key: _userKey);
+    await _storage.delete(key: _emailKey);
+    await _storage.delete(key: _nameKey);
   }
 }

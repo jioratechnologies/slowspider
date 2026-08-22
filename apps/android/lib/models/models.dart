@@ -62,24 +62,45 @@ NoteVisibility noteVisibilityFromString(String? v) => v == 'private' ? NoteVisib
 
 String noteVisibilityToString(NoteVisibility v) => v == NoteVisibility.private_ ? 'private' : 'workspace';
 
+int _asInt(dynamic v, [int fallback = 0]) {
+  if (v == null) return fallback;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? fallback;
+  return fallback;
+}
+
+int? _asNullableInt(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+double _asDouble(dynamic v, [double fallback = 0.0]) {
+  if (v == null) return fallback;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? fallback;
+  return fallback;
+}
+
 class Milestone {
   final int id;
   final int taskId;
   final String title;
   final bool done;
-  final int pos;
+  final double pos;
 
   Milestone({required this.id, required this.taskId, required this.title, required this.done, required this.pos});
 
   factory Milestone.fromJson(Map<String, dynamic> j) => Milestone(
-        id: j['id'] as int,
-        taskId: (j['task_id'] ?? 0) as int,
+        id: _asInt(j['id']),
+        taskId: _asInt(j['task_id']),
         title: (j['title'] ?? '') as String,
         done: (j['done'] ?? false) as bool,
-        pos: (j['pos'] ?? 0) as int,
+        pos: _asDouble(j['pos']),
       );
 
-  Milestone copyWith({String? title, bool? done, int? pos}) => Milestone(
+  Milestone copyWith({String? title, bool? done, double? pos}) => Milestone(
         id: id,
         taskId: taskId,
         title: title ?? this.title,
@@ -101,7 +122,7 @@ class Task {
   final bool cold;
   final bool binned;
   final String? binnedAt;
-  final int pos;
+  final double pos;
   final List<Milestone> milestones;
 
   Task({
@@ -122,8 +143,8 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> j) => Task(
-        id: j['id'] as int,
-        clusterId: j['cluster_id'] as int?,
+        id: _asInt(j['id']),
+        clusterId: _asNullableInt(j['cluster_id']),
         title: (j['title'] ?? '') as String,
         priority: priorityFromString(j['priority'] as String?),
         starred: (j['starred'] ?? false) as bool,
@@ -134,7 +155,7 @@ class Task {
         cold: (j['cold'] ?? false) as bool,
         binned: (j['binned'] ?? false) as bool,
         binnedAt: j['binned_at'] as String?,
-        pos: (j['pos'] ?? 0) as int,
+        pos: _asDouble(j['pos']),
         milestones: ((j['milestones'] as List?) ?? [])
             .map((m) => Milestone.fromJson(m as Map<String, dynamic>))
             .toList(),
@@ -156,7 +177,7 @@ class Task {
     bool? binned,
     String? binnedAt,
     bool binnedAtSet = false,
-    int? pos,
+    double? pos,
     List<Milestone>? milestones,
   }) =>
       Task(
@@ -184,7 +205,7 @@ class Cluster {
   final int? categoryId;
   final ClusterStatus status;
   final String? binnedAt;
-  final int pos;
+  final double pos;
 
   Cluster({
     required this.id,
@@ -197,13 +218,13 @@ class Cluster {
   });
 
   factory Cluster.fromJson(Map<String, dynamic> j) => Cluster(
-        id: j['id'] as int,
+        id: _asInt(j['id']),
         name: (j['name'] ?? '') as String,
         color: (j['color'] ?? '#888888') as String,
-        categoryId: j['category_id'] as int?,
+        categoryId: _asNullableInt(j['category_id']),
         status: clusterStatusFromString(j['status'] as String?),
         binnedAt: j['binned_at'] as String?,
-        pos: (j['pos'] ?? 0) as int,
+        pos: _asDouble(j['pos']),
       );
 
   Cluster copyWith({
@@ -214,7 +235,7 @@ class Cluster {
     ClusterStatus? status,
     String? binnedAt,
     bool binnedAtSet = false,
-    int? pos,
+    double? pos,
   }) =>
       Cluster(
         id: id,
@@ -231,15 +252,15 @@ class Category {
   final int id;
   final String name;
   final String color;
-  final int pos;
+  final double pos;
 
   Category({required this.id, required this.name, required this.color, required this.pos});
 
   factory Category.fromJson(Map<String, dynamic> j) => Category(
-        id: j['id'] as int,
+        id: _asInt(j['id']),
         name: (j['name'] ?? '') as String,
         color: (j['color'] ?? '#888888') as String,
-        pos: (j['pos'] ?? 0) as int,
+        pos: _asDouble(j['pos']),
       );
 }
 
@@ -255,6 +276,7 @@ class Note {
   final String? mime;
   final int sizeBytes;
   final int? durationMs;
+  final double pos;
   final String createdAt;
 
   Note({
@@ -269,21 +291,23 @@ class Note {
     required this.mime,
     required this.sizeBytes,
     required this.durationMs,
+    required this.pos,
     required this.createdAt,
   });
 
   factory Note.fromJson(Map<String, dynamic> j) => Note(
-        id: j['id'] as int,
-        taskId: j['task_id'] as int?,
-        clusterId: j['cluster_id'] as int?,
+        id: _asInt(j['id']),
+        taskId: _asNullableInt(j['task_id']),
+        clusterId: _asNullableInt(j['cluster_id']),
         createdBy: (j['created_by'] ?? '') as String,
         kind: noteKindFromString(j['kind'] as String?),
         visibility: noteVisibilityFromString(j['visibility'] as String?),
         body: (j['body'] ?? '') as String,
         url: j['url'] as String?,
         mime: j['mime'] as String?,
-        sizeBytes: (j['size_bytes'] ?? 0) as int,
-        durationMs: j['duration_ms'] as int?,
+        sizeBytes: _asInt(j['size_bytes']),
+        durationMs: _asNullableInt(j['duration_ms']),
+        pos: _asDouble(j['pos']),
         createdAt: (j['created_at'] ?? '') as String,
       );
 }
@@ -298,7 +322,7 @@ class Workspace {
   Workspace({required this.id, required this.name, required this.ownerId, required this.createdAt, required this.role});
 
   factory Workspace.fromJson(Map<String, dynamic> j) => Workspace(
-        id: j['id'] as int,
+        id: _asInt(j['id']),
         name: (j['name'] ?? '') as String,
         ownerId: (j['owner_id'] ?? '') as String,
         createdAt: (j['created_at'] ?? '') as String,
@@ -340,8 +364,8 @@ class InviteRow {
   });
 
   factory InviteRow.fromJson(Map<String, dynamic> j) => InviteRow(
-        id: j['id'] as int,
-        workspaceId: (j['workspace_id'] ?? 0) as int,
+        id: _asInt(j['id']),
+        workspaceId: _asInt(j['workspace_id']),
         email: (j['email'] ?? '') as String,
         status: (j['status'] ?? '') as String,
         createdAt: (j['created_at'] ?? '') as String,
@@ -367,8 +391,8 @@ class PendingInviteForUser {
   });
 
   factory PendingInviteForUser.fromJson(Map<String, dynamic> j) => PendingInviteForUser(
-        id: j['id'] as int,
-        workspaceId: (j['workspaceId'] ?? 0) as int,
+        id: _asInt(j['id']),
+        workspaceId: _asInt(j['workspaceId']),
         workspaceName: (j['workspaceName'] ?? '') as String,
         invitedByEmail: j['invitedByEmail'] as String?,
         token: (j['token'] ?? '') as String,
@@ -400,8 +424,8 @@ class BoardPayload {
         clusters: ((j['clusters'] as List?) ?? []).map((c) => Cluster.fromJson(c as Map<String, dynamic>)).toList(),
         tasks: ((j['tasks'] as List?) ?? []).map((t) => Task.fromJson(t as Map<String, dynamic>)).toList(),
         notes: ((j['notes'] as List?) ?? []).map((n) => Note.fromJson(n as Map<String, dynamic>)).toList(),
-        storageUsed: (j['storageUsed'] ?? 0) as int,
-        workspaceId: (j['workspaceId'] ?? 0) as int,
+        storageUsed: _asInt(j['storageUsed']),
+        workspaceId: _asInt(j['workspaceId']),
         sortMode: sortModeFromString(j['sortMode'] as String?),
       );
 

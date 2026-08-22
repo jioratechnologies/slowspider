@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/app_theme.dart';
+import 'screens/archive_screen.dart';
+import 'screens/calendar_screen.dart';
 import 'screens/cluster_detail_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/sign_in_screen.dart';
@@ -10,6 +12,7 @@ import 'screens/sign_up_screen.dart';
 import 'screens/task_detail_screen.dart';
 import 'screens/workspace_screen.dart';
 import 'state/auth_provider.dart';
+import 'state/theme_provider.dart';
 import 'widgets/app_shell.dart';
 
 final _routerListenable = ValueNotifier<AuthStatus>(AuthStatus.restoring);
@@ -30,6 +33,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const AppShell()),
+      GoRoute(path: '/calendar', builder: (context, state) => const CalendarScreen()),
+      GoRoute(path: '/archive', builder: (context, state) => const ArchiveScreen()),
       GoRoute(path: '/sign-in', builder: (context, state) => const SignInScreen()),
       GoRoute(path: '/sign-up', builder: (context, state) => const SignUpScreen()),
       GoRoute(path: '/reset-password', builder: (context, state) => const ResetPasswordScreen()),
@@ -55,20 +60,28 @@ class SlowSpiderApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authStatus = ref.watch(authProvider).status;
+    final themeMode = ref.watch(themeProvider);
     final router = ref.watch(routerProvider);
 
-    if (authStatus == AuthStatus.restoring) {
-      return MaterialApp(
-        theme: buildAppTheme(),
-        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
-      );
-    }
+    return Builder(
+      builder: (context) {
+        final platformBrightness = MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.dark;
+        final theme = buildAppTheme(mode: themeMode, platformBrightness: platformBrightness);
 
-    return MaterialApp.router(
-      title: 'Slow Spider',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
-      routerConfig: router,
+        if (authStatus == AuthStatus.restoring) {
+          return MaterialApp(
+            theme: theme,
+            home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+          );
+        }
+
+        return MaterialApp.router(
+          title: 'Slow Spider',
+          debugShowCheckedModeBanner: false,
+          theme: theme,
+          routerConfig: router,
+        );
+      },
     );
   }
 }

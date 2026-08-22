@@ -10,8 +10,6 @@ import '../state/board_provider.dart';
 const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/// Mirrors apps/mobile/src/screens/CalendarScreen.tsx — month grid + agenda for the
-/// selected day, Google Calendar sync link for timed tasks.
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -33,6 +31,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
+    final panelBg = isDark ? theme.cardColor : Colors.white;
+    final borderColor = isDark ? theme.dividerColor : AppColors.lightLine;
+
     final board = ref.watch(boardProvider);
     final data = board.data;
     if (board.loading && data == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -45,19 +50,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     String? clusterName(int? id) => id == null ? null : data?.clusters.where((c) => c.id == id).cast<dynamic>().firstWhere((_) => true, orElse: () => null)?.name;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
+      appBar: AppBar(
+        title: const Text('Calendar'),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _cursor = DateTime(_cursor.year, _cursor.month - 1, 1))),
-              SizedBox(width: 170, child: Text('${_months[_cursor.month - 1]} ${_cursor.year}', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.ink, fontSize: 16, fontWeight: FontWeight.w700))),
-              IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => setState(() => _cursor = DateTime(_cursor.year, _cursor.month + 1, 1))),
+              IconButton(icon: Icon(Icons.chevron_left, color: textColor), onPressed: () => setState(() => _cursor = DateTime(_cursor.year, _cursor.month - 1, 1))),
+              SizedBox(width: 170, child: Text('${_months[_cursor.month - 1]} ${_cursor.year}', textAlign: TextAlign.center, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w700))),
+              IconButton(icon: Icon(Icons.chevron_right, color: textColor), onPressed: () => setState(() => _cursor = DateTime(_cursor.year, _cursor.month + 1, 1))),
             ],
           ),
-          Row(children: _weekdays.map((w) => Expanded(child: Center(child: Text(w, style: const TextStyle(color: AppColors.ink3, fontSize: 11, fontWeight: FontWeight.w600))))).toList()),
+          Row(children: _weekdays.map((w) => Expanded(child: Center(child: Text(w, style: TextStyle(color: ink3Color, fontSize: 11, fontWeight: FontWeight.w600))))).toList()),
           const SizedBox(height: 4),
           GridView.count(
             crossAxisCount: 7,
@@ -78,13 +85,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: isSelected ? AppColors.accent : null,
-                      border: isToday && !isSelected ? Border.all(color: AppColors.lineStrong) : null,
+                      border: isToday && !isSelected ? Border.all(color: isDark ? AppColors.lineStrong : AppColors.lightLineStrong) : null,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text('${d.day}', style: TextStyle(color: isSelected ? AppColors.accentInk : (inMonth ? AppColors.ink : AppColors.ink3.withValues(alpha: 0.6)), fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, fontSize: 13)),
-                      if (count > 0) Container(margin: const EdgeInsets.only(top: 2), width: 4, height: 4, decoration: BoxDecoration(color: isSelected ? AppColors.accentInk : AppColors.accent, shape: BoxShape.circle)),
+                      Text('${d.day}', style: TextStyle(color: isSelected ? Colors.white : (inMonth ? textColor : ink3Color.withValues(alpha: 0.6)), fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, fontSize: 13)),
+                      if (count > 0) Container(margin: const EdgeInsets.only(top: 2), width: 4, height: 4, decoration: BoxDecoration(color: isSelected ? Colors.white : AppColors.accent, shape: BoxShape.circle)),
                     ]),
                   ),
                 ),
@@ -92,32 +99,36 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             }).toList(),
           ),
           const SizedBox(height: 18),
-          Text(_agendaTitle(_selected), style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(_agendaTitle(_selected), style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          if (dayTasks.isEmpty) const Text('Nothing scheduled.', style: TextStyle(color: AppColors.ink3, fontStyle: FontStyle.italic, fontSize: 13)),
+          if (dayTasks.isEmpty) Text('Nothing scheduled.', style: TextStyle(color: ink3Color, fontStyle: FontStyle.italic, fontSize: 13)),
           for (final t in dayTasks)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: panelBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor),
+              ),
               child: Row(children: [
-                Expanded(child: InkWell(onTap: () => context.push('/task/${t.id}'), child: Text(displayTitle(t.title).isNotEmpty ? displayTitle(t.title) : 'Untitled', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.ink, fontSize: 14)))),
+                Expanded(child: InkWell(onTap: () => context.push('/task/${t.id}'), child: Text(displayTitle(t.title).isNotEmpty ? displayTitle(t.title) : 'Untitled', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: textColor, fontSize: 14)))),
                 if (t.deadlineTime != null) ...[
-                  const Icon(Icons.access_time, size: 12, color: AppColors.ink3),
+                  Icon(Icons.access_time, size: 12, color: ink3Color),
                   const SizedBox(width: 4),
-                  Text(t.deadlineTime!, style: const TextStyle(color: AppColors.ink3, fontSize: 11.5)),
+                  Text(t.deadlineTime!, style: TextStyle(color: ink3Color, fontSize: 11.5)),
                 ],
                 if (isCalendarSyncable(t)) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.open_in_new, size: 16, color: AppColors.ink3),
+                    icon: Icon(Icons.open_in_new, size: 16, color: ink3Color),
                     onPressed: () => launchUrl(Uri.parse(googleCalendarUrl(t, clusterName(t.clusterId))), mode: LaunchMode.externalApplication),
                   ),
                 ],
               ]),
             ),
           if (dayTasks.any((t) => !isCalendarSyncable(t)))
-            const Padding(padding: EdgeInsets.only(top: 4), child: Text('Add a time to a task to sync it to Google Calendar.', style: TextStyle(color: AppColors.ink3, fontSize: 12))),
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text('Add a time to a task to sync it to Google Calendar.', style: TextStyle(color: ink3Color, fontSize: 12))),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import crypto from "crypto";
 import { SupabaseService } from "../common/services/supabase.service";
 import { EmailService } from "../common/services/email.service";
+import type { Workspace, WorkspaceRef, MemberRow, InviteRow, PendingInviteForUser } from "@slowspider/shared-types";
 
 // 1:1 port of apps/web's src/lib/services/workspace.ts. Deliberately uses the service_role
 // client (SupabaseService.admin()) rather than a per-token RLS client — creating a
@@ -9,37 +10,11 @@ import { EmailService } from "../common/services/email.service";
 // can't authorize on its own (there's no membership row yet to check), so these functions do
 // the authorization explicitly in application code, same as the original.
 
-export interface Workspace {
-  id: number;
-  name: string;
-  owner_id: string;
-  created_at: string;
-}
-export interface WorkspaceRef extends Workspace {
-  role: "owner" | "editor";
-}
-export interface MemberRow {
-  userId: string;
-  email: string | null;
-  role: "owner" | "editor";
-  joinedAt: string;
-}
-export interface InviteRow {
-  id: number;
-  workspace_id: number;
-  email: string;
-  status: string;
-  created_at: string;
-  expires_at: string;
-}
-export interface PendingInviteForUser {
-  id: number;
-  workspaceId: number;
-  workspaceName: string;
-  invitedByEmail: string | null;
-  token: string;
-  createdAt: string;
-}
+// Workspace/WorkspaceRef/MemberRow/InviteRow/PendingInviteForUser now come from
+// packages/shared-types (previously duplicated here 1:1 with apps/web's
+// src/lib/workspace-actions.ts) — re-exported so other backend files that import these names
+// from "./workspace.service" don't need to change.
+export type { Workspace, WorkspaceRef, MemberRow, InviteRow, PendingInviteForUser };
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);

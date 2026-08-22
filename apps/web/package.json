@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@slowspider/shared-types": "*",
     "@base-ui/react": "^1.7.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",

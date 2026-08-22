@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { backend } from "@/lib/backend-client";
 import type { WorkspaceRef } from "@/lib/workspace-actions";
-import type { BoardData, SortMode } from "@/lib/types";
+import type { BoardPayload } from "@/lib/types";
 import SignIn from "@/components/auth/SignIn";
 import Board from "@/components/board/Board";
 
@@ -11,13 +11,11 @@ import Board from "@/components/board/Board";
 // same data from apps/backend's GET /v1/board (which already does the bin-purge +
 // board-data + sort-mode fetch server-side, same as the old /api/v1/board route) and
 // GET /v1/workspace, through Kong, same as apps/mobile.
+// BoardPayload comes from packages/shared-types (via @/lib/types) — this file used to define
+// its own one-off `interface BoardPayload extends BoardData` here, a third independent copy
+// of the same shape shared-types now owns.
 
 const WORKSPACE_COOKIE = "active_workspace_id";
-
-interface BoardPayload extends BoardData {
-  sortMode: SortMode;
-  workspaceId: number;
-}
 
 export default async function Home() {
   const supabase = await createClient();

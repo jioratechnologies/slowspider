@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "./supabase/server";
 import { backend, getAccessToken } from "./backend-client";
+import type { Workspace, WorkspaceRef, MemberRow, InviteRow, PendingInviteForUser } from "@slowspider/shared-types";
 
 // Used to call ./services/workspace.ts in-process; now calls apps/backend's /v1/workspace/**
 // routes through Kong instead (same endpoints apps/mobile/src/api.ts already uses, plus two
@@ -38,38 +39,11 @@ function fail(e: unknown): ActionResult {
   return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
 }
 
-// ---- types (previously re-exported from ./services/workspace.ts) ----
-export interface Workspace {
-  id: number;
-  name: string;
-  owner_id: string;
-  created_at: string;
-}
-export interface WorkspaceRef extends Workspace {
-  role: "owner" | "editor";
-}
-export interface MemberRow {
-  userId: string;
-  email: string | null;
-  role: "owner" | "editor";
-  joinedAt: string;
-}
-export interface InviteRow {
-  id: number;
-  workspace_id: number;
-  email: string;
-  status: string;
-  created_at: string;
-  expires_at: string;
-}
-export interface PendingInviteForUser {
-  id: number;
-  workspaceId: number;
-  workspaceName: string;
-  invitedByEmail: string | null;
-  token: string;
-  createdAt: string;
-}
+// ---- types (previously re-exported from ./services/workspace.ts, then hand-duplicated here
+// as their own local interfaces — now the canonical versions from packages/shared-types,
+// re-exported so the several other apps/web files that import these names from
+// "@/lib/workspace-actions" don't need to change) ----
+export type { Workspace, WorkspaceRef, MemberRow, InviteRow, PendingInviteForUser };
 
 export async function inviteCollaborator(email: string): Promise<ActionResult> {
   try {

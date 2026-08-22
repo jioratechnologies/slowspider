@@ -1,0 +1,22 @@
+# Root .dockerignore — applies to every build whose context is "." (currently just
+# apps/backend's Dockerfile, see docker-compose.yml). Keeps the build context small and, more
+# importantly, keeps apps/mobile (a completely separate app, never built into this image) and
+# every workspace's own node_modules out of it — apps/backend/Dockerfile explicitly COPYs only
+# the package.json files + source it actually needs (apps/backend, packages/shared-types).
+node_modules
+**/node_modules
+apps/mobile
+apps/web
+apps/backend/dist
+apps/backend/.env
+apps/backend/.env.*
+packages/shared-types/dist
+# Stale local incremental-build caches — if copied in without their matching dist/ output
+# (which is excluded above), tsc/nest build reads them, believes it's already up to date, and
+# silently skips emitting anything. Bit us once already getting this Dockerfile working.
+**/*.tsbuildinfo
+.git
+.next
+docs
+infra
+*.md

@@ -11,6 +11,8 @@
 
 So there is already a clean REST seam (`/api/v1`) — this is a real advantage. The migration is "extract that seam into its own service," not "invent an API from scratch."
 
+**Decision (recorded, not yet acted on): Android goes Flutter, not React Native.** `apps/mobile` (Expo/RN) stays in the repo untouched for now — no code changes from this decision yet, revisit when ready to actually start the Flutter app (either replace `apps/mobile` or add a new `apps/android` alongside it, TBD at that time). Doesn't affect anything else in this plan: the backend is a plain REST/JSON API behind Kong, client-agnostic — a Flutter client calls the exact same `/v1/**` endpoints the RN app and web app do. iOS timeline/framework is a separate open question (see below).
+
 ## Target architecture
 
 ```

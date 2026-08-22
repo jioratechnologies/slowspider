@@ -1,0 +1,31 @@
+_format_version: "3.0"
+_transform: true
+
+# DB-less declarative config — no separate Kong Postgres to run/back up. Single file,
+# single Kong container. Revisit only if Kong Konnect (managed) or a Kong admin DB is
+# needed later; not needed for a solo-maintainer setup.
+
+services:
+  - name: backend
+    url: http://backend:3001
+    routes:
+      - name: backend-api
+        paths:
+          - /v1
+        strip_path: false
+      - name: backend-cron
+        paths:
+          - /cron
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods: [GET, POST, PATCH, DELETE, OPTIONS]
+          headers: [Authorization, Content-Type, X-Workspace-Id]
+          credentials: false
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: local

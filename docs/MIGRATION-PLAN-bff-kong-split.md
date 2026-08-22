@@ -102,13 +102,13 @@ No urgency to build the VPS path now — just don't hardcode Supabase-specific b
 
 ## Auth across the gateway
 
-Current: NextAuth issues a JWT (`API_JWT_SECRET`), mobile stores it and sends `Authorization: Bearer <token>`. This pattern already works for a gateway setup with no change to the token format.
+Correction from earlier draft: this app authenticates via **Supabase Auth**, not NextAuth (`AUTH_SECRET`/`API_JWT_SECRET` in `.env.local` are unused leftovers). `apps/web/src/lib/api/handler.ts`'s `withApiAuth` verifies the Bearer token via `supabase.auth.getUser(token)` — mobile stores the Supabase session tokens it gets back from `/v1/auth/login`. `apps/backend`'s `SupabaseAuthGuard` ports this exact logic.
 
-Two options for where the JWT gets verified:
-1. **Kong verifies** (`jwt` plugin) using the same secret/JWKS, rejects invalid tokens before they hit backend — less load on backend, but secret must be shared with Kong config.
-2. **Backend verifies** (as it does today), Kong just routes — simpler to keep as a first step, move verification to Kong later once stable.
+Two options for where the token gets verified:
+1. **Kong verifies** (Kong's own `jwt` plugin can't validate opaque Supabase tokens directly, but Supabase does expose a JWKS endpoint for its JWT-format access tokens — would need Kong's `jwt` or `openid-connect` plugin configured against it) — less load on backend, more Kong config to maintain.
+2. **Backend verifies** (as it does today), Kong just routes — simpler, zero auth-logic changes.
 
-Recommend starting with (2) — zero auth-logic changes — and only moving verification into Kong once the split is otherwise stable.
+Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right now, backend still does the real `auth.getUser()` call. Revisit moving verification into Kong only if backend auth load actually becomes a bottleneck.
 
 ## Phased plan
 
@@ -116,14 +116,15 @@ Recommend starting with (2) — zero auth-logic changes — and only moving veri
 - Extract `packages/shared-types` from the interfaces already duplicated in `src/lib/api` and `apps/mobile/src/api.ts`.
 - Confirm which Redis/S3/DB env vars the new backend needs (all already exist in `.env.local`: `DATABASE_URL`, `DIRECT_URL`, `REDIS_URL`, Supabase storage keys).
 
-**Phase 1 — stand up `apps/backend` alongside the monolith**
-- Scaffold NestJS in `apps/backend`, move `prisma/` there.
-- Port `/api/v1/*` route handlers into NestJS modules 1:1 (same request/response shape, so no client changes needed yet). Port `src/lib/services/*` and `src/lib/note-media.ts` as-is.
-- Backend runs on its own port locally; Next.js `/api/v1/*` routes stay in place untouched (parallel, not yet switched over).
+**Phase 1 — stand up `apps/backend` alongside the monolith** ✅ done
+- Monorepo scaffolded (npm workspaces: `apps/web`, `apps/backend`, `packages/shared-types`; `apps/mobile` deliberately left out of the workspace array — Expo/Metro doesn't play well with hoisted workspace `node_modules`).
+- `apps/backend` is a hand-scaffolded NestJS app (no network-dependent `nest new`) — all 29 `/v1/*` routes + the cron route ported 1:1, same `{ok,data}`/`{ok,error}` envelope, same `SupabaseAuthGuard` logic, `StorageService` wrapping Supabase Storage per the portability section above.
+- `apps/web` kept its own copies of `prisma/`, `src/lib/services/*`, etc. — untouched, still does the real work. Verified both apps build/boot; backend curl-tested live against real Supabase/Postgres/Redis (401 unauthenticated, real "wrong password" from an actual `auth.getUser`/credential check — confirms live DB/Supabase connectivity, not just a clean boot).
 
-**Phase 2 — Kong in front of backend**
-- Write `infra/kong/kong.yml`: one service → `apps/backend`, routes matching `/v1/*`, CORS + rate-limit plugins.
-- Point `apps/mobile` at Kong (`EXPO_PUBLIC_API_URL`) in a dev/staging build only, verify parity against the old Next.js-hosted API.
+**Phase 2 — Kong in front of backend** ✅ done
+- `infra/kong/kong.yml` — DB-less declarative config (no separate Kong Postgres to run/back up — single container, single YAML file, lowest-ops option for a solo maintainer). One service → `backend:3001`, routes for `/v1/*` and `/cron/*`, CORS + a generous `rate-limiting` plugin (300/min, local policy) as a basic gateway-level guard on top of the app's own Redis-based login rate limit.
+- `docker-compose.yml` at repo root runs `backend` (built from `apps/backend/Dockerfile`, multi-stage Node 22) + `kong` (image `kong:3.9`), Kong's proxy on `:8000`, admin API bound to `127.0.0.1:8001` only. `docker compose up -d --build` — verified live: `curl http://localhost:8000/v1/board` → `401 Not signed in.`, `curl -X POST http://localhost:8000/v1/auth/login` with bad creds → real `400 Wrong email or password.` from Supabase, proving the whole path (Kong → backend → Supabase) works end to end.
+- Not yet done: pointing `apps/mobile` at Kong (`EXPO_PUBLIC_API_URL`) for a dev/staging build parity check — do this before Phase 3.
 
 **Phase 3 — cut Next.js over**
 - Swap Next.js's own data fetching (currently same-process Prisma calls / internal fetches) to call the backend through Kong.
@@ -151,7 +152,7 @@ Phases 5 and 6 can run in parallel with each other (and largely independent of P
 ## Open questions to resolve before Phase 1
 
 - **NestJS project conventions**: module-per-resource vs. feature-based folders — pick one before porting 20+ route files.
-- **Kong deployment**: self-hosted (Docker/K8s) vs. Kong Konnect (managed)? Affects `infra/kong/` setup.
+- ~~**Kong deployment**: self-hosted (Docker/K8s) vs. Kong Konnect (managed)?~~ Resolved: self-hosted, DB-less declarative config via `docker-compose.yml` — lowest ops for a solo maintainer, no Kong admin DB to run/back up.
 - **NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.
 - **iOS timeline**: not urgent now, but confirms the "one backend, N clients" shape is worth the Kong investment.
 - **Storage**: staying on Supabase Storage (S3-compatible) is the lowest-friction option since `note-media.ts` already targets it — only revisit if there's a reason to move to raw AWS S3.

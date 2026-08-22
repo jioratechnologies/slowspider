@@ -1,5 +1,20 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import type {
+  Priority,
+  SortMode,
+  NoteKind,
+  AttachmentKind,
+  TextNoteKind,
+  RemoteMilestone,
+  RemoteTask,
+  RemoteWorkspace,
+  RemoteCluster,
+  RemoteCategory,
+  RemoteNote,
+  BoardPayload,
+} from "@slowspider/shared-types";
+import { isAttachment, isTextNote } from "@slowspider/shared-types";
 
 // The mobile client is a pure consumer of apps/backend's /v1 REST API, reached through Kong
 // the same way apps/web's Server Actions do (see docs/MIGRATION-PLAN-bff-kong-split.md,
@@ -140,95 +155,10 @@ export async function uploadMedia(uri: string, filename: string, mime: string, s
   return path;
 }
 
-export type Priority = "high" | "med" | "low" | "none";
-
-export interface RemoteMilestone {
-  id: number;
-  task_id: number;
-  title: string;
-  done: boolean;
-  pos: number;
-}
-
-export interface RemoteTask {
-  id: number;
-  cluster_id: number | null;
-  title: string;
-  priority: Priority;
-  starred: boolean;
-  deadline: string | null;
-  deadline_time: string | null;
-  notes: string;
-  done: boolean;
-  cold: boolean;
-  binned: boolean;
-  binned_at: string | null;
-  pos: number;
-  milestones?: RemoteMilestone[];
-}
-
-export interface RemoteWorkspace {
-  id: number;
-  name: string;
-  owner_id: string;
-  created_at: string;
-  role: "owner" | "editor";
-}
-
-export interface RemoteCluster {
-  id: number;
-  name: string;
-  color: string;
-  category_id: number | null;
-  status: "active" | "cold" | "binned";
-  binned_at: string | null;
-  pos: number;
-}
-
-export interface RemoteCategory {
-  id: number;
-  name: string;
-  color: string;
-  pos: number;
-}
-
-export type NoteKind = "text" | "rich" | "code" | "link" | "image" | "video" | "voice" | "table" | "file";
-export type AttachmentKind = "image" | "video" | "voice" | "file";
-export type TextNoteKind = "text" | "rich" | "code" | "link" | "table";
-
-// Mirrors src/lib/types.ts on the web side: attachments are raw files shown in the task's
-// Attachments list; text notes are authored content shown in the Notes sheet.
-const ATTACHMENT_KINDS: string[] = ["image", "video", "voice", "file"];
-export function isAttachment(kind: string): kind is AttachmentKind {
-  return ATTACHMENT_KINDS.includes(kind);
-}
-export function isTextNote(kind: string): kind is TextNoteKind {
-  return !ATTACHMENT_KINDS.includes(kind);
-}
-
-export interface RemoteNote {
-  id: number;
-  task_id: number | null;
-  cluster_id: number | null;
-  created_by: string;
-  kind: NoteKind;
-  visibility: "workspace" | "private";
-  body: string;
-  url: string | null;
-  mime: string | null;
-  size_bytes: number;
-  duration_ms: number | null;
-  created_at: string;
-}
-
-export type SortMode = "smart" | "manual";
-
-export interface BoardPayload {
-  categories: RemoteCategory[];
-  clusters: RemoteCluster[];
-  tasks: RemoteTask[];
-  notes: RemoteNote[];
-  storageUsed: number;
-  workspaceId: number;
-  sortMode: SortMode;
-}
+// Re-exports of the types imported above, from packages/shared-types (the canonical source —
+// see that package's header comment for the full reconciliation history), under these
+// original names (RemoteTask, RemoteCluster, etc — apps/mobile's own naming from before
+// shared-types was wired up) so the ~13 other files in apps/mobile that import them from
+// "./api"/"../api" don't need to change.
+export type { Priority, SortMode, NoteKind, AttachmentKind, TextNoteKind, RemoteMilestone, RemoteTask, RemoteWorkspace, RemoteCluster, RemoteCategory, RemoteNote, BoardPayload };
+export { isAttachment, isTextNote };

@@ -52,8 +52,11 @@ apps/
   backend/    # NestJS service — owns /v1 API, Prisma, Redis, storage
   mobile/     # existing Expo app — src/api.ts points at Kong (:8000), /v1/** paths (Phase 4/3)
 packages/
-  shared-types/   # DTOs / API contracts shared by web + backend + mobile (not done yet — see
-                  # note below; each client still hand-copies its own response interfaces)
+  shared-types/   # DTOs / API contracts shared by web + backend + mobile ✅ wired up (see
+                  # note below) — the canonical Task/Cluster/Category/Note/Milestone/
+                  # Workspace/BoardPayload/etc types now live here; all three apps import
+                  # from @slowspider/shared-types (via a thin re-export barrel at each app's
+                  # old import path) instead of hand-copying their own interfaces.
   db/             # optional: Prisma schema + generated client as its own package
   realtime/       # not built (Phase 5 only did whole-record live sync — NatsService and the
                   # RealtimeGateway WS relay live directly in apps/backend/src/{common,realtime}/,
@@ -65,7 +68,7 @@ infra/
   nats/       # nats.conf — JetStream store dir, internal-only (no websocket listener anymore, see Realtime section)
 ```
 
-`src/app/api/v1/**` route handlers were moved to `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron) in Phase 1, then deleted from `apps/web` in Phase 3 once Server Actions were cut over to call the backend instead. `src/lib/services/*` and `prisma/` were likewise ported to `apps/backend` in Phase 1 and deleted from `apps/web` in Phase 3. `src/lib/note-media.ts` stayed in `apps/web` — it's pure client-side browser-to-Supabase-Storage code, never part of the in-process data layer being moved. `packages/shared-types` was never built out — `apps/web`, `apps/backend`, and `apps/mobile` each still define their own copies of the response/DTO shapes (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`); still a real opportunity for a follow-up phase, not attempted here.
+`src/app/api/v1/**` route handlers were moved to `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron) in Phase 1, then deleted from `apps/web` in Phase 3 once Server Actions were cut over to call the backend instead. `src/lib/services/*` and `prisma/` were likewise ported to `apps/backend` in Phase 1 and deleted from `apps/web` in Phase 3. `src/lib/note-media.ts` stayed in `apps/web` — it's pure client-side browser-to-Supabase-Storage code, never part of the in-process data layer being moved. `packages/shared-types` was never built out in this phase — `apps/web`, `apps/backend`, and `apps/mobile` each still defined their own copies of the response/DTO shapes (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`) — ✅ **done** in the shared-types follow-up below, after Phase 5.
 
 ## Realtime & collaboration (NATS + CRDT)
 
@@ -388,6 +391,89 @@ snapshot persistence — was not touched. No Yjs dependency was added anywhere. 
 live sync (this phase) already covers most of the app (task moved, cluster renamed, note
 added/edited/deleted, etc. all broadcast and land as last-write-wins); true concurrent
 co-editing of a single field by two people at once remains a distinct follow-up phase.
+
+**`packages/shared-types` follow-up — actually wiring it up** ✅ done
+
+Closes the gap flagged since Phase 0: `packages/shared-types` existed but wasn't a real
+dependency of any app — `apps/web`'s `src/lib/types.ts`, `apps/backend`'s
+`src/common/types.ts`, and `apps/mobile`'s `src/api.ts` each carried their own copy of
+`Task`/`Cluster`/`Category`/`Note`/`Milestone`/`BoardPayload`/etc, and had already drifted:
+`apps/mobile`'s `RemoteTask`/`RemoteCluster`/etc (the shapes `shared-types/src/index.ts` had
+been seeded from in Phase 0) were a *slimmer* subset than what `apps/backend`'s
+`board.service.ts` actually returns — it mostly does `.select("*")` / `.select().single()`
+against Postgres and hands the full row back over the wire (`workspace_id`, `created_by`,
+etc included), not the trimmed shape Phase 0's extraction had assumed. `apps/web` had it
+worse: `src/lib/types.ts` and `apps/backend/src/common/types.ts` were an intentional 1:1 port
+of each other (per each file's own header comment) — a *third* independent copy, kept in sync
+by hand — and `apps/web/src/app/page.tsx` additionally had its own fourth, one-off
+`interface BoardPayload extends BoardData {...}`. `Workspace`/`WorkspaceRef`/`MemberRow`/
+`InviteRow`/`PendingInviteForUser` were likewise hand-duplicated between `apps/web`'s
+`workspace-actions.ts` and `apps/backend`'s `workspace.service.ts`.
+
+- **Reconciliation**: for every type, the full DB-row shape (`apps/web`'s/`apps/backend`'s
+  version, matching what the backend's controllers actually return — the ground truth) became
+  canonical in `packages/shared-types/src/index.ts`; `apps/mobile`'s original `Remote*` names
+  (`RemoteTask`, `RemoteCluster`, `RemoteCategory`, `RemoteNote`, `RemoteMilestone`,
+  `RemoteWorkspace`) are kept as type aliases onto those same canonical interfaces, not
+  separate structural types, so its ~13 files importing those names didn't need a rename. The
+  one deliberate behavior-preserving choice: `Task.milestones` stays a *required* `Milestone[]`
+  (not the optional field `apps/mobile`'s version had) because `apps/web`'s `Board.tsx` accesses
+  it unconditionally (`t.milestones.map(...)`, no `?.`) in several places — matching
+  `apps/mobile`'s laxer optionality there would have broken `apps/web`'s typecheck for no
+  reason, since no client ever actually receives a `Task`-typed value missing that field (the
+  one backend path that omits it, `updateTask`'s return row, is discarded by
+  `tasks.controller.ts`, which responds `{updated:true}` instead of the row).
+- **Wiring**: `packages/shared-types` is a real npm-workspaces package
+  (`@slowspider/shared-types`) with a build step (`tsc` → CommonJS + `.d.ts` in `dist/`) —
+  shipping raw `.ts` source directly (as originally set up) works fine for `apps/web`
+  (Turbopack) and `apps/mobile` (Metro/Babel), both of which inline-compile any `.ts` reachable
+  from their module graph regardless of where it lives, but not for `apps/backend`: NestJS's
+  `nest build` only emits compiled JS for its own `src/**`, never for `node_modules` (which is
+  where a workspace dependency resolves from), so the plain `node dist/main.js` runtime would
+  have tried to `require()` raw `.ts` directly and failed (`node:22-slim`, the base image, has
+  no built-in TypeScript support). `apps/web` and `apps/backend` get it via the root npm
+  workspace (`packages/*` was already in the root `workspaces` array); `apps/mobile` is
+  deliberately excluded from that array (Phase 1: Expo/Metro doesn't play well with hoisted
+  workspace `node_modules`), so it depends on it via a plain `"file:../../packages/shared-types"`
+  entry in its own `package.json` instead, and gets its own `apps/mobile/metro.config.js` (new
+  file — none existed before) adding `watchFolders`/`resolver.nodeModulesPaths`/
+  `resolver.unstable_enableSymlinks` so Metro can see and resolve the symlinked package outside
+  its own project root.
+- **`apps/backend/Dockerfile` + `docker-compose.yml`**: the backend's Docker build context was
+  `./apps/backend` alone, which stopped working the moment it gained a real dependency living
+  at `../../packages/shared-types` — Docker can't `COPY` anything from outside its build
+  context. Moved the context to the repo root (`docker-compose.yml`: `context: .`, `dockerfile:
+  apps/backend/Dockerfile`) and rewrote the Dockerfile to explicitly `COPY` only
+  `apps/backend`/`packages/shared-types` (plus the root manifests) rather than the whole
+  monorepo, install with `npm install --workspace=apps/backend --workspace=packages/shared-types`
+  (the root `postinstall` script then builds `shared-types`'s `dist/`), and copy both compiled
+  `dist/` outputs into the lean runtime stage. Added a root `.dockerignore` to keep
+  `apps/web`/`apps/mobile`/every `node_modules` out of the build context. One real bug caught
+  building this: a stale local `apps/backend/tsconfig.build.tsbuildinfo` (incremental-build
+  cache, already gitignored via `*.tsbuildinfo` but not dockerignored) got copied into the image
+  without its matching `dist/` output, and `nest build` — trusting the cache — silently emitted
+  nothing; fixed by adding `**/*.tsbuildinfo` to `.dockerignore`.
+- **Verified**: `apps/web` (`next build` + `tsc --noEmit`, zero warnings — an initial version
+  re-exporting shared-types via `export * from` triggered a Turbopack "unexpected export *"
+  warning on the CommonJS output, fixed by re-exporting named bindings explicitly instead) and
+  `apps/backend` (`nest build`) both build clean; `apps/mobile` (`tsc --noEmit`, no typecheck
+  script exists in its `package.json` so this was run directly) is clean except for one
+  **pre-existing, unrelated** error — `BoardScreen.tsx:210`, `Property 'clusters' does not
+  exist on type 'Category'` — confirmed present before this change too (that file was never
+  touched here, and `Category`/the old `RemoteCategory` never had a `clusters` field either);
+  left alone per this task's own "don't touch business logic" scope rather than papered over
+  with a fake field. Root `npm install` (builds `apps/web`+`apps/backend`+`packages/shared-types`)
+  and a separate `apps/mobile`-scoped `npm install` (its own lockfile, outside the root
+  workspace) both correctly symlink `@slowspider/shared-types` to `packages/shared-types`. Built
+  the real `apps/backend/Dockerfile` via `docker compose build backend` (succeeded after the
+  tsbuildinfo fix above) and ran the full `docker compose up -d` stack (`nats`+`backend`+`kong`)
+  against a clearly-labeled, non-functional placeholder `apps/backend/.env` (gitignored, deleted
+  after testing — no real Supabase/Postgres/Redis project is available in this worktree, same
+  gap every prior phase's own verification section already flags): `backend` boots clean,
+  connects to NATS, and maps every route; `curl http://localhost:8000/v1/board` through Kong
+  still returns `401 {"ok":false,"error":"Not signed in."}`, unchanged from every prior phase —
+  confirming the type-consolidation and Docker rewrite didn't change runtime behavior. `docker
+  compose down` afterward.
 
 **Phase 6 — Android offline-first**
 - Add local SQLite mirror + outbox table to `apps/mobile`.

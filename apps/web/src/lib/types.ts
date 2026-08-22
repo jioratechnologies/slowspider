@@ -1,93 +1,32 @@
-export type Priority = "high" | "med" | "low" | "none";
-export type ClusterStatus = "active" | "cold" | "binned";
-export type SortMode = "smart" | "manual";
-export type NoteKind = "text" | "rich" | "code" | "link" | "image" | "video" | "voice" | "table" | "file";
-export type AttachmentKind = "image" | "video" | "voice" | "file";
-export type TextNoteKind = "text" | "rich" | "code" | "link" | "table";
-export type NoteVisibility = "workspace" | "private";
-
-export const ATTACHMENT_KINDS: AttachmentKind[] = ["image", "video", "voice", "file"];
-export const TEXT_NOTE_KINDS: TextNoteKind[] = ["text", "rich", "code", "link", "table"];
-export function isAttachment(kind: NoteKind): kind is AttachmentKind {
-  return (ATTACHMENT_KINDS as string[]).includes(kind);
-}
-export function isTextNote(kind: NoteKind): kind is TextNoteKind {
-  return (TEXT_NOTE_KINDS as string[]).includes(kind);
-}
-
-export const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
-
-export interface Category {
-  id: number;
-  workspace_id: number;
-  created_by: string | null;
-  name: string;
-  color: string;
-  pos: number;
-}
-
-export interface Cluster {
-  id: number;
-  workspace_id: number;
-  created_by: string | null;
-  name: string;
-  color: string;
-  category_id: number | null;
-  status: ClusterStatus;
-  binned_at: string | null;
-  last_used_at: string;
-  pos: number;
-}
-
-export interface Note {
-  id: number;
-  workspace_id: number;
-  task_id: number | null;
-  cluster_id: number | null;
-  created_by: string;
-  kind: NoteKind;
-  visibility: NoteVisibility;
-  body: string;
-  url: string | null;
-  mime: string | null;
-  size_bytes: number;
-  duration_ms: number | null;
-  pos: number;
-  created_at: string;
-}
-
-export interface Milestone {
-  id: number;
-  workspace_id: number;
-  task_id: number;
-  title: string;
-  done: boolean;
-  pos: number;
-}
-
-export interface Task {
-  id: number;
-  workspace_id: number;
-  created_by: string | null;
-  cluster_id: number | null;
-  title: string;
-  priority: Priority;
-  starred: boolean;
-  deadline: string | null; // yyyy-mm-dd
-  deadline_time: string | null; // "HH:MM" — required for calendar sync
-  notes: string;
-  done: boolean;
-  cold: boolean;
-  binned: boolean;
-  binned_at: string | null;
-  pos: number;
-  milestones: Milestone[];
-}
-
-export interface BoardData {
-  categories: Category[];
-  clusters: Cluster[];
-  tasks: Task[];
-  notes: Note[];
-  storageUsed: number;
-}
+// Re-exports the canonical DTO/row types from packages/shared-types — see that package's
+// header comment for the full reconciliation history. Kept as its own module (rather than
+// switching every import site to "@slowspider/shared-types" directly) so the ~25 files across
+// apps/web that already `import ... from "@/lib/types"` (or "./types") don't need to change.
+//
+// Named re-exports rather than `export *`: packages/shared-types compiles to CommonJS (so a
+// plain Node/tsc-built apps/backend can `require()` it without a TS-aware runtime), and
+// Turbopack warns on `export *` from a CommonJS module ("exports only available at runtime") —
+// listing the names explicitly avoids that extra runtime indirection.
+export type {
+  Priority,
+  ClusterStatus,
+  SortMode,
+  NoteKind,
+  AttachmentKind,
+  TextNoteKind,
+  NoteVisibility,
+  Category,
+  Cluster,
+  Note,
+  Milestone,
+  Task,
+  BoardData,
+  BoardPayload,
+  Workspace,
+  WorkspaceRef,
+  MemberRow,
+  InviteRow,
+  PendingInviteForUser,
+  ApiEnvelope,
+} from "@slowspider/shared-types";
+export { ATTACHMENT_KINDS, TEXT_NOTE_KINDS, isAttachment, isTextNote, STORAGE_QUOTA_BYTES } from "@slowspider/shared-types";

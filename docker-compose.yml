@@ -1,7 +1,8 @@
 services:
   backend:
     build:
-      context: ./apps/backend
+      context: .
+      dockerfile: apps/backend/Dockerfile
     env_file:
       - ./apps/backend/.env
     depends_on:

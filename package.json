@@ -10,8 +10,10 @@
   "scripts": {
     "dev:web": "npm run dev -w apps/web",
     "dev:backend": "npm run start:dev -w apps/backend",
-    "build:web": "npm run build -w apps/web",
-    "build:backend": "npm run build -w apps/backend"
+    "build:shared-types": "npm run build -w packages/shared-types",
+    "build:web": "npm run build:shared-types && npm run build -w apps/web",
+    "build:backend": "npm run build:shared-types && npm run build -w apps/backend",
+    "postinstall": "npm run build:shared-types"
   },
   "allowScripts": {
     "prisma@7.9.1": true,

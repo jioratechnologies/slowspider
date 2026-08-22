@@ -22,6 +22,7 @@
     "@supabase/supabase-js": "^2.112.3",
     "dotenv": "^17.4.2",
     "ioredis": "^6.0.0",
+    "nats": "^2.29.3",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.19.0",
     "rxjs": "^7.8.1"

@@ -38,14 +38,14 @@ export class TasksController {
   // PATCH /v1/tasks/:id/milestones/:msId
   @Patch(":id/milestones/:msId")
   async updateMilestone(@CurrentUser() ctx: ApiContext, @Param("msId") msId: string, @Body() patch: any) {
-    await this.board.updateMilestone(ctx.token, Number(msId), patch);
+    await this.board.updateMilestone(ctx.token, ctx.workspaceId, Number(msId), patch);
     return { updated: true };
   }
 
   // DELETE /v1/tasks/:id/milestones/:msId
   @Delete(":id/milestones/:msId")
   async removeMilestone(@CurrentUser() ctx: ApiContext, @Param("msId") msId: string) {
-    await this.board.deleteMilestone(ctx.token, Number(msId));
+    await this.board.deleteMilestone(ctx.token, ctx.workspaceId, Number(msId));
     return { deleted: true };
   }
 }

@@ -53,10 +53,13 @@ packages/
   shared-types/   # DTOs / API contracts shared by web + backend + mobile (not done yet — see
                   # note below; each client still hand-copies its own response interfaces)
   db/             # optional: Prisma schema + generated client as its own package
-  realtime/       # NATS pub/sub helpers + Yjs-NATS CRDT provider, shared by backend + web + mobile
+  realtime/       # not built (Phase 5 only did whole-record live sync — NatsService lives
+                  # directly in apps/backend/src/common/, and useRealtimeBoard.ts directly in
+                  # apps/web; nothing shared with apps/mobile yet). Would still make sense once
+                  # a Yjs-NATS CRDT provider or a mobile NATS client is actually built.
 infra/
   kong/       # kong.yml (declarative config) or deck.yml
-  nats/       # NATS server config, JetStream stream defs, subject/account auth rules
+  nats/       # nats.conf — JetStream store dir, websocket listener, shared-token auth (Phase 5)
 ```
 
 `src/app/api/v1/**` route handlers were moved to `apps/backend/src/**` NestJS modules, one module per resource (auth, board, categories, clusters, notes, tasks, workspace, cron) in Phase 1, then deleted from `apps/web` in Phase 3 once Server Actions were cut over to call the backend instead. `src/lib/services/*` and `prisma/` were likewise ported to `apps/backend` in Phase 1 and deleted from `apps/web` in Phase 3. `src/lib/note-media.ts` stayed in `apps/web` — it's pure client-side browser-to-Supabase-Storage code, never part of the in-process data layer being moved. `packages/shared-types` was never built out — `apps/web`, `apps/backend`, and `apps/mobile` each still define their own copies of the response/DTO shapes (e.g. `BoardPayload`, `RemoteTask`, `RemoteCluster`); still a real opportunity for a follow-up phase, not attempted here.
@@ -78,6 +81,15 @@ Two distinct kinds of "realtime" here — keep them separate, don't over-build t
 
 **Auth on NATS subjects**: scope per workspace so a client can only subscribe/publish to workspaces they're a member of — NATS decentralized JWT auth (or account/subject permissions keyed off the same JWT the backend already issues) enforces this at the NATS server, not just in app code.
 
+> **NOT implemented as of Phase 5 below.** What actually shipped is a single shared bearer
+> token (`NATS_AUTH_TOKEN`) gating the whole socket — it stops the socket being wide open to
+> the internet, but it does **not** do per-workspace authorization: anyone holding the token
+> can subscribe to *any* workspace's `ws.<id>.change` subject, not just ones they're a member
+> of. This is a known, deliberately-accepted gap (solo maintainer, pre-production) — see
+> Phase 5's writeup for the full rationale. Revisit (decentralized JWT auth, or at minimum
+> per-connection subject permissions derived from the caller's Supabase JWT) before any real
+> multi-tenant or production exposure.
+
 **Ops note**: NATS (with JetStream) is a single self-contained binary — much lighter to run/monitor solo than a hand-rolled WebSocket/OT server would be, but it *is* one more stateful service to deploy and back up (JetStream stores data on disk). Budget for that in the deploy story (Phase 5 below).
 
 ## Offline-first Android
@@ -98,7 +110,7 @@ No production DB/bucket of your own today, so Supabase (Postgres + Storage) and 
 | Redis | Upstash, via `ioredis`/`REDIS_URL` | **Already portable** — generic Redis protocol client. VPS-hosted Redis later = change `REDIS_URL` only. |
 | Auth | NextAuth + own `AuthUser` table/JWT | **Already portable** — not on Supabase Auth, no lock-in here. |
 | Storage | Supabase Storage, via `@supabase/supabase-js` storage client directly in `note-media.ts`/`board.ts` | **Not portable yet** — calls the Supabase SDK directly. |
-| Realtime | Supabase Realtime, via client-side `createClient()` in `useRealtimeBoard.ts` (and session bits in `src/app/page.tsx`) | **Being replaced anyway** — Phase 5's NATS work removes this Supabase coupling as a side effect. |
+| Realtime | ~~Supabase Realtime, via client-side `createClient()` in `useRealtimeBoard.ts`~~ Replaced in Phase 5 — `useRealtimeBoard.ts` now subscribes to the self-hosted NATS server instead. Session bits in `src/app/page.tsx` are unrelated (a different Supabase client, still in use — see Auth section). | **Portable already** — self-hosted NATS, no managed-provider lock-in to begin with. |
 
 Action for Phase 1 (backend extraction): wrap storage behind a small internal interface in the backend — `getUploadUrl()`, `getFileUrl()`, `deleteFile()` — implemented against Supabase Storage today. MinIO and most self-hosted object stores speak the S3 API, so swapping the implementation later (point the S3-compatible client at the VPS's MinIO endpoint) doesn't touch any caller. This is a small amount of extra structure now that avoids a rewrite later — don't skip it just because "Supabase Storage works fine today."
 
@@ -145,12 +157,95 @@ Went with (2) for Phase 2 — Kong is a pure router/CORS/rate-limit layer right 
 - Point production mobile build at Kong's production URL (local dev default done in Phase 3 — this is the prod/staging URL specifically).
 - Decide whether to move JWT verification into Kong (see Auth section).
 
-**Phase 5 — realtime (NATS + CRDT)**
-- Stand up NATS (with JetStream) in `infra/nats/`, define subject namespace and auth rules per workspace.
-- Add event publish calls to backend mutation handlers (whole-record events first — this alone gets multi-device live sync working for most of the app).
-- Web subscribes to workspace subjects, applies updates to client state.
-- Add Yjs + custom NATS provider (`packages/realtime`) for the specific co-editable fields identified; wire into the note/task editor components.
-- Add periodic Yjs snapshot persistence job.
+**Phase 5 — realtime, whole-record live sync only** ✅ done (CRDT/Yjs half of this section — true concurrent co-editing — deliberately not attempted; see below)
+- `infra/nats/nats.conf` — single self-hosted `nats:2-alpine` container, same "lowest ops for
+  a solo maintainer" shape as `infra/kong/kong.yml`: one binary, one config file, no
+  clustering, no separate admin DB. JetStream enabled (`store_dir` on a named Docker volume,
+  `nats-data`, so a container restart doesn't lose replay history) and a `websocket` listener
+  (`no_tls: true` — local dev only) for direct browser connections, since NATS traffic
+  bypasses Kong the same way Supabase Realtime always did. `docker-compose.yml` runs it as a
+  `nats` service alongside `backend`/`kong`, exposing `4222` (client protocol, for
+  debugging/scripts), `8080` (websocket — what `apps/web` actually connects to), and `8222`
+  (HTTP monitoring) to the host.
+  - **Auth — known, deliberately-accepted simplification.** `infra/nats/nats.conf` gates the
+    whole socket with a single shared bearer token (`authorization { token: $NATS_AUTH_TOKEN }`,
+    sourced from `apps/backend/.env` for both the `nats` and `backend` docker-compose
+    services). This is **not** the per-workspace "NATS decentralized JWT auth" originally
+    scoped at the top of this Realtime section — it stops the socket being wide open to the
+    internet, but anyone holding the token can subscribe to *any* workspace's
+    `ws.<id>.change` subject, not just ones they're a member of. Flagging this prominently
+    rather than papering over it: acceptable for a solo-maintainer, pre-production app; not
+    acceptable once there's more than one mutually-untrusting tenant. Revisiting this
+    (decentralized JWT auth, or at minimum deriving per-connection subject permissions from
+    the caller's existing Supabase JWT at connect time) is the main piece of unfinished work
+    from this phase.
+  - One nats.conf gotcha worth recording: `token: "$NATS_AUTH_TOKEN"` (quoted) does **not**
+    get environment-variable-substituted by nats-server — it's taken as the literal string
+    `$NATS_AUTH_TOKEN`. Unquoted (`token: $NATS_AUTH_TOKEN`) is required for substitution to
+    work. Cost some time to track down via nats-server's own `[ERR] ... authentication error`
+    log line.
+- `apps/backend`: added the `nats` npm package and `NatsService`
+  (`src/common/services/nats.service.ts`, registered in `CommonModule` alongside
+  `RedisService`/`SupabaseService`, same pattern). Connects once on startup (`NATS_URL` +
+  `NATS_AUTH_TOKEN`, both added to `.env.example`) and logs clearly whether that succeeded —
+  a publish is fire-and-forget from the caller's side (NATS being down must never fail a
+  mutation), so this startup log is the signal for "is live sync actually wired up," not
+  anything a request will surface. Exposes one method, `publishChange(workspaceId, table,
+  type, row)`, publishing JSON `{table, type, row}` to `ws.<workspaceId>.change`.
+  - Wired into every INSERT/UPDATE/DELETE in `board.service.ts` (tasks, milestones, clusters,
+    categories — including the `batchUpdatePos` reorder path, which fires one event per
+    affected row to match what Postgres Realtime used to do per-row regardless of how the
+    write was issued) and `notes.controller.ts`'s note create/update/delete (also served by
+    `board.service.ts`, per the existing `insertNote`/`updateNote`/`deleteNote` there). Also
+    wired into the cron sweep (`runDailyColdStorageCron` — auto-archive and bin-purge), since
+    it mutates the same tables across every workspace and would have fired Realtime events
+    too under the old system.
+  - `update*`/`delete*` methods that used to return `void` now chain `.select()` onto the
+    same Supabase call (PostgREST's `Prefer: return=representation`) to get the affected row
+    back for the event payload — not an extra round trip, just a wider response on the same
+    query. `updateMilestone`/`deleteMilestone` gained a `workspaceId` parameter (threaded from
+    `ctx.workspaceId` in `tasks.controller.ts`, which already had it) since the event subject
+    needs it and the original signatures didn't carry it.
+- `apps/web`: added `nats.ws` and rewrote `useRealtimeBoard.ts` to connect to
+  `NEXT_PUBLIC_NATS_WS_URL` (default `ws://localhost:8080`) with `NEXT_PUBLIC_NATS_AUTH_TOKEN`
+  (necessarily public — see the auth caveat above), subscribe to `ws.<workspaceId>.change`,
+  and dispatch each `{table, type, row}` message to the matching `on*Change` handler. Same
+  `RealtimeBoardHandlers` interface, same handler bodies, same call site in `Board.tsx` —
+  zero changes needed there, exactly as scoped. The old `createClient()`/`postgres_changes`
+  Supabase Realtime path is fully removed from this file; `apps/web/src/lib/supabase/client.ts`
+  itself was **not** touched or removed — it's still used by `note-media.ts` for direct
+  browser-to-Storage uploads, and `supabase/server.ts` is still used for the SSR auth session
+  (a separate Supabase client instantiation from the one this hook used to use).
+- Verified live end-to-end, not just code review (a mismatched subject name or payload shape
+  would otherwise fail silently at the frontend with no build-time error): `docker compose up
+  -d --build` against real Supabase/Postgres/Redis; `nats` container logs confirm JetStream +
+  websocket both started cleanly; `apps/backend` logs `[NatsService] Connected to NATS at
+  nats://nats:4222` on boot (not retrying/erroring); `apps/backend` (`nest build`) and
+  `apps/web` (`next build` + `tsc --noEmit`) both build clean. Created a throwaway test
+  account through the live stack (`POST /v1/auth/signup/{otp,verify,complete}` through Kong,
+  `AUTH_MODE=dev` so the OTP is `123456`, no email needed) to get a real bearer token and
+  workspace id, then drove a throwaway Node script (the `nats` package) subscribed to
+  `ws.<id>.change` while issuing real mutations through Kong (`POST/PATCH/DELETE
+  /v1/{tasks,clusters,categories,notes,tasks/:id/milestones}`, plus `/v1/clusters/reorder`)
+  with `curl`/PowerShell. Confirmed every table × change-type combination arrives with the
+  exact `{table, type, row}` shape `useRealtimeBoard.ts` expects: tasks INSERT/UPDATE/DELETE,
+  clusters INSERT/UPDATE/DELETE (including a `batchUpdatePos` reorder producing a
+  per-row UPDATE event), categories INSERT/DELETE, milestones INSERT/UPDATE/DELETE, notes
+  INSERT/UPDATE/DELETE. Test board rows and the throwaway auth account were left in place /
+  cleaned up (test rows deleted; the throwaway `@example.com` test auth account was left,
+  harmless) — no production or real user data touched. `docker compose down` afterward.
+  Not verified: an actual browser (`apps/web`'s `next dev`) round-tripping a live event into
+  rendered UI — no browser available in this environment; the hook's connect/subscribe logic
+  was verified via `tsc --noEmit`/`next build` type-checking against the real `nats.ws`
+  types and via the equivalent Node-side (`nats` package) test above, which exercises the
+  identical wire protocol and payload shape, but not React state updates in an actual page.
+
+**Not built in this phase (explicitly out of scope): CRDT/Yjs co-editing.** The second half
+of the Realtime section above — Yjs docs, per-document NATS subjects, awareness, periodic
+snapshot persistence — was not touched. No Yjs dependency was added anywhere. Whole-record
+live sync (this phase) already covers most of the app (task moved, cluster renamed, note
+added/edited/deleted, etc. all broadcast and land as last-write-wins); true concurrent
+co-editing of a single field by two people at once remains a distinct follow-up phase.
 
 **Phase 6 — Android offline-first**
 - Add local SQLite mirror + outbox table to `apps/mobile`.
@@ -163,7 +258,7 @@ Phases 5 and 6 can run in parallel with each other (and largely independent of P
 
 - **NestJS project conventions**: module-per-resource vs. feature-based folders — pick one before porting 20+ route files.
 - ~~**Kong deployment**: self-hosted (Docker/K8s) vs. Kong Konnect (managed)?~~ Resolved: self-hosted, DB-less declarative config via `docker-compose.yml` — lowest ops for a solo maintainer, no Kong admin DB to run/back up.
-- **NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.
+- ~~**NATS deployment**: self-hosted (single VM/container + JetStream volume) vs. a managed NATS provider (e.g. Synadia Cloud) — same solo-maintainer ops tradeoff as Kong.~~ Resolved in Phase 5: self-hosted, single `nats:2-alpine` container + JetStream volume via `docker-compose.yml`, same reasoning as Kong. **Still open**: per-workspace NATS subject authorization (decentralized JWT auth) — Phase 5 shipped a single shared token instead, see that section's auth caveat.
 - **iOS timeline**: not urgent now, but confirms the "one backend, N clients" shape is worth the Kong investment.
 - **Storage**: staying on Supabase Storage (S3-compatible) is the lowest-friction option since `note-media.ts` already targets it — only revisit if there's a reason to move to raw AWS S3.
 - **Which fields actually need CRDT**: confirm the exact field list (likely `Note.body` at minimum — task title/description TBD) before building the Yjs provider, since scope here directly drives Phase 5 effort.

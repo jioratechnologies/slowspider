@@ -4,8 +4,30 @@ services:
       context: ./apps/backend
     env_file:
       - ./apps/backend/.env
+    depends_on:
+      - nats
     expose:
       - "3001"
+    restart: unless-stopped
+
+  # Realtime backbone (Phase 5, whole-record live sync only — see
+  # docs/MIGRATION-PLAN-bff-kong-split.md). Backend publishes here over the plain client
+  # protocol (internal-network only, not exposed); apps/web connects straight to the
+  # websocket listener below, bypassing Kong, same as Supabase Realtime did before it.
+  # NATS_AUTH_TOKEN is read from apps/backend/.env — see infra/nats/nats.conf for the
+  # known simplification this single shared token implies (no per-workspace auth yet).
+  nats:
+    image: nats:2-alpine
+    command: ["-c", "/etc/nats/nats.conf"]
+    env_file:
+      - ./apps/backend/.env
+    volumes:
+      - ./infra/nats/nats.conf:/etc/nats/nats.conf:ro
+      - nats-data:/data/jetstream
+    ports:
+      - "4222:4222" # NATS client protocol — exposed for local debugging (nats CLI / node scripts)
+      - "8080:8080" # NATS websocket — apps/web (running outside Docker in dev) connects here directly
+      - "8222:8222" # HTTP monitoring/health endpoint
     restart: unless-stopped
 
   kong:
@@ -26,3 +48,6 @@ services:
       - "8000:8000" # proxy — every client (web/android/iOS) hits this
       - "127.0.0.1:8001:8001" # admin API, localhost-only
     restart: unless-stopped
+
+volumes:
+  nats-data: # JetStream store — persists so a restart doesn't lose recent replay history

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { connect, StringCodec, type NatsConnection, type Subscription } from "nats.ws";
 import type { Category, Cluster, Milestone, Note, Task } from "@/lib/types";
 
 type ChangeType = "INSERT" | "UPDATE" | "DELETE";
@@ -14,12 +14,35 @@ export interface RealtimeBoardHandlers {
   onNoteChange: (type: ChangeType, row: Note) => void;
 }
 
-// Subscribes to live Postgres changes on the four board tables, scoped to one workspace —
-// this is what makes a collaborator's edit show up without a manual refresh. Authorization
-// for the subscription itself comes from RLS on the browser client's Supabase session, not
-// this filter (the filter is just "don't bother sending me rows I can already see anyway
-// from other workspaces" — RLS is still what actually stops a non-member's client from
-// getting anything at all).
+type ChangeEvent =
+  | { table: "tasks"; type: ChangeType; row: Task }
+  | { table: "clusters"; type: ChangeType; row: Cluster }
+  | { table: "categories"; type: ChangeType; row: Category }
+  | { table: "milestones"; type: ChangeType; row: Milestone }
+  | { table: "notes"; type: ChangeType; row: Note };
+
+// KNOWN SIMPLIFICATION (see infra/nats/nats.conf and docs/MIGRATION-PLAN-bff-kong-split.md's
+// Phase 5 section): a single shared token gates the NATS socket, not per-workspace
+// authorization. It's necessarily public here (NEXT_PUBLIC_-prefixed, shipped to the
+// browser) — anyone holding it could subscribe to any workspace's subject, not just ones
+// they're a member of. Accepted gap for now (solo maintainer, pre-production).
+const NATS_WS_URL = process.env.NEXT_PUBLIC_NATS_WS_URL || "ws://localhost:8080";
+const NATS_AUTH_TOKEN = process.env.NEXT_PUBLIC_NATS_AUTH_TOKEN;
+
+const sc = StringCodec();
+
+// Subscribes to live whole-record change events on one workspace's NATS subject
+// (`ws.<workspaceId>.change`) — this is what makes a collaborator's edit show up without a
+// manual refresh. Replaces the old direct Supabase Realtime `postgres_changes` subscription
+// (Phase 5 of docs/MIGRATION-PLAN-bff-kong-split.md — this is the "whole-record live sync"
+// half of that section only; no CRDT/Yjs here, that's explicitly out of scope).
+//
+// The backend (apps/backend/src/common/services/nats.service.ts) publishes one event per
+// mutation as `{table, type, row}` right after every successful board/notes DB write; this
+// hook just routes each event to the matching on*Change handler by table name — same
+// handlers, same call sites in Board.tsx, nothing else changes. Connects directly to NATS's
+// websocket listener, bypassing Kong entirely, same reasoning as the Realtime path it
+// replaces (Kong routes request/response API traffic only, not this).
 export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHandlers) {
   const handlersRef = useRef(handlers);
   useEffect(() => {
@@ -27,37 +50,56 @@ export function useRealtimeBoard(workspaceId: number, handlers: RealtimeBoardHan
   });
 
   useEffect(() => {
-    const supabase = createClient();
-    const filter = `workspace_id=eq.${workspaceId}`;
+    let cancelled = false;
+    let nc: NatsConnection | null = null;
+    let sub: Subscription | null = null;
 
-    const channel = supabase
-      .channel(`workspace-${workspaceId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter }, (payload) => {
-        const row = (payload.eventType === "DELETE" ? payload.old : payload.new) as Task;
-        handlersRef.current.onTaskChange(payload.eventType, row);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "clusters", filter }, (payload) => {
-        const row = (payload.eventType === "DELETE" ? payload.old : payload.new) as Cluster;
-        handlersRef.current.onClusterChange(payload.eventType, row);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "categories", filter }, (payload) => {
-        const row = (payload.eventType === "DELETE" ? payload.old : payload.new) as Category;
-        handlersRef.current.onCategoryChange(payload.eventType, row);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "milestones", filter }, (payload) => {
-        const row = (payload.eventType === "DELETE" ? payload.old : payload.new) as Milestone;
-        handlersRef.current.onMilestoneChange(payload.eventType, row);
-      })
-      // Private notes are filtered out by the notes RLS policy before the change is
-      // broadcast, so another member's private note never reaches this client.
-      .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter }, (payload) => {
-        const row = (payload.eventType === "DELETE" ? payload.old : payload.new) as Note;
-        handlersRef.current.onNoteChange(payload.eventType, row);
-      })
-      .subscribe();
+    (async () => {
+      try {
+        nc = await connect({ servers: NATS_WS_URL, token: NATS_AUTH_TOKEN });
+        if (cancelled) {
+          await nc.close();
+          return;
+        }
+
+        sub = nc.subscribe(`ws.${workspaceId}.change`);
+        for await (const msg of sub) {
+          let event: ChangeEvent;
+          try {
+            event = JSON.parse(sc.decode(msg.data)) as ChangeEvent;
+          } catch {
+            continue; // malformed payload — skip it rather than take down the whole subscription
+          }
+          const h = handlersRef.current;
+          switch (event.table) {
+            case "tasks":
+              h.onTaskChange(event.type, event.row);
+              break;
+            case "clusters":
+              h.onClusterChange(event.type, event.row);
+              break;
+            case "categories":
+              h.onCategoryChange(event.type, event.row);
+              break;
+            case "milestones":
+              h.onMilestoneChange(event.type, event.row);
+              break;
+            case "notes":
+              h.onNoteChange(event.type, event.row);
+              break;
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("useRealtimeBoard: NATS connection error", err);
+        }
+      }
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      sub?.unsubscribe();
+      nc?.close();
     };
   }, [workspaceId]);
 }

@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function VoiceRecorder({
   onRecorded,
   disabled,
+  className,
 }: {
   onRecorded: (blob: Blob, durationMs: number) => void;
   disabled?: boolean;
+  className?: string;
 }) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -60,7 +63,6 @@ export default function VoiceRecorder({
         if (blob.size) onRecorded(blob, durationMs);
       };
 
-      // Set up real-time audio analyser for waveform
       try {
         const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const audioCtx = new AudioContextClass();
@@ -87,7 +89,7 @@ export default function VoiceRecorder({
         };
         updateWaves();
       } catch {
-        // Fallback to synthetic wave animation if Web Audio is blocked
+        // Fallback
       }
 
       startedAtRef.current = Date.now();
@@ -123,31 +125,34 @@ export default function VoiceRecorder({
           size="sm"
           onClick={start}
           disabled={disabled}
-          className="h-8 rounded-xl border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white text-[12.5px]"
+          className={cn(
+            "h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)] hover:border-[var(--line-strong)] text-[12px] cursor-pointer",
+            className
+          )}
         >
-          <Mic className="size-3.5 mr-1 text-amber-500" /> Record audio
+          <Mic className="size-3.5 mr-1 text-[var(--muted)]" /> Record audio
         </Button>
       ) : (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 dark:bg-rose-500/10 px-3 py-1.5 shadow-xs animate-in fade-in zoom-in-95">
+        <div className="flex items-center gap-2.5 rounded-lg border border-[var(--ink)] bg-[var(--bg)] px-2.5 py-1 animate-in fade-in">
           {/* Pulsing indicator + Timer */}
-          <div className="flex items-center gap-2">
-            <span className="relative flex size-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-              <span className="relative inline-flex size-2.5 rounded-full bg-rose-500" />
+              <span className="relative inline-flex size-2 rounded-full bg-rose-500" />
             </span>
-            <span className="text-[13px] font-mono font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+            <span className="text-[12px] font-mono font-medium text-[var(--ink)] tabular-nums">
               {String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}
             </span>
           </div>
 
-          {/* Live Waveform Bars */}
-          <div className="flex h-5 items-center gap-1 px-1">
+          {/* Waveform Bars */}
+          <div className="flex h-4 items-center gap-0.5 px-0.5">
             {audioLevels.map((lvl, idx) => (
               <motion.div
                 key={idx}
                 animate={{ height: `${lvl}%` }}
                 transition={{ duration: 0.08, ease: "linear" }}
-                className="w-1 min-h-[4px] rounded-full bg-rose-500/80 dark:bg-rose-400"
+                className="w-0.5 min-h-[3px] rounded-full bg-[var(--ink)]"
               />
             ))}
           </div>
@@ -158,25 +163,25 @@ export default function VoiceRecorder({
               type="button"
               size="sm"
               onClick={() => stop(true)}
-              className="h-7 rounded-lg bg-rose-600 hover:bg-rose-700 text-white px-2.5 text-[12px] font-medium shadow-xs"
+              className="h-6.5 rounded bg-[var(--ink)] text-[var(--bg)] px-2 text-[11px] font-medium cursor-pointer"
               title="Save recording"
             >
-              <Check className="size-3.5 mr-1" /> Done
+              <Check className="size-3 mr-0.5" /> Done
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => stop(false)}
-              className="h-7 w-7 p-0 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10"
+              className="h-6.5 w-6.5 p-0 rounded text-[var(--muted)] hover:text-rose-500 cursor-pointer"
               title="Discard recording"
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 className="size-3" />
             </Button>
           </div>
         </div>
       )}
-      {error && <span className="text-[12px] text-rose-500 dark:text-rose-400">{error}</span>}
+      {error && <span className="text-[11.5px] text-rose-500">{error}</span>}
     </div>
   );
 }

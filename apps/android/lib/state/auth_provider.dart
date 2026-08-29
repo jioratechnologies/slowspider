@@ -22,6 +22,9 @@ class AuthState {
 /// apps/backend's AuthController (dev mode's OTP is the fixed "123456").
 class AuthController extends StateNotifier<AuthState> {
   AuthController() : super(const AuthState.restoring()) {
+    ApiClient.onUnauthorized = () {
+      signOut();
+    };
     _restore();
   }
 

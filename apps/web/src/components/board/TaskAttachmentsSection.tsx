@@ -10,10 +10,10 @@ import VoiceRecorder from "@/components/notes/VoiceRecorder";
 import type { NewNote } from "@/components/notes/NotesPanel";
 
 function getAttachmentIcon(note: Note) {
-  if (note.kind === "voice") return <Mic className="size-4 text-amber-500 shrink-0" />;
-  if (note.kind === "image") return <ImageIcon className="size-4 text-sky-500 shrink-0" />;
-  if (note.kind === "video") return <Video className="size-4 text-purple-500 shrink-0" />;
-  return <FileIcon className="size-4 text-zinc-400 shrink-0" />;
+  if (note.kind === "voice") return <Mic className="size-3.5 text-[var(--muted)] shrink-0" />;
+  if (note.kind === "image") return <ImageIcon className="size-3.5 text-[var(--muted)] shrink-0" />;
+  if (note.kind === "video") return <Video className="size-3.5 text-[var(--muted)] shrink-0" />;
+  return <FileIcon className="size-3.5 text-[var(--muted)] shrink-0" />;
 }
 
 function getDisplayName(note: Note) {
@@ -106,13 +106,13 @@ export default function TaskAttachmentsSection({
         visibility: "workspace",
         body: name,
         url: path,
-        mime: blob.type || "audio/webm",
+        mime: "audio/webm",
         size_bytes: blob.size,
         duration_ms: durationMs,
         pos: attachments.length,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Voice upload failed.");
+      setError(e instanceof Error ? e.message : "Upload failed.");
     } finally {
       setBusy(false);
     }
@@ -121,12 +121,13 @@ export default function TaskAttachmentsSection({
   const quotaPct = Math.min(100, Math.round((storageUsed / STORAGE_QUOTA_BYTES) * 100));
 
   return (
-    <div className="space-y-3">
-      {/* Upload Controls Bar */}
+    <div className="space-y-2.5">
+      {/* Action Controls */}
       <div className="flex flex-wrap items-center gap-2">
         <VoiceRecorder
           onRecorded={addVoice}
-          disabled={busy || storageUsed >= STORAGE_QUOTA_BYTES}
+          disabled={busy}
+          className="h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)] hover:border-[var(--line-strong)] text-[12px] px-3 cursor-pointer"
         />
         <input
           ref={fileRef}
@@ -145,31 +146,31 @@ export default function TaskAttachmentsSection({
           size="sm" 
           onClick={() => fileRef.current?.click()} 
           disabled={busy}
-          className="h-8 rounded-xl border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white text-[12.5px] cursor-pointer"
+          className="h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)] hover:border-[var(--line-strong)] text-[12px] cursor-pointer"
         >
           {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Paperclip className="size-3.5" />}
           Attach file / media
         </Button>
-        {error && <span className="text-[12px] text-rose-500 dark:text-rose-400">{error}</span>}
+        {error && <span className="text-[11.5px] text-rose-500">{error}</span>}
       </div>
 
-      {/* Uncollapsed Full Attachments List with Real-time Media Players & Previews */}
+      {/* Attachments List */}
       {attachments.length > 0 ? (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {attachments.map((a) => (
             <div
               key={a.id}
-              className="group rounded-2xl border border-zinc-200/90 dark:border-white/[0.08] bg-zinc-50/60 dark:bg-white/[0.02] p-3 transition-all hover:border-zinc-300 dark:hover:border-white/15"
+              className="group rounded-xl border border-[var(--line)] bg-[var(--bg)] p-2.5 transition-all hover:border-[var(--line-strong)]"
             >
-              {/* Attachment Header */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/50 dark:border-white/[0.04]">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[var(--line)]">
                 <div className="flex items-center gap-2 min-w-0">
                   {getAttachmentIcon(a)}
-                  <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                  <span className="text-[12.5px] font-medium text-[var(--ink)] truncate">
                     {getDisplayName(a)}
                   </span>
                   {a.size_bytes > 0 && (
-                    <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 shrink-0">
+                    <span className="text-[10.5px] font-mono text-[var(--muted)] shrink-0">
                       ({formatBytes(a.size_bytes)})
                     </span>
                   )}
@@ -178,27 +179,27 @@ export default function TaskAttachmentsSection({
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
                     title="Download file"
                     onClick={() => downloadAttachment(a)}
                   >
-                    <Download className="size-3.5" />
+                    <Download className="size-3" />
                   </button>
 
                   {a.created_by === currentUserId && (
                     <button
                       type="button"
-                      className="rounded-lg p-1.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                      className="rounded p-1 text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-all hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                       title="Remove attachment"
                       onClick={() => onDelete(a.id)}
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 className="size-3" />
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Full Uncollapsed Media Render */}
+              {/* Media Render */}
               <div className="pt-2">
                 <NoteMedia note={a} />
               </div>
@@ -206,20 +207,20 @@ export default function TaskAttachmentsSection({
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.06] p-3 text-center text-[12px] text-zinc-400 dark:text-zinc-500 italic">
+        <div className="rounded-lg border border-dashed border-[var(--line)] p-2.5 text-center text-[11.5px] text-[var(--muted)] italic">
           No files or recordings attached yet.
         </div>
       )}
 
       {/* Storage quota */}
-      <div className="flex items-center gap-2.5 pt-1">
-        <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-white/[0.06]">
+      <div className="flex items-center gap-2 pt-0.5">
+        <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-[var(--sunken)]">
           <span
-            className={`block h-full rounded-full ${quotaPct > 90 ? "bg-rose-500" : "bg-purple-600 dark:bg-purple-400"}`}
+            className="block h-full bg-[var(--ink)]"
             style={{ width: `${quotaPct}%` }}
           />
         </div>
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 tabular-nums font-mono">
+        <span className="text-[10px] text-[var(--muted)] tabular-nums font-mono">
           {formatBytes(storageUsed)} / {formatBytes(STORAGE_QUOTA_BYTES)}
         </span>
       </div>

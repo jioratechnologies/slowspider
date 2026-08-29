@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_theme.dart';
 import '../models/models.dart';
 import 'note_media.dart';
+import 'rendered_math_text.dart';
 
 /// Mirrors apps/mobile/src/components/NoteRow.tsx — one authored note (text/rich/code/
 /// link/table) or, via NoteMedia, one attachment.
@@ -108,9 +109,9 @@ class NoteRow extends StatelessWidget {
 
     if (note.kind == NoteKind.rich) {
       final plain = note.body.replaceAll(RegExp(r'<[^>]+>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-      return Text(plain, style: const TextStyle(color: AppColors.ink, fontSize: 14, height: 1.35));
+      return RenderedMathText(text: plain);
     }
 
-    return Text(note.body, style: const TextStyle(color: AppColors.ink, fontSize: 14, height: 1.35));
+    return RenderedMathText(text: note.body);
   }
 }

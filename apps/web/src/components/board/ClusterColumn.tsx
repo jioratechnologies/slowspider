@@ -14,7 +14,7 @@ import {
 import { exportClusterToLatex, downloadLatexFile } from "../research/LatexExporter";
 import type { Category, Cluster, Task, Note } from "@/lib/types";
 
-const VISIBLE_LIMIT = 4;
+const VISIBLE_LIMIT = 5;
 
 export default function ClusterColumn({
   cluster,
@@ -61,29 +61,30 @@ export default function ClusterColumn({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className="cluster group relative flex w-full flex-col rounded-2xl border border-zinc-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#16161a]/85 p-3 backdrop-blur-md shadow-xs dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] transition-all"
+      transition={{ duration: 0.2 }}
+      className="cluster group relative flex w-full flex-col rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3.5 shadow-xs transition-all"
       data-cluster={cluster.id}
     >
       {/* Cluster Header */}
       <div className="mb-3 flex flex-col gap-2">
-        <div className="flex items-center gap-2 px-0.5">
-          <span className="cluster-grip -ml-1 flex shrink-0 cursor-grab items-center rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-100 transition-colors active:cursor-grabbing" title="Drag to reorder clusters">
-            <GripVertical className="size-4" />
+        <div className="flex items-center gap-2">
+          <span
+            className="cluster-grip -ml-1 flex shrink-0 cursor-grab items-center p-1 text-[var(--ink3)] hover:text-[var(--ink)] transition-colors active:cursor-grabbing"
+            title="Drag to reorder clusters"
+          >
+            <GripVertical className="size-3.5" />
           </span>
-          
-          <span 
-            className="shrink-0 size-2.5 rounded-full" 
-            style={{ 
-              backgroundColor: cluster.color, 
-              boxShadow: `0 0 8px ${cluster.color}80` 
-            }} 
+
+          {/* Color Indicator */}
+          <span
+            className="shrink-0 size-2 rounded-full ring-1 ring-black/10 dark:ring-white/20"
+            style={{ backgroundColor: cluster.color }}
           />
-          
+
           <input
-            className="cluster-name min-w-0 flex-1 border-0 bg-transparent text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-colors"
+            className="cluster-name min-w-0 flex-1 border-0 bg-transparent text-[14.5px] font-medium tracking-tight text-[var(--ink)] outline-none placeholder:text-[var(--ink3)] transition-colors"
             defaultValue={cluster.name}
             placeholder="Cluster Name"
             spellCheck={false}
@@ -96,31 +97,32 @@ export default function ClusterColumn({
               if (e.key === "Enter") (e.target as HTMLInputElement).blur();
             }}
           />
-          
+
           {category && (
             <span
-              className="hidden shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap sm:inline-block"
-              style={{ color: category.color, borderColor: `${category.color}40`, backgroundColor: `${category.color}15` }}
+              className="hidden shrink-0 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-md border border-[var(--line)] text-[var(--muted)] bg-[var(--panel-2)] sm:inline-block"
             >
               {category.name}
             </span>
           )}
-          
-          <span className="shrink-0 rounded-full bg-zinc-100 dark:bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 font-mono">{openCount}</span>
-          
+
+          <span className="shrink-0 rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.5 text-[11px] font-mono text-[var(--muted)]">
+            {openCount}
+          </span>
+
           <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-100 outline-none transition-colors">
-              <MoreHorizontal className="size-4" />
+            <DropdownMenuTrigger className="rounded-md p-1 text-[var(--ink3)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] outline-none transition-colors">
+              <MoreHorizontal className="size-3.5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[220px] rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#16161a] p-1.5 shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl text-zinc-900 dark:text-zinc-200">
-              <DropdownMenuItem onClick={onEdit} className="rounded-xl px-2.5 py-2 text-[13px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer">
-                <Pencil className="size-4 mr-2 text-zinc-500 dark:text-zinc-400" /> Edit name, colour, category
+            <DropdownMenuContent align="end" className="min-w-[200px] border border-[var(--line)] bg-[var(--panel)] p-1 text-[var(--ink)] shadow-md">
+              <DropdownMenuItem onClick={onEdit} className="px-2.5 py-2 text-[13px] cursor-pointer">
+                <Pencil className="size-3.5 mr-2 text-[var(--muted)]" /> Edit details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMoveLeft} className="rounded-xl px-2.5 py-2 text-[13px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer">
-                <ArrowLeft className="size-4 mr-2 text-zinc-500 dark:text-zinc-400" /> Move left
+              <DropdownMenuItem onClick={onMoveLeft} className="px-2.5 py-2 text-[13px] cursor-pointer">
+                <ArrowLeft className="size-3.5 mr-2 text-[var(--muted)]" /> Move left
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMoveRight} className="rounded-xl px-2.5 py-2 text-[13px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer">
-                <ArrowRight className="size-4 mr-2 text-zinc-500 dark:text-zinc-400" /> Move right
+              <DropdownMenuItem onClick={onMoveRight} className="px-2.5 py-2 text-[13px] cursor-pointer">
+                <ArrowRight className="size-3.5 mr-2 text-[var(--muted)]" /> Move right
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -135,40 +137,39 @@ export default function ClusterColumn({
                   });
                   downloadLatexFile(tex, `Report_${cluster.name.replace(/\s+/g, "_")}`);
                 }}
-                className="rounded-xl px-2.5 py-2 text-[13px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer"
+                className="px-2.5 py-2 text-[13px] cursor-pointer"
               >
-                <FileText className="size-4 mr-2 text-purple-500" /> Export as LaTeX (.tex)
+                <FileText className="size-3.5 mr-2 text-[var(--muted)]" /> Export as LaTeX
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-100 dark:bg-white/[0.08] my-1" />
-              <DropdownMenuItem onClick={onCold} className="rounded-xl px-2.5 py-2 text-[13px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer">
-                <Snowflake className="size-4 mr-2 text-sky-500 dark:text-sky-400" /> Pause → Cold store
+              <DropdownMenuSeparator className="bg-[var(--line)] my-1" />
+              <DropdownMenuItem onClick={onCold} className="px-2.5 py-2 text-[13px] cursor-pointer">
+                <Snowflake className="size-3.5 mr-2 text-[var(--muted)]" /> Pause → Cold store
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBin} className="rounded-xl px-2.5 py-2 text-[13px] text-rose-500 hover:bg-rose-500/10 cursor-pointer">
-                <Trash2 className="size-4 mr-2" /> Move to bin
+              <DropdownMenuItem onClick={onBin} className="px-2.5 py-2 text-[13px] text-rose-500 hover:bg-rose-500/10 cursor-pointer">
+                <Trash2 className="size-3.5 mr-2" /> Move to bin
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {/* Minimal Progress Bar */}
-        <div className="flex items-center gap-2 px-1">
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/[0.06]">
+        <div className="flex items-center gap-2 px-0.5">
+          <div className="h-[2px] flex-1 rounded-full bg-[var(--sunken)] overflow-hidden">
             <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: cluster.color }}
+              className="h-full bg-[var(--ink)] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress.pct}%` }}
               transition={{ duration: 0.3 }}
             />
           </div>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono shrink-0">
+          <span className="text-[10px] text-[var(--muted)] font-mono shrink-0">
             {progress.pct}%
           </span>
         </div>
       </div>
-      
+
       {/* Task List */}
-      <div className="flex min-h-[30px] flex-col gap-1.5 transition-all">
+      <div className="flex min-h-[36px] flex-col gap-1.5 transition-all">
         {tasks.length ? (
           <>
             <AnimatePresence initial={false} mode="popLayout">
@@ -186,22 +187,22 @@ export default function ClusterColumn({
                 />
               ))}
             </AnimatePresence>
-            
-            {/* Show More / Show Less Toggle Button */}
+
+            {/* Show More / Show Less */}
             {hasMore && (
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 hover:bg-zinc-100 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] py-1.5 text-[11.5px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors"
+                className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line)] py-1.5 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] transition-colors"
               >
                 {expanded ? (
                   <>
-                    <ChevronUp className="size-3.5" />
+                    <ChevronUp className="size-3" />
                     <span>Show less</span>
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="size-3.5" />
+                    <ChevronDown className="size-3" />
                     <span>Show {tasks.length - VISIBLE_LIMIT} more</span>
                   </>
                 )}
@@ -209,7 +210,7 @@ export default function ClusterColumn({
             )}
           </>
         ) : (
-          <div className="flex h-20 items-center justify-center rounded-xl border border-dashed border-white/[0.08] bg-white/[0.01] text-[12px] text-zinc-500 italic transition-colors hover:border-white/[0.15]">
+          <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-[var(--line)] bg-[var(--bg)]/50 text-[12px] text-[var(--ink3)] italic">
             Drop tasks here
           </div>
         )}

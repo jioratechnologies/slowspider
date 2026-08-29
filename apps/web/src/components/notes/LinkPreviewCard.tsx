@@ -32,7 +32,6 @@ export default function LinkPreviewCard({
         if (live && json) setData(json);
       })
       .catch(() => {
-        // Fallback gracefully
         if (live) {
           try {
             const parsed = new URL(cleanUrl);
@@ -69,11 +68,11 @@ export default function LinkPreviewCard({
   const image = !imgError && data?.image ? data.image : null;
 
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/70 dark:bg-white/[0.02] overflow-hidden transition-all hover:border-zinc-300 dark:hover:border-white/15">
+    <div className="rounded-lg border border-[var(--line)] bg-[var(--panel-2)]/60 overflow-hidden transition-all text-[var(--ink)]">
       {/* Header bar */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-100 dark:border-white/[0.04] bg-white/50 dark:bg-white/[0.01]">
-        <div className="flex items-center gap-1.5 min-w-0 text-[11.5px] text-zinc-500 dark:text-zinc-400 font-mono">
-          <Globe className="size-3.5 shrink-0 text-sky-500" />
+      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-[var(--line)] bg-[var(--panel)]">
+        <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-[var(--muted)] font-mono">
+          <Globe className="size-3 shrink-0 text-[var(--muted)]" />
           <span className="truncate">{domain}</span>
         </div>
 
@@ -82,7 +81,7 @@ export default function LinkPreviewCard({
             <button
               type="button"
               onClick={() => setShowPreview((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
               title={showPreview ? "Hide preview" : "Show preview"}
             >
               {showPreview ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
@@ -94,7 +93,7 @@ export default function LinkPreviewCard({
             href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition-colors"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-mono text-[var(--ink)] hover:underline transition-colors"
             title="Open in new tab"
           >
             <ExternalLink className="size-3" />
@@ -106,35 +105,35 @@ export default function LinkPreviewCard({
       {/* Preview Body */}
       {showPreview ? (
         <a
-          href={url}
+          href={cleanUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col sm:flex-row gap-3 p-3 transition-colors hover:bg-zinc-100/50 dark:hover:bg-white/[0.02] group block"
+          className="flex flex-col sm:flex-row gap-2.5 p-2.5 transition-colors hover:bg-[var(--accent-soft)] group block"
         >
           {image && (
-            <div className="relative w-full sm:w-28 sm:h-20 shrink-0 rounded-lg overflow-hidden bg-zinc-100 dark:bg-black/40 border border-zinc-200/60 dark:border-white/[0.06]">
+            <div className="relative w-full sm:w-20 sm:h-16 shrink-0 rounded overflow-hidden bg-[var(--sunken)] border border-[var(--line)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
                 alt={title}
                 onError={() => setImgError(true)}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                className="w-full h-full object-cover grayscale contrast-125"
               />
             </div>
           )}
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             {loading && !data ? (
-              <div className="flex items-center gap-2 text-[12px] text-zinc-400">
+              <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
                 <Loader2 className="size-3 animate-spin" /> Loading preview...
               </div>
             ) : (
               <>
-                <h4 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-2 leading-snug">
+                <h4 className="text-[12.5px] font-medium text-[var(--ink)] group-hover:underline transition-colors line-clamp-1 leading-snug">
                   {title}
                 </h4>
                 {description ? (
-                  <p className="mt-1 text-[11.5px] text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                  <p className="mt-0.5 text-[11px] text-[var(--muted)] line-clamp-2 leading-relaxed">
                     {description}
                   </p>
                 ) : null}
@@ -143,15 +142,15 @@ export default function LinkPreviewCard({
           </div>
         </a>
       ) : (
-        <div className="px-3 py-2 text-[12.5px]">
+        <div className="px-2.5 py-1.5 text-[11.5px]">
           <a
-            href={url}
+            href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sky-600 dark:text-sky-400 hover:underline break-all inline-flex items-center gap-1.5"
+            className="text-[var(--ink)] hover:underline break-all inline-flex items-center gap-1 font-mono"
           >
-            <span>{title || url}</span>
-            <ExternalLink className="size-3 shrink-0" />
+            <span>{title || cleanUrl}</span>
+            <ExternalLink className="size-2.5 shrink-0 opacity-70" />
           </a>
         </div>
       )}

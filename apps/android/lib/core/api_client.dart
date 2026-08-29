@@ -22,18 +22,50 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  /// Kong's local dev proxy port by default. Override with --dart-define=API_BASE_URL=...
-  static const String base = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000');
+  static void Function()? onUnauthorized;
+
+  static String _customBase = '';
+
+  /// Kong's local dev proxy port by default. Override with --dart-define=API_BASE_URL=... or customBase.
+  static String get base {
+    if (_customBase.isNotEmpty) return _customBase;
+    return const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000');
+  }
+
+  static void setCustomBase(String? url) {
+    if (url == null || url.trim().isEmpty) {
+      _customBase = '';
+    } else {
+      var u = url.trim();
+      if (u.endsWith('/')) u = u.substring(0, u.length - 1);
+      _customBase = u;
+    }
+  }
+
+  static Future<bool> testConnection(String url) async {
+    try {
+      var u = url.trim();
+      if (u.endsWith('/')) u = u.substring(0, u.length - 1);
+      final res = await http.get(Uri.parse('$u/v1/auth/session')).timeout(const Duration(seconds: 4));
+      return res.statusCode >= 200 && res.statusCode < 500;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _refreshing = false;
 
   Future<T> _request<T>(
     String path, {
     String method = 'GET',
     Map<String, dynamic>? body,
     bool auth = true,
+    bool retryAfterRefresh = true,
   }) async {
     final headers = <String, String>{'content-type': 'application/json'};
     if (auth) {
-      final session = SessionStorage.instance.current;
+      var session = SessionStorage.instance.current;
+      session ??= await SessionStorage.instance.load();
       if (session == null) throw ApiException('Not signed in.');
       headers['authorization'] = 'Bearer ${session.accessToken}';
       if (session.workspaceId != null) headers['x-workspace-id'] = session.workspaceId.toString();
@@ -62,6 +94,38 @@ class ApiClient {
       json = null;
     }
 
+    final err = (json?['error'] as String?)?.toLowerCase();
+    final isUnauthorized = res.statusCode == 401 || err?.contains('expired') == true || err?.contains('invalid token') == true;
+
+    if (isUnauthorized && auth && retryAfterRefresh && !_refreshing) {
+      final session = SessionStorage.instance.current;
+      if (session?.refreshToken != null && session!.refreshToken!.isNotEmpty) {
+        _refreshing = true;
+        try {
+          final refreshRes = await refreshSession(session.refreshToken!);
+          final newAccessToken = refreshRes['token'] as String;
+          final newRefreshToken = refreshRes['refreshToken'] as String?;
+          final userMap = refreshRes['user'] as Map<String, dynamic>?;
+          final updatedSession = session.copyWith(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+            userId: userMap?['id'] as String? ?? session.userId,
+            email: userMap?['email'] as String? ?? session.email,
+          );
+          await SessionStorage.instance.save(updatedSession);
+          _refreshing = false;
+          return await _request<T>(path, method: method, body: body, auth: auth, retryAfterRefresh: false);
+        } catch (_) {
+          _refreshing = false;
+          onUnauthorized?.call();
+        }
+      } else {
+        onUnauthorized?.call();
+      }
+    } else if (isUnauthorized && !retryAfterRefresh) {
+      onUnauthorized?.call();
+    }
+
     if (res.statusCode < 200 || res.statusCode >= 300 || json?['ok'] != true) {
       throw ApiException((json?['error'] as String?) ?? 'Request failed (${res.statusCode}).');
     }
@@ -69,6 +133,14 @@ class ApiClient {
   }
 
   // ---- Auth (POST /v1/auth/**, all public) ----
+
+  Future<Map<String, dynamic>> refreshSession(String refreshToken) => _request<Map<String, dynamic>>(
+        '/v1/auth/refresh',
+        method: 'POST',
+        body: {'refreshToken': refreshToken},
+        auth: false,
+        retryAfterRefresh: false,
+      );
 
   Future<Map<String, dynamic>> login(String email, String password) => _request<Map<String, dynamic>>(
         '/v1/auth/login',

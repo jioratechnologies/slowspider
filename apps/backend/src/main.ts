@@ -22,8 +22,8 @@ async function bootstrap() {
   app.get(RealtimeGateway).attach(app.getHttpServer());
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3001;
-  await app.listen(port);
+  await app.listen(port, "0.0.0.0");
   // eslint-disable-next-line no-console
-  console.log(`backend listening on http://localhost:${port}`);
+  console.log(`backend listening on http://0.0.0.0:${port} (LAN: http://192.168.1.5:${port})`);
 }
 bootstrap();

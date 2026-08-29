@@ -1,0 +1,492 @@
+<title>Slow Spider Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --paper:#FFFFFF;
+    --surface-2:#F4F5F8;
+    --ink:#1B2333;
+    --muted:#5B6472;
+    --border:#E1E4EA;
+    --navy:#122A4E;
+    --navy-deep:#0B1C36;
+    --navy-tint:#EDF1F7;
+    --gold:#B98A2E;
+    --gold-bright:#D9A93F;
+    --gold-soft:#F7EDD8;
+    --head-bg:#0F2648;
+    --head-fg:#F4E9D2;
+    --shadow: 0 1px 2px rgba(15,20,30,0.05), 0 8px 22px rgba(15,20,30,0.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10131A; --paper:#161A23; --surface-2:#1C212C; --ink:#E9ECF3; --muted:#9BA3B4;
+      --border:#2B3140; --navy:#7FA0D6; --navy-deep:#0B1C36; --navy-tint:#1B2536;
+      --gold:#E0B75C; --gold-bright:#EFC968; --gold-soft:#2B2416;
+      --head-bg:#0B1C36; --head-fg:#EFC968;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10131A; --paper:#161A23; --surface-2:#1C212C; --ink:#E9ECF3; --muted:#9BA3B4;
+    --border:#2B3140; --navy:#7FA0D6; --navy-deep:#0B1C36; --navy-tint:#1B2536;
+    --gold:#E0B75C; --gold-bright:#EFC968; --gold-soft:#2B2416;
+    --head-bg:#0B1C36; --head-fg:#EFC968;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif; font-size:15.5px; line-height:1.62; }
+  h1,h2,h3,h4{ font-family:"Libre Franklin", ui-sans-serif, system-ui, sans-serif; color:var(--ink); text-wrap:balance; margin:0; }
+  ::selection{ background:var(--gold-soft); }
+  a{ color:var(--navy); }
+  .mono, td.num{ font-variant-numeric: tabular-nums; }
+
+  .page{ max-width:900px; margin:0 auto; background:var(--paper); }
+
+  /* ---- Letterhead ---- */
+  .letterhead{ background:var(--head-bg); color:var(--head-fg); padding:1.3rem clamp(1.25rem,5vw,3rem); display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; border-bottom:3px solid var(--gold); }
+  .brandmark{ display:flex; align-items:center; gap:.7rem; }
+  .brandmark svg{ flex:none; }
+  .brandmark .word{ font-family:"Libre Franklin"; font-weight:800; letter-spacing:.04em; font-size:1.25rem; color:var(--head-fg); }
+  .brandmark .word small{ display:block; font-family:"Public Sans"; font-weight:500; font-size:.62rem; letter-spacing:.22em; color:var(--gold-bright); margin-top:.1rem; }
+  .co-addr{ text-align:right; font-size:.78rem; line-height:1.55; color:#CBD4E3; }
+  .co-addr strong{ color:var(--head-fg); }
+
+  main{ padding:clamp(1.5rem,5vw,3rem) clamp(1.25rem,5vw,3rem) 4rem; }
+
+  .titleblock{ margin-bottom:2rem; }
+  .titleblock .date{ font-size:.82rem; color:var(--muted); margin-bottom:1.2rem; }
+  .titleblock h1{ font-size:clamp(1.5rem,3.4vw,2.05rem); line-height:1.22; max-width:32ch; }
+  .titleblock .sub{ font-family:"Libre Franklin"; font-weight:600; font-size:1.05rem; color:var(--gold); margin-top:.35rem; letter-spacing:.01em; }
+  .titleblock .intro{ margin-top:1rem; max-width:68ch; color:var(--muted); }
+
+  section{ margin-top:2.6rem; scroll-margin-top:1rem; }
+  h2.sect{ font-size:1.18rem; font-weight:700; padding-bottom:.5rem; border-bottom:2px solid var(--navy); margin-bottom:1.1rem; display:flex; align-items:baseline; gap:.55rem; }
+  h2.sect .num{ color:var(--gold); font-weight:800; }
+  h3{ font-size:1rem; font-weight:700; margin-top:1.4rem; margin-bottom:.55rem; }
+
+  p{ max-width:70ch; margin:.7rem 0; }
+  ul, ol.terms{ max-width:70ch; padding-left:1.25rem; margin:.7rem 0; }
+  li{ margin:.3rem 0; }
+  ol.terms{ padding-left:1.1rem; }
+  ol.terms li{ margin:.55rem 0; }
+  strong{ font-weight:700; }
+
+  /* ---- Tables ---- */
+  .tablewrap{ overflow-x:auto; border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow); margin:.9rem 0 1.6rem; }
+  table{ border-collapse:collapse; width:100%; min-width:520px; background:var(--paper); font-size:.87rem; }
+  thead th{ text-align:left; font-family:"Libre Franklin"; font-weight:700; font-size:.78rem; letter-spacing:.02em; color:var(--navy-deep); background:linear-gradient(180deg,var(--gold-bright),var(--gold)); padding:.6rem .85rem; white-space:nowrap; }
+  tbody td{ padding:.58rem .85rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(even){ background:var(--surface-2); }
+  td.right{ text-align:right; }
+  td.center{ text-align:center; }
+  tfoot td{ padding:.65rem .85rem; font-weight:700; background:var(--navy-tint); border-top:2px solid var(--navy); }
+  td.id{ color:var(--navy); font-weight:600; white-space:nowrap; font-size:.82rem; }
+  .prio{ display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.03em; padding:.14rem .5rem; border-radius:999px; white-space:nowrap; }
+  .prio.must{ color:#7A2E22; background:#F6DDD6; }
+  .prio.should{ color:#7A5A12; background:#F6EAC8; }
+  .prio.could{ color:#28506B; background:#DCE9F2; }
+  :root[data-theme="dark"] .prio.must{ color:#F0B3A4; background:#3A231E; }
+  :root[data-theme="dark"] .prio.should{ color:#EAD08A; background:#3A2E13; }
+  :root[data-theme="dark"] .prio.could{ color:#A9CBE4; background:#1C2B36; }
+
+  /* ---- Diagram ---- */
+  .diagram{ background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:1.3rem; box-shadow:var(--shadow); margin:1rem 0 1.6rem; overflow-x:auto; }
+  .diagram svg{ display:block; margin:0 auto; min-width:640px; }
+  .diagram text{ font-family:"Public Sans", sans-serif; fill:var(--ink); }
+  .diagram .lbl{ font-size:11px; fill:var(--muted); }
+  .diagram rect.box{ fill:var(--paper); stroke:var(--border); stroke-width:1; }
+  .diagram rect.navybox{ fill:var(--navy-tint); stroke:var(--navy); stroke-width:1.3; }
+  .diagram .edge{ stroke:var(--muted); stroke-width:1.2; fill:none; marker-end:url(#arrowp); }
+  .diagram .dashed{ stroke-dasharray:4 3; }
+
+  /* ---- Cards for scope / stack ---- */
+  .cardgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:.8rem; margin:1rem 0 1.6rem; }
+  .card{ background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:.9rem 1rem; box-shadow:var(--shadow); }
+  .card h4{ font-size:.88rem; color:var(--navy); margin-bottom:.3rem; }
+  .card p{ margin:0; font-size:.85rem; color:var(--muted); max-width:none; }
+
+  .scope-cols{ display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin:1rem 0 1.6rem; }
+  .scope-cols .col{ background:var(--paper); border:1px solid var(--border); border-radius:8px; padding:1rem 1.1rem; box-shadow:var(--shadow); }
+  .scope-cols h4{ font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; }
+  .scope-cols .in h4{ color:#1F6B44; }
+  .scope-cols .out h4{ color:#8A4A1E; }
+  .scope-cols ul{ margin:0; padding-left:1.1rem; }
+  .scope-cols li{ font-size:.87rem; }
+  @media (max-width: 700px){ .scope-cols{ grid-template-columns:1fr; } }
+
+  .callout{ background:var(--navy-tint); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:6px; padding:.85rem 1.05rem; margin:1rem 0; max-width:70ch; }
+  .callout p{ margin:.25rem 0; }
+  .callout .label{ font-family:"Libre Franklin"; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); display:block; margin-bottom:.3rem; font-weight:700; }
+
+  .divider{ height:1px; background:var(--border); margin:2.6rem 0; }
+
+  footer{ margin-top:3.5rem; padding:1.4rem clamp(1.25rem,5vw,3rem); border-top:1px solid var(--border); color:var(--muted); font-size:.78rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; background:var(--surface-2); }
+
+  .sig{ display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:1.4rem; max-width:640px; }
+  .sig .box{ border-top:1px solid var(--ink); padding-top:.5rem; font-size:.82rem; color:var(--muted); }
+</style>
+
+<div class="page">
+  <div class="letterhead">
+    <div class="brandmark">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="var(--gold-bright)" stroke-width="1.4"/>
+        <text x="20" y="27" text-anchor="middle" font-family="Libre Franklin" font-weight="800" font-size="18" fill="var(--head-fg)">J</text>
+        <text x="20" y="27" text-anchor="middle" font-family="Libre Franklin" font-weight="800" font-size="18" fill="var(--gold-bright)" dx="9">T</text>
+      </svg>
+      <span class="word">JIORA<small>TECHNOLOGIES</small></span>
+    </div>
+    <div class="co-addr">
+      <strong>Jiora Technologies</strong><br>
+      H 63, Shastri Nager, Meerut, U. P., India<br>
+      Mobile: +91 96342 32989 &nbsp;·&nbsp; Email: info@jioratech.com<br>
+      Registration Number: UDYAM-UP-56-0170467
+    </div>
+  </div>
+
+  <main>
+    <div class="titleblock">
+      <div class="date">Date: 23 August 2026</div>
+      <h1>SLOW SPIDER — Workspace, Task &amp; Note Collaboration Platform</h1>
+      <div class="sub">Commercial &amp; Technical Proposal</div>
+      <p class="intro">This proposal covers design, development, deployment, user training, technical documentation, and post-implementation warranty support for Slow Spider — a multi-platform workspace organizer with live collaboration across web and Android clients.</p>
+    </div>
+
+    <section id="perspective">
+      <h2 class="sect"><span class="num">1.</span> Product Perspective</h2>
+      <p>Slow Spider is a workspace-based productivity platform: teams organize work as Categories, Clusters, and Tasks on a shared board, attach rich Notes to any item, and see each other's changes live. It is delivered as three coordinated surfaces — a web application, an Android application, and a backend API — all speaking to one shared source of truth, so a change made on one device is reflected on every other device without a manual refresh.</p>
+      <p>The platform is architected client-agnostic from day one: every client talks to a single API gateway over REST and WebSocket, never to the database or messaging layer directly. This keeps the system open to future clients — an iOS app, a browser extension, a desktop app — as additional consumers of the same gateway, with no backend rework.</p>
+    </section>
+
+    <section id="scope">
+      <h2 class="sect"><span class="num">2.</span> Scope of Work</h2>
+      <div class="scope-cols">
+        <div class="col in">
+          <h4>In Scope</h4>
+          <ul>
+            <li>Web application (responsive, desktop &amp; mobile browser)</li>
+            <li>Android application (Flutter)</li>
+            <li>Backend API, gateway, and realtime infrastructure</li>
+            <li>Authentication, workspaces, and role-based membership</li>
+            <li>Board, task, cluster, and milestone management</li>
+            <li>Notes subsystem with typed attachments and storage quota</li>
+            <li>Live multi-device sync and concurrent note co-editing</li>
+            <li>Calendar view with Google Calendar event linking</li>
+            <li>Deployment, UAT, training, and documentation</li>
+          </ul>
+        </div>
+        <div class="col out">
+          <h4>Out of Scope (available via Change Request)</h4>
+          <ul>
+            <li>iOS application</li>
+            <li>Offline-first mobile data (local mirror + mutation queue)</li>
+            <li>Two-way OAuth sync with Google/Outlook Calendar</li>
+            <li>Live cursor / presence indicators during co-editing</li>
+            <li>Third-party integrations not listed above (Slack, email digest, SSO/SAML)</li>
+            <li>Infrastructure procurement — cloud accounts, domain, SSL (client-owned, see Section 8)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2 class="sect"><span class="num">3.</span> System Architecture</h2>
+      <p>All client traffic — REST requests and the live-update connection alike — passes through a single API gateway. The backend is the only component that ever talks to the database, cache, or event bus; no client connects to them directly.</p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 900 340" width="100%" height="340" role="img" aria-label="Architecture diagram: web and Android clients call the API gateway, which routes to the backend service; the backend is the sole caller of Postgres, Redis, and the realtime event bus.">
+          <defs>
+            <marker id="arrowp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color:var(--muted)"/>
+            </marker>
+          </defs>
+
+          <rect class="box" x="30" y="30" width="150" height="52" rx="7"/>
+          <text x="105" y="52" text-anchor="middle" font-size="13" font-weight="700">Web App</text>
+          <text x="105" y="70" text-anchor="middle" class="lbl">Next.js · SSR + UI</text>
+
+          <rect class="box" x="30" y="150" width="150" height="52" rx="7"/>
+          <text x="105" y="172" text-anchor="middle" font-size="13" font-weight="700">Android App</text>
+          <text x="105" y="190" text-anchor="middle" class="lbl">Flutter</text>
+
+          <path class="edge" d="M180,56 C 260,56 260,120 330,140"/>
+          <path class="edge" d="M180,176 C 260,176 260,150 330,145"/>
+
+          <rect class="navybox" x="330" y="110" width="150" height="60" rx="8"/>
+          <text x="405" y="135" text-anchor="middle" font-size="13" font-weight="800">API Gateway</text>
+          <text x="405" y="152" text-anchor="middle" class="lbl">routing · rate limit</text>
+          <text x="405" y="165" text-anchor="middle" class="lbl">CORS · auth pass-through</text>
+
+          <path class="edge" d="M480,140 L 580,140"/>
+
+          <rect class="navybox" x="580" y="105" width="170" height="70" rx="8"/>
+          <text x="665" y="132" text-anchor="middle" font-size="13" font-weight="800">Backend Service</text>
+          <text x="665" y="149" text-anchor="middle" class="lbl">business logic + auth</text>
+          <text x="665" y="164" text-anchor="middle" class="lbl">sole caller of infra below</text>
+
+          <path class="edge" d="M665,175 L 665,230"/>
+          <path class="edge" d="M645,175 C 500,230 350,250 190,260"/>
+          <path class="edge" d="M685,175 C 780,230 800,250 800,260"/>
+
+          <rect class="box" x="120" y="260" width="140" height="50" rx="7"/>
+          <text x="190" y="281" text-anchor="middle" font-size="12" font-weight="700">PostgreSQL</text>
+          <text x="190" y="297" text-anchor="middle" class="lbl">managed database</text>
+
+          <rect class="box" x="595" y="260" width="140" height="50" rx="7"/>
+          <text x="665" y="281" text-anchor="middle" font-size="12" font-weight="700">Event Bus</text>
+          <text x="665" y="297" text-anchor="middle" class="lbl">internal only</text>
+
+          <rect class="box" x="740" y="260" width="130" height="50" rx="7"/>
+          <text x="805" y="281" text-anchor="middle" font-size="12" font-weight="700">Redis / Storage</text>
+          <text x="805" y="297" text-anchor="middle" class="lbl">cache + object store</text>
+
+          <path class="edge dashed" d="M180,70 C 260,90 260,90 330,125"/>
+          <text x="250" y="95" text-anchor="middle" class="lbl">live-sync connection (WS)</text>
+        </svg>
+      </div>
+
+      <ul>
+        <li><strong>API Gateway</strong> — single entry point for every client, REST and WebSocket alike; declarative configuration, centralized rate limiting and CORS.</li>
+        <li><strong>Backend Service</strong> — owns all business logic and is the only component with credentials to the database, cache, storage, and event bus. Terminates each client's live-update connection and relays events through, rather than exposing internal infrastructure directly.</li>
+        <li><strong>Event Bus</strong> — internal publish/subscribe backbone for live sync (task, cluster, note, workspace changes), with durable delivery so a briefly-disconnected client catches up instead of missing updates.</li>
+        <li><strong>Shared contracts</strong> — request/response shapes defined once and consumed by both backend and web, so the two never drift apart.</li>
+      </ul>
+    </section>
+
+    <section id="technical">
+      <h2 class="sect"><span class="num">4.</span> Technical Requirements</h2>
+      <div class="cardgrid">
+        <div class="card"><h4>Web Client</h4><p>Next.js (React), server-rendered UI, calls the backend exclusively through the gateway.</p></div>
+        <div class="card"><h4>Android Client</h4><p>Flutter (Dart), single codebase, Material-based UI, live-sync client built in.</p></div>
+        <div class="card"><h4>Backend Service</h4><p>Node.js (NestJS), REST + WebSocket, containerized.</p></div>
+        <div class="card"><h4>API Gateway</h4><p>Declarative, DB-less gateway in front of the backend — routing, rate limiting, CORS.</p></div>
+        <div class="card"><h4>Database</h4><p>PostgreSQL (managed), relational schema for workspaces, boards, tasks, notes.</p></div>
+        <div class="card"><h4>Cache</h4><p>Managed Redis — session/rate-limit and short-lived state.</p></div>
+        <div class="card"><h4>Event Bus</h4><p>Internal pub/sub with durable (replayable) delivery for realtime sync.</p></div>
+        <div class="card"><h4>Object Storage</h4><p>S3-compatible storage for note attachments (images, video, voice, files), quota-enforced per user.</p></div>
+        <div class="card"><h4>Authentication</h4><p>Bearer-token session auth, verified on every request; workspace-membership checked per resource.</p></div>
+        <div class="card"><h4>Containerization</h4><p>Docker Compose for backend, gateway, and event bus — one deploy artifact per environment.</p></div>
+        <div class="card"><h4>Concurrent Editing</h4><p>Conflict-free merge (CRDT) for simultaneously edited note text.</p></div>
+        <div class="card"><h4>Environments</h4><p>Separate staging and production configurations, gateway routes identical across both.</p></div>
+      </div>
+    </section>
+
+    <section id="functional">
+      <h2 class="sect"><span class="num">5.</span> Functional Requirements</h2>
+
+      <h3>5.1 Authentication &amp; Workspaces</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="id">FR-AUTH-1</td><td>A user shall create an account and sign in with email and password.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-AUTH-2</td><td>A user shall be able to reset a forgotten password by email.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-WS-1</td><td>A user shall create a workspace and become its owner.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-WS-2</td><td>A workspace owner shall invite other users into the workspace.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-WS-3</td><td>A user shall belong to, and switch between, multiple workspaces.</td><td><span class="prio should">Should</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>5.2 Board Organization</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="id">FR-BRD-1</td><td>Work shall be organized as Category &gt; Cluster &gt; Task, shown on a shared board view.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-BRD-2</td><td>A task shall support one or more milestones.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-BRD-3</td><td>A task or cluster shall be markable as high priority (starred), sorting above others.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-BRD-4</td><td>Tasks and clusters shall be archivable to a cold-storage / bin area via drag-and-drop.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-BRD-5</td><td>A cluster left unused for a configurable idle period shall automatically move to cold storage.</td><td><span class="prio could">Could</span></td></tr>
+          <tr><td class="id">FR-BRD-6</td><td>Restoring a cold cluster shall temporarily boost its priority, decaying if it goes idle again.</td><td><span class="prio could">Could</span></td></tr>
+          <tr><td class="id">FR-BRD-7</td><td>Clusters and tasks shall support an automatic sort mode (usage + priority weighted), toggleable against manual ordering.</td><td><span class="prio should">Should</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>5.3 Notes &amp; Attachments</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="id">FR-NOTE-1</td><td>A note shall attach to exactly one task or one cluster.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-NOTE-2</td><td>Notes shall support text, rich text, code, link (with preview), image, video, voice, and table content.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-NOTE-3</td><td>A note shall be markable private (author-only) or workspace-visible, enforced independent of parent-item sharing.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-NOTE-4</td><td>Concurrent edits to the same note body by two users shall merge automatically without overwriting either edit.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-NOTE-5</td><td>Voice notes shall be recordable directly within the app.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-NOTE-6</td><td>Per-user attachment storage shall be capped at a configurable quota, enforced at upload time with usage visible to the user.</td><td><span class="prio must">Must</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>5.4 Calendar &amp; Search</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="id">FR-CAL-1</td><td>Tasks carrying a deadline date and time shall appear on a calendar view.</td><td><span class="prio should">Should</span></td></tr>
+          <tr><td class="id">FR-CAL-2</td><td>A task with a deadline shall offer a one-click add-to-Google-Calendar link.</td><td><span class="prio could">Could</span></td></tr>
+          <tr><td class="id">FR-SRCH-1</td><td>Users shall be able to search across tasks and notes from a dedicated search view.</td><td><span class="prio should">Should</span></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>5.5 Realtime Sync</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="id">FR-SYNC-1</td><td>A change made by one workspace member shall appear live for other members with an open session, on both web and Android, without manual refresh.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-SYNC-2</td><td>A client shall only receive realtime events for workspaces it is a current, authenticated member of.</td><td><span class="prio must">Must</span></td></tr>
+          <tr><td class="id">FR-SYNC-3</td><td>The Android client shall reconnect automatically with backoff on connection loss.</td><td><span class="prio should">Should</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="cost">
+      <h2 class="sect"><span class="num">6.</span> Total Project Development Cost</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Particular</th><th>Amount (INR)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Software Development Cost (One-Time)</strong></td><td><strong>₹14,50,000</strong></td></tr>
+          <tr><td>Project Duration</td><td>22 Weeks (approx.)</td></tr>
+          <tr><td>Warranty</td><td>3 Months</td></tr>
+          <tr><td>Software Deployment</td><td>Included</td></tr>
+          <tr><td>User Training</td><td>Included</td></tr>
+          <tr><td>Technical Documentation</td><td>Included</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="infra">
+      <h2 class="sect"><span class="num">7.</span> Infrastructure Cost Matrix <em style="font-style:italic; font-weight:400; font-size:.8em; color:var(--muted);">(To be procured by Client)</em></h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Category</th><th>Estimated Annual Cost (INR) *</th></tr></thead>
+        <tbody>
+          <tr><td>Cloud Hosting — Backend, Gateway &amp; Event Bus (Production &amp; Staging)</td><td>₹90,000</td></tr>
+          <tr><td>Managed Database (PostgreSQL)</td><td>₹60,000</td></tr>
+          <tr><td>Managed Cache (Redis)</td><td>₹15,000</td></tr>
+          <tr><td>Domain &amp; SSL Certificate</td><td>₹8,000</td></tr>
+          <tr><td>Object Storage &amp; Backup</td><td>₹25,000</td></tr>
+          <tr><td>Email Service (transactional)</td><td>₹12,000</td></tr>
+          <tr><td>Push Notification Service</td><td>Included</td></tr>
+          <tr><td>Firewall &amp; Security Services</td><td>₹25,000</td></tr>
+          <tr><td>Monitoring &amp; Logging Services</td><td>Included</td></tr>
+          <tr><td>Play Store Registration (Android)</td><td>$25 USD (One Time) ≈ ₹2,200 *</td></tr>
+          <tr><td>SMS / OTP Gateway</td><td>Estimate ₹1,000/mo for 5k alerts</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:.8rem; color:var(--muted); font-style:italic;">* Infrastructure costs are indicative and may vary based on deployment requirements and provider selected.</p>
+    </section>
+
+    <section id="maintenance">
+      <h2 class="sect"><span class="num">8.</span> Maintenance &amp; Support</h2>
+      <ol class="terms">
+        <li>The project includes 3 months of complimentary warranty support from the date of Go-Live. After the warranty period, the Client may opt for an Annual Maintenance Contract (AMC).</li>
+        <li>The annual AMC fee is <strong>₹2,17,500</strong>, which includes bug fixes, security updates, database maintenance, performance optimization, technical support, remote support, and minor enhancements.</li>
+        <li>Any additional functionality or scope beyond the approved Software Requirements Specification (SRS) shall be handled through a formal Change Request (CR) process; training sessions for additional client-designated users may involve extra cost and time.</li>
+        <li>Major new modules or significant changes to project scope shall be estimated and charged separately through the Change Request (CR) process.</li>
+        <li>AMC charges for subsequent renewal periods shall be applicable based on mutual agreement and the prevailing policies of Jiora Technologies at the time of renewal.</li>
+      </ol>
+    </section>
+
+    <section id="exec-summary">
+      <h2 class="sect"><span class="num">9.</span> Executive Cost Summary</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Particular</th><th>Cost (INR)</th></tr></thead>
+        <tbody>
+          <tr><td>Software Development (One-Time)</td><td>₹14,50,000</td></tr>
+          <tr><td>Annual Infrastructure Cost (Approx.)</td><td>₹2,35,000</td></tr>
+          <tr><td>Recommended AMC (Annual)</td><td>₹2,17,500</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="modules">
+      <h2 class="sect"><span class="num">10.</span> Development by Modules</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Module</th><th>Release Name</th><th>Approx. Timeline</th><th>Core Modules / Features Included</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Module 1</strong></td>
+            <td>Platform Foundation &amp; Workspace Setup</td>
+            <td>Weeks 1–5</td>
+            <td>Authentication, Workspace &amp; Role Management, API Gateway Setup, Web + Android App Shell, Dashboard Foundation.</td>
+          </tr>
+          <tr>
+            <td><strong>Module 2</strong></td>
+            <td>Board &amp; Task Management</td>
+            <td>Weeks 6–11</td>
+            <td>Category / Cluster / Task / Milestone Hierarchy, Star &amp; Priority, Cold Storage &amp; Bin Management, Smart/Manual Sort, Calendar View with Google Calendar Linking.</td>
+          </tr>
+          <tr>
+            <td><strong>Module 3</strong></td>
+            <td>Notes, Attachments &amp; Realtime Collaboration</td>
+            <td>Weeks 12–17</td>
+            <td>Multi-Type Notes (Text, Rich, Code, Link, Image, Video, Voice, Table), Private/Workspace Visibility, Storage Quota, Live Multi-Device Sync, Concurrent Note Co-Editing.</td>
+          </tr>
+          <tr>
+            <td><strong>Module 4</strong></td>
+            <td>Mobile App, Search, Reporting &amp; Go-Live</td>
+            <td>Weeks 18–22</td>
+            <td>Android Application (Full Parity), Quick Search, Reports &amp; Analytics, System Testing, User Acceptance Testing (UAT), Deployment, User Training, Technical Documentation, Production Go-Live.</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="payment">
+      <h2 class="sect"><span class="num">11.</span> Development Cost &amp; Milestone-Based Payment Schedule</h2>
+      <p>Payments shall be released per the schedule below. An advance payment is required before project commencement, with remaining payments linked to the successful completion and approval of each development milestone.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Payment Stage</th><th>Deliverable</th><th>Payment Trigger</th><th>Amount (INR)</th></tr></thead>
+        <tbody>
+          <tr><td>Advance Payment</td><td>Proposal Acceptance, Project Kick-off, Resource Allocation &amp; Project Initiation</td><td>20%</td><td>₹2,90,000</td></tr>
+          <tr><td>Completion of Module 1</td><td>Platform Foundation &amp; Workspace Setup</td><td>25%</td><td>₹3,62,500</td></tr>
+          <tr><td>Completion of Module 2</td><td>Board &amp; Task Management</td><td>25%</td><td>₹3,62,500</td></tr>
+          <tr><td>Completion of Module 3</td><td>Notes, Attachments &amp; Realtime Collaboration</td><td>15%</td><td>₹2,17,500</td></tr>
+          <tr><td>Completion of Module 4</td><td>Mobile App, Reporting &amp; Go-Live, Production Deployment, User Training &amp; Project Handover</td><td>15%</td><td>₹2,17,500</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td>Total</td><td>Complete Slow Spider Platform</td><td>100%</td><td>₹14,50,000</td></tr>
+        </tfoot>
+      </table></div>
+    </section>
+
+    <section id="payterms">
+      <h2 class="sect"><span class="num">12.</span> Payment Terms</h2>
+      <ul>
+        <li>Prices are exclusive of applicable GST.</li>
+        <li>Advance payment is required to initiate the project.</li>
+        <li>Subsequent milestone payments shall be released upon successful completion and client approval of the respective milestone.</li>
+      </ul>
+    </section>
+
+    <section id="commercial-terms">
+      <h2 class="sect"><span class="num">13.</span> Commercial Terms</h2>
+      <ul>
+        <li>This quotation is valid for 60 days from the date of issue.</li>
+        <li>The software development cost includes design, development, testing, deployment, user training, technical documentation, and 3 months of post-go-live warranty support.</li>
+        <li>The source code and ownership of the developed application shall remain with <strong>Jiora Technologies</strong> and will not be shared as part of this engagement, unless otherwise agreed in writing.</li>
+        <li>Infrastructure, cloud hosting, third-party API subscriptions, SMS/notification charges, domain registration, SSL certificates, and other external services are not included in the software development cost and will be borne by the Client.</li>
+        <li>AMC charges apply after the warranty period and include preventive maintenance, corrective maintenance, security updates, database optimization, performance tuning, and technical support.</li>
+      </ul>
+
+      <div class="callout">
+        <span class="label">Note</span>
+        <p>Pricing reflects a fixed-scope engagement against the functional requirements in Section 5. Items listed as Out of Scope in Section 2 are estimated and quoted separately on request.</p>
+      </div>
+    </section>
+
+    <section id="signoff">
+      <h2 class="sect"><span class="num">14.</span> Acceptance</h2>
+      <p>Acceptance of this proposal authorizes Jiora Technologies to commence project planning and resource allocation upon receipt of the advance payment.</p>
+      <div class="sig">
+        <div class="box">Authorized Signatory — Jiora Technologies<br>Name &amp; Date</div>
+        <div class="box">Authorized Signatory — Client<br>Name &amp; Date</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Jiora Technologies — Commercial &amp; Technical Proposal</span>
+    <span>Slow Spider · 23 August 2026</span>
+  </footer>
+</div>

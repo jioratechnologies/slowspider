@@ -31,6 +31,16 @@ export class AuthController {
     return { token: result.session.access_token, refreshToken: result.session.refresh_token, user: { id: result.id, email: result.email } };
   }
 
+  // POST /v1/auth/refresh
+  @Post("refresh")
+  async refresh(@Body() body: { refreshToken?: string }) {
+    const { refreshToken } = body || {};
+    if (!refreshToken) throw new Error("No refresh token provided.");
+    const result = await this.account.refreshSession(refreshToken);
+    if (!result) throw new Error("Session expired.");
+    return { token: result.session.access_token, refreshToken: result.session.refresh_token, user: { id: result.id, email: result.email } };
+  }
+
   // POST /v1/auth/signup/otp
   @Post("signup/otp")
   async signupOtp(@Body() body: { email?: string }) {

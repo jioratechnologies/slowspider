@@ -80,17 +80,21 @@ Progress taskProgress(Task t) {
 List<Task> sortTasks(List<Task> tasks, SortMode mode) {
   final list = [...tasks];
   if (mode == SortMode.manual) {
-    list.sort((a, b) => a.pos.compareTo(b.pos));
+    list.sort((a, b) {
+      if (a.done != b.done) return a.done ? 1 : -1;
+      if (a.starred != b.starred) return a.starred ? -1 : 1;
+      return a.pos.compareTo(b.pos);
+    });
     return list;
   }
   list.sort((a, b) {
     if (a.done != b.done) return a.done ? 1 : -1;
     if (a.starred != b.starred) return a.starred ? -1 : 1;
-    final pr = prioRank[b.priority]! - prioRank[a.priority]!;
-    if (pr != 0) return pr;
     final ad = a.deadline != null ? (dayDiff(a.deadline) ?? 1 << 30) : 1 << 30;
     final bd = b.deadline != null ? (dayDiff(b.deadline) ?? 1 << 30) : 1 << 30;
     if (ad != bd) return ad.compareTo(bd);
+    final pr = prioRank[b.priority]! - prioRank[a.priority]!;
+    if (pr != 0) return pr;
     return a.pos.compareTo(b.pos);
   });
   return list;

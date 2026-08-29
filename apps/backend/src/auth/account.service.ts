@@ -56,6 +56,13 @@ export class AccountService {
     return this.toAuthResult(e, data);
   }
 
+  async refreshSession(refreshToken: string): Promise<AuthResult | null> {
+    if (!refreshToken) return null;
+    const { data, error } = await this.supabase.anon().auth.refreshSession({ refresh_token: refreshToken });
+    if (error || !data.user || !data.session) return null;
+    return this.toAuthResult(data.user.email || "", data);
+  }
+
   async requestSignupOtp(email: string): Promise<{ devCode?: string }> {
     const e = this.normalizeEmail(email);
     if (!validEmail(e)) throw new Error("Enter a valid email.");

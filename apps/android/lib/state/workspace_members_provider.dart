@@ -45,7 +45,9 @@ class WorkspaceMembersController extends StateNotifier<WorkspaceMembersState> {
   final _api = ApiClient.instance;
 
   Future<void> load() async {
-    state = state.copyWith(loading: true, clearError: true);
+    if (state.members.isEmpty && state.invites.isEmpty) {
+      state = state.copyWith(loading: true, clearError: true);
+    }
     try {
       final res = await _api.listMembers();
       final members = ((res['members'] as List?) ?? []).map((m) => MemberRow.fromJson(m as Map<String, dynamic>)).toList();

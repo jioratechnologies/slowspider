@@ -55,19 +55,22 @@ class BoardState {
 /// phase (see HANDOVER.md).
 class BoardController extends StateNotifier<BoardState> {
   BoardController(this._ref) : super(const BoardState()) {
-    reload();
-    loadWorkspaces();
+    final auth = _ref.read(authProvider);
+    if (auth.status == AuthStatus.signedIn) {
+      reload();
+      loadWorkspaces();
+    }
     // Connect/reconnect realtime as auth state changes: drop the socket immediately on
     // sign-out, and refetch the board (which reconnects with the new session's token/
-    // workspace, see reload() below) on a fresh sign-in. This provider is created lazily on
-    // first read (typically right after the post-login redirect to '/'), but it isn't
-    // disposed on sign-out, so it can live across a sign-out/sign-in-as-someone-else cycle —
-    // this listener is what keeps the socket (and the stale board data) from surviving that.
+    // workspace, see reload() below) on a fresh sign-in.
     _ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.signedOut) {
         _disconnectRealtime();
-      } else if (next.status == AuthStatus.signedIn && previous?.status != AuthStatus.signedIn) {
+        state = const BoardState(); // Clear all data and stale errors immediately on sign out
+      } else if (next.status == AuthStatus.signedIn) {
+        state = const BoardState(loading: true);
         reload();
+        loadWorkspaces();
       }
     });
   }
@@ -79,17 +82,27 @@ class BoardController extends StateNotifier<BoardState> {
   void _fail(Object e) => state = state.copyWith(error: e.toString());
 
   Future<void> reload() async {
+    final auth = _ref.read(authProvider);
+    if (auth.status != AuthStatus.signedIn) {
+      state = state.copyWith(loading: false, refreshing: false);
+      return;
+    }
+
+    state = state.copyWith(loading: state.data == null, refreshing: state.data != null, clearError: true);
     try {
       final board = await _api.board();
-      state = state.copyWith(data: board, clearError: true);
+      state = state.copyWith(data: board, clearError: true, loading: false, refreshing: false);
       // The server resolves the account's default workspace on first load; pin it locally
       // so switchWorkspace() means something afterward.
       await SessionStorage.instance.setActiveWorkspace(board.workspaceId);
       _connectRealtime(board.workspaceId);
+      loadWorkspaces();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
-    } finally {
-      state = state.copyWith(loading: false, refreshing: false);
+      state = state.copyWith(error: e.toString(), loading: false, refreshing: false);
+      final err = e.toString().toLowerCase();
+      if (err.contains('token') || err.contains('expired') || err.contains('not signed in') || err.contains('401')) {
+        _ref.read(authProvider.notifier).signOut();
+      }
     }
   }
 

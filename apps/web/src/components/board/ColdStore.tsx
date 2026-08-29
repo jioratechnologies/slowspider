@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronsDown, ChevronsUp, Play, Snowflake, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronsDown, ChevronsUp, Play, Snowflake, Trash2, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Category, Cluster, Task } from "@/lib/types";
 
-/** Strip legacy [File: …] pollution from task titles */
 function cleanTitle(title: string) {
   return title.replace(/\s*\[(?:File|Audio Record|Audio_Record)[^\]]*\]/gi, "").trim();
 }
@@ -47,31 +46,31 @@ export default function ColdStore({
     <section
       id="coldStore"
       className={cn(
-        "stash mt-4 overflow-hidden rounded-2xl border border-zinc-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#16161a]/85 backdrop-blur-md shadow-xs dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] transition-all"
+        "stash overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] shadow-xs transition-all"
       )}
     >
       {/* Header */}
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-3 text-left select-none hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
+        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left select-none hover:bg-[var(--accent-soft)] transition-colors"
         onClick={onToggleOpen}
       >
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 border border-sky-500/20 shadow-[0_0_10px_rgba(14,165,233,0.15)]">
-          <Snowflake className="size-3.5 text-sky-500 dark:text-sky-400" />
+        <div className="flex size-6.5 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]">
+          <Snowflake className="size-3.5 text-[var(--ink)]" />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold leading-tight text-zinc-900 dark:text-zinc-100">
-            Cold store
+          <span className="block text-[13px] font-medium leading-tight text-[var(--ink)]">
+            Cold Store
           </span>
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Paused projects, kept for later</span>
+          <span className="text-[11px] text-[var(--muted)]">Paused projects, kept for later</span>
         </div>
         {total > 0 && (
-          <span className="rounded-full bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 text-[11px] font-medium text-sky-600 dark:text-sky-300 tabular-nums font-mono">
+          <span className="rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.2 text-[10.5px] font-mono text-[var(--muted)]">
             {total}
           </span>
         )}
         <ChevronDown
-          className={cn("size-4 shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-200", open && "rotate-180")}
+          className={cn("size-3.5 shrink-0 text-[var(--muted)] transition-transform duration-200", open && "rotate-180")}
         />
       </button>
 
@@ -81,24 +80,24 @@ export default function ColdStore({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t border-zinc-100 dark:border-white/[0.06] px-3 py-3 space-y-3">
-              {/* Cloud Archive & Compression Info Banner */}
-              <div className="flex items-center justify-between rounded-xl bg-sky-500/10 border border-sky-500/20 px-3 py-2 text-[11px] text-sky-600 dark:text-sky-300">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Snowflake className="size-3.5 shrink-0" />
-                  <span>Cloud Storage: <strong>Zipped &amp; Archived</strong> (70% space saved)</span>
+            <div className="border-t border-[var(--line)] px-3 py-2.5 space-y-2.5">
+              {/* Cloud Archive Info Banner */}
+              <div className="flex items-center justify-between rounded-lg border border-[var(--line)] bg-[var(--panel-2)] px-2.5 py-1.5 text-[11px] text-[var(--muted)]">
+                <span className="flex items-center gap-1.5 font-mono">
+                  <Archive className="size-3 shrink-0" />
+                  <span>Archived &amp; Compressed</span>
                 </span>
-                <span className="font-mono text-[10px] bg-sky-500/20 px-1.5 py-0.5 rounded-md font-bold">
-                  Auto-Cold &gt; 4mo
+                <span className="font-mono text-[10px] text-[var(--ink3)]">
+                  &gt; 4mo
                 </span>
               </div>
 
               {!total && (
-                <p className="px-1 py-2 text-[12px] text-zinc-500 italic">
-                  Nothing paused. Items inactive for &gt; 4 months auto-archive here to save cloud storage.
+                <p className="px-1 py-2 text-[11.5px] text-[var(--muted)] italic">
+                  Nothing paused. Drag tasks or clusters here to pause them.
                 </p>
               )}
 
@@ -117,12 +116,12 @@ export default function ColdStore({
                         onResume={() => onResumeCluster(c.id)}
                         onBin={() => onBinCluster(c.id)}
                       >
-                        <span className="size-2 shrink-0 rounded-[3px]" style={{ background: c.color }} />
-                        <span className="flex-1 truncate text-[13px] font-medium text-zinc-800 dark:text-zinc-200">{c.name}</span>
-                        <span className="shrink-0 text-[10.5px] text-sky-600 dark:text-sky-400 font-mono bg-sky-500/10 px-1.5 py-0.5 rounded-md">
-                          📦 Zipped
+                        <span className="size-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span className="flex-1 truncate text-[12.5px] font-medium text-[var(--ink)]">{c.name}</span>
+                        <span className="shrink-0 text-[10px] text-[var(--muted)] font-mono border border-[var(--line)] bg-[var(--panel-2)] px-1.5 py-0.2 rounded">
+                          Zipped
                         </span>
-                        <span className="shrink-0 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">
                           {n} task{n !== 1 ? "s" : ""}
                           {cat ? ` · ${cat.name}` : ""}
                         </span>
@@ -143,12 +142,12 @@ export default function ColdStore({
                         onResume={() => onResumeTask(t.id)}
                         onBin={() => onBinTask(t.id)}
                       >
-                        <span className="size-2 shrink-0 rounded-full bg-sky-400" />
-                        <span className="flex-1 truncate text-[13px] text-zinc-800 dark:text-zinc-200">{title}</span>
-                        <span className="shrink-0 text-[10.5px] text-sky-600 dark:text-sky-400 font-mono bg-sky-500/10 px-1.5 py-0.5 rounded-md">
-                          📦 Zipped
+                        <span className="size-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
+                        <span className="flex-1 truncate text-[12.5px] text-[var(--ink)]">{title}</span>
+                        <span className="shrink-0 text-[10px] text-[var(--muted)] font-mono border border-[var(--line)] bg-[var(--panel-2)] px-1.5 py-0.2 rounded">
+                          Zipped
                         </span>
-                        <span className="shrink-0 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">
                           {clusterName}
                         </span>
                       </ColdRow>
@@ -170,13 +169,13 @@ export default function ColdStore({
                     {hasMore && (
                       <button
                         type="button"
-                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-200 dark:border-white/[0.08] py-1.5 text-[11.5px] text-zinc-600 dark:text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-zinc-100"
+                        className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-[var(--line)] py-1 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
                         onClick={() => setShowAll((v) => !v)}
                       >
                         {showAll ? (
-                          <><ChevronsUp className="size-3.5" /> Show less</>
+                          <><ChevronsUp className="size-3" /> Show less</>
                         ) : (
-                          <><ChevronsDown className="size-3.5" /> Show {allItems.length - LIMIT} more</>
+                          <><ChevronsDown className="size-3" /> Show {allItems.length - LIMIT} more</>
                         )}
                       </button>
                     )}
@@ -209,8 +208,8 @@ function ColdRow({
   return (
     <div
       className={cn(
-        "stash-item group flex cursor-grab items-center gap-2.5 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-zinc-50/70 hover:bg-zinc-100 dark:bg-white/[0.02] px-3 py-2.5 touch-none active:cursor-grabbing transition-all dark:hover:bg-white/[0.05] dark:hover:border-white/15 text-zinc-800 dark:text-zinc-200",
-        frozen && "just-frozen ring-1 ring-sky-400/30 bg-sky-500/5"
+        "stash-item group flex cursor-grab items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2.5 py-2 touch-none active:cursor-grabbing transition-all hover:border-[var(--line-strong)] hover:bg-[var(--panel)] text-[var(--ink)]",
+        frozen && "just-frozen ring-1 ring-[var(--ink)]"
       )}
       data-skind={skind}
       data-sid={sid}
@@ -218,23 +217,23 @@ function ColdRow({
     >
       {children}
 
-      {/* Icon-only action buttons (revealed on hover) */}
+      {/* Action buttons (revealed on hover) */}
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
-          className="rounded-lg p-1.5 text-zinc-500 dark:text-zinc-400 hover:bg-sky-500/15 hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
+          className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
           title="Resume"
           onClick={onResume}
         >
-          <Play className="size-3.5" />
+          <Play className="size-3" />
         </button>
         <button
           type="button"
-          className="rounded-lg p-1.5 text-zinc-500 dark:text-zinc-400 hover:bg-rose-500/10 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+          className="rounded p-1 text-[var(--muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
           title="Move to bin"
           onClick={onBin}
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-3" />
         </button>
       </div>
     </div>

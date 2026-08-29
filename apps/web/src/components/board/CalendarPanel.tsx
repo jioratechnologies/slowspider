@@ -75,7 +75,7 @@ export default function CalendarPanel({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent 
         showCloseButton={false} 
-        className="max-w-[90vw] sm:max-w-[800px] gap-0 p-0 overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#16161a] shadow-xl dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+        className="max-w-[90vw] sm:max-w-[800px] gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-xl"
       >
         <DialogTitle className="sr-only">Calendar</DialogTitle>
         <div className="relative flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/[0.08]">

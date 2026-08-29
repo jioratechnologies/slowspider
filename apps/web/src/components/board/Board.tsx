@@ -681,7 +681,7 @@ export default function Board({
         onSignOut={signOut}
         onPinCalculator={() => setPinnedCalculator(true)}
       />
-      <main className="mx-auto max-w-375 p-3.5 sm:p-6 pb-28 md:pb-8">
+      <main className="mx-auto max-w-[1600px] px-4 sm:px-6 py-4 pb-28 md:pb-8">
         <CalendarPanel
           open={calendarOpen}
           tasks={tasks}
@@ -691,10 +691,10 @@ export default function Board({
         />
         <DeadlinesPanel tasks={tasks} clusters={clusters} onOpenTask={openTask} />
         <QuickAdd onAdd={addTask} />
-        {/* Cold store and the bin sit in a sticky right rail so a drag from anywhere in the
-            cluster grid has a drop target on screen without scrolling. */}
-        <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-4">
-          <div className="min-w-0">
+
+        {/* Board & Side Rail Container */}
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0 flex flex-col gap-3">
             <Tray
               tasks={tasksIn(tasks, null, search, sortMode)}
               noteCount={noteCountForTask}
@@ -705,10 +705,12 @@ export default function Board({
               onDelete={binTask}
               onToggleStar={toggleStar}
             />
+
             <CategoryFilter categories={categories} clusters={clusters} activeCategory={activeCategory} onSelect={setActiveCategory} />
+
             <div
-              className="board grid items-start gap-3 sm:gap-4"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))" }}
+              className="board grid items-start gap-3.5"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(290px, 100%), 1fr))" }}
             >
               {visibleClusters.map((c) => {
                 const items = tasksIn(tasks, c.id, search, sortMode);
@@ -742,7 +744,7 @@ export default function Board({
             </div>
           </div>
 
-          <aside className="flex flex-col gap-4 lg:sticky lg:top-22 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto [&_.stash]:mt-0">
+          <aside className="flex flex-col gap-3 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto [&_.stash]:mt-0">
             <ColdStore
               clusters={clusters}
               tasks={tasks}
@@ -770,9 +772,9 @@ export default function Board({
             />
           </aside>
         </div>
-        <div className="mt-7.5 mb-2 text-center text-xs text-muted-foreground">
+        <div className="mt-8 mb-2 text-center text-[11px] text-[var(--ink3)]">
           Synced to your Slow Spider account ·{" "}
-          <a className="cursor-pointer text-primary hover:underline" onClick={exportJSON}>
+          <a className="cursor-pointer text-[var(--ink)] hover:underline" onClick={exportJSON}>
             Export a backup
           </a>
         </div>
@@ -834,7 +836,7 @@ export default function Board({
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 10, x: "-50%" }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-4.5 left-1/2 z-200 rounded-[10px] bg-destructive px-4 py-2.25 text-[13px] text-white shadow-(--sh-3)"
+            className="fixed bottom-5 left-1/2 z-200 -translate-x-1/2 border border-[var(--ink)] bg-[var(--bg)] px-4 py-2 text-[13px] text-[var(--ink)]"
           >
             {errorMsg}
           </motion.div>

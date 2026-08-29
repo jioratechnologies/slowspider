@@ -107,112 +107,81 @@ export default function ScientificCalculator({
       case "sq":
         res = Math.pow(val, 2);
         break;
-      case "exp":
-        res = Math.exp(val);
-        break;
       case "inv":
-        res = 1 / val;
+        res = val !== 0 ? 1 / val : 0;
         break;
-      case "fact":
-        res = factorial(Math.floor(val));
+      case "fact": {
+        const n = Math.floor(val);
+        if (n < 0 || n > 170) {
+          setDisplay("Overflow");
+          return;
+        }
+        let f = 1;
+        for (let i = 2; i <= n; i++) f *= i;
+        res = f;
         break;
-      case "neg":
-        res = -val;
-        break;
+      }
+      default:
+        return;
     }
 
-    if (!isNaN(res) && isFinite(res)) {
-      setDisplay(Number(res.toFixed(8)).toString());
-    } else {
-      setDisplay("Error");
-    }
+    const resStr = Number(res.toFixed(8)).toString();
+    setHistory((prev) => [{ eq: `${funcName}(${display})`, res: resStr }, ...prev.slice(0, 9)]);
+    setDisplay(resStr);
   }, [display, isRad]);
 
-  function factorial(n: number): number {
-    if (n < 0) return NaN;
-    if (n === 0 || n === 1) return 1;
-    let r = 1;
-    for (let i = 2; i <= Math.min(n, 100); i++) r *= i;
-    return r;
-  }
-
-  // Keyboard and Numpad Support
+  // Keyboard shortcut listener
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      // Don't intercept if user is typing inside an input, textarea, or contentEditable
-      const target = e.target as HTMLElement;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
 
-      if (e.key >= "0" && e.key <= "9") {
-        e.preventDefault();
+      if (!isNaN(Number(e.key))) {
         inputDigit(e.key);
       } else if (e.key === ".") {
-        e.preventDefault();
         inputDigit(".");
-      } else if (e.key === "+" || e.key === "-") {
-        e.preventDefault();
-        inputOp(e.key);
+      } else if (e.key === "+") {
+        inputOp("+");
+      } else if (e.key === "-") {
+        inputOp("-");
       } else if (e.key === "*") {
-        e.preventDefault();
         inputOp("×");
       } else if (e.key === "/") {
         e.preventDefault();
         inputOp("÷");
-      } else if (e.key === "^") {
-        e.preventDefault();
-        inputOp("^");
       } else if (e.key === "Enter" || e.key === "=") {
         e.preventDefault();
         calculate();
       } else if (e.key === "Backspace") {
-        e.preventDefault();
         backspace();
-      } else if (e.key === "Escape" || e.key.toLowerCase() === "c") {
-        e.preventDefault();
+      } else if (e.key === "Escape") {
         clearAll();
-      } else if (e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        applyFunc("sin");
-      } else if (e.key.toLowerCase() === "t") {
-        e.preventDefault();
-        applyFunc("tan");
-      } else if (e.key.toLowerCase() === "l") {
-        e.preventDefault();
-        applyFunc("ln");
-      } else if (e.key.toLowerCase() === "r") {
-        e.preventDefault();
-        applyFunc("sqrt");
-      } else if (e.key.toLowerCase() === "p") {
-        e.preventDefault();
-        inputDigit("Math.PI");
       }
-    }
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [inputDigit, inputOp, calculate, backspace, clearAll, applyFunc]);
+  }, [inputDigit, inputOp, calculate, backspace, clearAll]);
 
   return (
     <div
       className={cn(
-        "rounded-2xl border border-zinc-200 dark:border-white/10 bg-white/95 dark:bg-[#16161c]/95 shadow-2xl backdrop-blur-2xl text-zinc-900 dark:text-zinc-100 transition-all overflow-hidden",
-        isPinned && "fixed bottom-6 right-6 z-50 w-80 shadow-[0_20px_60px_rgba(0,0,0,0.5)] border-purple-500/30"
+        "rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-xl text-[var(--ink)] transition-all overflow-hidden",
+        isPinned && "fixed bottom-6 right-6 z-50 w-80 shadow-2xl border-[var(--ink)]"
       )}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-zinc-100/70 dark:bg-white/[0.03] border-b border-zinc-200/80 dark:border-white/[0.06]">
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[var(--panel-2)] border-b border-[var(--line)]">
         <div className="flex items-center gap-2">
-          <Calculator className="size-4 text-purple-500" />
-          <span className="text-[12.5px] font-semibold tracking-tight">Scientific Calculator</span>
+          <Calculator className="size-3.5 text-[var(--muted)]" />
+          <span className="text-[12px] font-medium tracking-tight text-[var(--ink)]">Calculator</span>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setIsRad((v) => !v)}
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-mono font-bold uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 cursor-pointer"
+            className="rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-[var(--bg)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
             title="Toggle Radians / Degrees"
           >
             {isRad ? "RAD" : "DEG"}
@@ -223,10 +192,8 @@ export default function ScientificCalculator({
               type="button"
               onClick={onTogglePin}
               className={cn(
-                "rounded-lg p-1.5 transition-colors cursor-pointer",
-                isPinned
-                  ? "bg-purple-500/20 text-purple-600 dark:text-purple-400"
-                  : "text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                "rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer",
+                isPinned && "text-[var(--ink)]"
               )}
               title={isPinned ? "Unpin calculator" : "Pin calculator to screen"}
             >
@@ -238,7 +205,7 @@ export default function ScientificCalculator({
             <button
               type="button"
               onClick={() => setIsMinimized((v) => !v)}
-              className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+              className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
               title={isMinimized ? "Maximize" : "Minimize"}
             >
               {isMinimized ? <Maximize2 className="size-3.5" /> : <Minimize2 className="size-3.5" />}
@@ -249,7 +216,7 @@ export default function ScientificCalculator({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+              className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -258,19 +225,19 @@ export default function ScientificCalculator({
       </div>
 
       {!isMinimized && (
-        <div className="p-3.5 space-y-3">
+        <div className="p-3 space-y-2.5">
           {/* Display screen */}
-          <div className="rounded-xl border border-zinc-200/80 dark:border-white/[0.06] bg-zinc-50 dark:bg-[#101014] p-3 text-right">
-            <div className="min-h-4 text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--bg)] p-2.5 text-right">
+            <div className="min-h-4 text-[10.5px] font-mono text-[var(--muted)] truncate">
               {equation || " "}
             </div>
-            <div className="text-[22px] font-mono font-bold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">
+            <div className="text-[20px] font-mono font-medium text-[var(--ink)] truncate tracking-tight">
               {display}
             </div>
           </div>
 
           {/* Keypad Grid */}
-          <div className="grid grid-cols-5 gap-1.5 text-[12px] font-mono">
+          <div className="grid grid-cols-5 gap-1 text-[12px] font-mono">
             {/* Row 1: Sci */}
             <CalcBtn label="sin" onClick={() => applyFunc("sin")} sci />
             <CalcBtn label="cos" onClick={() => applyFunc("cos")} sci />
@@ -314,33 +281,33 @@ export default function ScientificCalculator({
             <CalcBtn label="+" onClick={() => inputOp("+")} op />
           </div>
 
-          {/* Keyboard badge reminder & History */}
-          <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-white/[0.06] text-[10.5px] font-mono text-zinc-400 dark:text-zinc-500">
+          {/* Keyboard & History */}
+          <div className="flex items-center justify-between pt-1 border-t border-[var(--line)] text-[10px] font-mono text-[var(--muted)]">
             <span className="flex items-center gap-1">
-              <Keyboard className="size-3 text-purple-500" /> Numpad & Keyboard active
+              <Keyboard className="size-2.5" /> Keyboard active
             </span>
             {history.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="flex items-center gap-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 cursor-pointer"
+                className="flex items-center gap-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
               >
-                <History className="size-3 text-purple-500" />
+                <History className="size-2.5" />
                 <span>{showHistory ? "Hide" : `History (${history.length})`}</span>
               </button>
             )}
           </div>
 
           {showHistory && history.length > 0 && (
-            <div className="mt-1.5 max-h-28 overflow-y-auto space-y-1 text-[11px] font-mono">
+            <div className="mt-1 max-h-24 overflow-y-auto space-y-1 text-[10.5px] font-mono">
               {history.map((h, idx) => (
                 <div
                   key={idx}
                   onClick={() => setDisplay(h.res)}
-                  className="flex items-center justify-between rounded-lg p-1.5 bg-zinc-50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] cursor-pointer"
+                  className="flex items-center justify-between rounded p-1 bg-[var(--panel-2)] hover:bg-[var(--accent-soft)] cursor-pointer"
                 >
-                  <span className="text-zinc-400 truncate">{h.eq} =</span>
-                  <span className="font-bold text-purple-600 dark:text-purple-400">{h.res}</span>
+                  <span className="text-[var(--muted)] truncate">{h.eq} =</span>
+                  <span className="font-medium text-[var(--ink)]">{h.res}</span>
                 </div>
               ))}
             </div>
@@ -373,12 +340,12 @@ function CalcBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "h-9 rounded-xl font-semibold transition-all cursor-pointer shadow-2xs flex items-center justify-center select-none active:scale-95",
-        num && "bg-white dark:bg-[#202026] text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200/80 dark:border-white/[0.06]",
-        sci && "bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 text-[11.5px]",
-        op && "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 border border-indigo-500/20 text-[14px]",
-        danger && "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/20",
-        equals && "bg-purple-600 text-white hover:bg-purple-700 font-bold col-span-1 shadow-xs"
+        "h-8 rounded-lg font-medium transition-all cursor-pointer flex items-center justify-center select-none active:scale-95 border",
+        num && "bg-[var(--bg)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--panel)]",
+        sci && "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] text-[11px]",
+        op && "bg-[var(--panel-2)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] text-[13px]",
+        danger && "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-rose-500 hover:border-rose-500/30",
+        equals && "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-bold hover:opacity-90"
       )}
     >
       {label}

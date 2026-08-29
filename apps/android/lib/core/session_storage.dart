@@ -117,6 +117,20 @@ class SessionStorage {
     await save(_cached!.copyWith(workspaceId: workspaceId));
   }
 
+  static const _apiUrlKey = 'ss_custom_api_url';
+
+  Future<String?> getCustomApiUrl() async {
+    return await _storage.read(key: _apiUrlKey);
+  }
+
+  Future<void> setCustomApiUrl(String? url) async {
+    if (url == null || url.trim().isEmpty) {
+      await _storage.delete(key: _apiUrlKey);
+    } else {
+      await _storage.write(key: _apiUrlKey, value: url.trim());
+    }
+  }
+
   Future<void> clear() async {
     _cached = null;
     await _storage.delete(key: _tokenKey);

@@ -118,26 +118,26 @@ export default function SignIn() {
   const stepKey = `${mode}:${step}`;
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden p-5">
-      <DotPattern />
-      <Spotlight />
+    <div className="relative flex min-h-dvh items-center justify-center p-5 bg-[var(--bg)]">
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-100 rounded-[20px] border border-border bg-card/95 p-7 shadow-(--sh-3) backdrop-blur-sm"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-[390px] rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-8 shadow-sm"
       >
-        <div className="mb-4.5 flex items-center gap-3.5">
-          <svg width="54" height="auto" className="block shrink-0" viewBox="0 0 143 100" fill="none" role="img" aria-label="Slow Spider">
-            <g stroke="var(--ink)" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 91 54 8 100 91" />
-              <path d="M43 91 89 8 135 91" />
-            </g>
-            <circle cx="71.5" cy="87" r="11.5" fill="var(--logo-dot)" />
-          </svg>
+        <div className="mb-6 flex items-center gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--panel-2)]">
+            <svg width="24" height="auto" viewBox="0 0 143 100" fill="none" role="img" aria-label="Slow Spider">
+              <g stroke="currentColor" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--ink)]">
+                <path d="M8 91 54 8 100 91" />
+                <path d="M43 91 89 8 135 91" />
+              </g>
+              <circle cx="71.5" cy="87" r="11.5" className="fill-[var(--muted)]" />
+            </svg>
+          </div>
           <div>
-            <h1 className="m-0 text-2xl font-semibold [font-family:var(--serif)]">Slow Spider</h1>
-            <div className="mt-0.5 text-[12.5px] text-muted-foreground">A calm, single-screen organizer</div>
+            <h1 className="m-0 text-[18px] font-semibold tracking-tight text-[var(--ink)]">Slow Spider</h1>
+            <div className="text-[12px] text-[var(--muted)]">A calm, single-screen organizer</div>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export default function SignIn() {
                 Enter the 6-digit code we emailed to <b className="text-foreground">{email}</b>.
               </p>
               {devCode && (
-                <div className="mb-2.5 rounded-lg border border-primary/30 bg-accent px-2.5 py-1.5 text-xs font-semibold text-primary">
+                <div className="mb-2.5 border border-[var(--line)] px-2.5 py-1.5 text-xs text-[var(--ink)]">
                   Dev mode — code is <b>{devCode}</b> (nothing was actually emailed).
                 </div>
               )}
@@ -250,7 +250,7 @@ export default function SignIn() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2.5 overflow-hidden text-[13px] font-semibold text-(--soon)"
+              className="mt-2.5 overflow-hidden text-[13px] font-medium text-[var(--ink)]"
             >
               {err}
             </motion.div>

@@ -1,14 +1,21 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../core/app_icons.dart';
 import '../core/app_theme.dart';
+import '../core/helpers.dart';
 import '../models/models.dart';
 import '../screens/archive_screen.dart';
 import '../screens/board_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../state/board_provider.dart';
 import 'quick_capture_sheet.dart';
+import 'quick_search_sheet.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -19,14 +26,52 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   int _tabIndex = 0; // 0: Board/Home, 1: Cold Store, 2: Dumping Bin, 3: Calendar
+  bool _isNavVisible = true;
+  bool _showSpeedDial = false;
+  Timer? _scrollEndTimer;
+
+  @override
+  void dispose() {
+    _scrollEndTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return;
+
+    if (notification is ScrollStartNotification || notification is ScrollUpdateNotification) {
+      if (notification is ScrollUpdateNotification && (notification.scrollDelta ?? 0).abs() < 1.0) {
+        return;
+      }
+      _scrollEndTimer?.cancel();
+      if (_showSpeedDial) {
+        setState(() => _showSpeedDial = false);
+      }
+      if (_isNavVisible) {
+        setState(() => _isNavVisible = false);
+      }
+      _scrollEndTimer = Timer(const Duration(milliseconds: 250), () {
+        if (mounted && !_isNavVisible) {
+          setState(() => _isNavVisible = true);
+        }
+      });
+    } else if (notification is ScrollEndNotification ||
+        (notification is UserScrollNotification && notification.direction == ScrollDirection.idle)) {
+      _scrollEndTimer?.cancel();
+      if (!_isNavVisible) {
+        setState(() => _isNavVisible = true);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dockBg = isDark ? const Color(0xCC151620) : const Color(0xEBFFFFFF);
-    final dockBorder = isDark ? Colors.white.withValues(alpha: 0.14) : Colors.black.withValues(alpha: 0.08);
-    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.45) : Colors.black.withValues(alpha: 0.1);
+
+    final dockBg = isDark ? const Color(0xF5000000) : const Color(0xF8FFFFFF);
+    final dockBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final activeIconColor = isDark ? AppColors.ink : AppColors.lightInk;
     final mutedIconColor = isDark ? AppColors.muted : AppColors.lightMuted;
 
     final board = ref.watch(boardProvider);
@@ -37,192 +82,426 @@ class _AppShellState extends ConsumerState<AppShell> {
     final binCount = (data?.clusters.where((c) => c.status == ClusterStatus.binned).length ?? 0) +
         (data?.tasks.where((t) => t.binned).length ?? 0);
 
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: _tabIndex,
-        children: const [
-          BoardScreen(),
-          ArchiveScreen(initialBin: false),
-          ArchiveScreen(initialBin: true),
-          CalendarScreen(),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: dockBg,
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(
-                    color: dockBorder,
-                    width: 1.2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: shadowColor,
-                      blurRadius: 28,
-                      offset: const Offset(0, 10),
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      spreadRadius: -2,
-                    ),
-                  ],
+    if (data == null) {
+      return const BoardScreen();
+    }
+
+    return PopScope(
+      canPop: !_showSpeedDial && _tabIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_showSpeedDial) {
+          setState(() => _showSpeedDial = false);
+          return;
+        }
+        if (_tabIndex != 0) {
+          setState(() => _tabIndex = 0);
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: Stack(
+          children: [
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                _handleScroll(notification);
+                return false;
+              },
+              child: IndexedStack(
+                index: _tabIndex,
+                children: const [
+                  BoardScreen(),
+                  ArchiveScreen(initialBin: false),
+                  ArchiveScreen(initialBin: true),
+                  CalendarScreen(),
+                ],
+              ),
+            ),
+          if (_showSpeedDial)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _showSpeedDial = false),
+                child: Container(
+                  color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.25),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // 1. Home / Board Tab
-                    _buildNavItem(
-                      icon: Icons.dashboard_outlined,
-                      activeIcon: Icons.dashboard_rounded,
-                      label: 'Home',
-                      active: _tabIndex == 0,
-                      activeColor: AppColors.accent,
-                      mutedColor: mutedIconColor,
-                      onTap: () => setState(() => _tabIndex = 0),
-                    ),
+              ),
+            ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            left: 16,
+            right: 16,
+            bottom: _isNavVisible ? 16 : -90,
+            child: SafeArea(
+              top: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // 1. Navigation Pill
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              height: 52,
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: dockBg,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: dockBorder, width: 1.0),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Board Tab
+                                  Expanded(
+                                    child: _buildDockItem(
+                                      icon: AppIcons.home,
+                                      activeIcon: AppIcons.homeActive,
+                                      label: 'Board',
+                                      active: _tabIndex == 0,
+                                      accentColor: activeIconColor,
+                                      mutedColor: mutedIconColor,
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        setState(() => _tabIndex = 0);
+                                      },
+                                    ),
+                                  ),
 
-                    // 2. Cold Store Tab
-                    _buildNavItem(
-                      icon: Icons.ac_unit_rounded,
-                      activeIcon: Icons.ac_unit_rounded,
-                      label: 'Cold',
-                      active: _tabIndex == 1,
-                      badgeCount: coldCount,
-                      activeColor: const Color(0xFF38BDF8),
-                      mutedColor: mutedIconColor,
-                      onTap: () => setState(() => _tabIndex = 1),
-                    ),
+                                  // Cold Store
+                                  Expanded(
+                                    child: DragTarget<Task>(
+                                      onWillAcceptWithDetails: (_) => true,
+                                      onAcceptWithDetails: (details) {
+                                        final task = details.data;
+                                        ref.read(boardProvider.notifier).patchTask(
+                                          task.id,
+                                          {'cold': true, 'binned': false},
+                                          (t) => t.copyWith(cold: true, binned: false),
+                                        );
+                                        HapticFeedback.mediumImpact();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Moved "${displayTitle(task.title)}" to Cold store'),
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      builder: (ctx, candidateData, rejectedData) {
+                                        final isHovered = candidateData.isNotEmpty;
+                                        return _buildDockItem(
+                                          icon: AppIcons.coldStore,
+                                          activeIcon: AppIcons.coldStore,
+                                          label: 'Cold',
+                                          active: _tabIndex == 1 || isHovered,
+                                          badgeCount: coldCount,
+                                          accentColor: activeIconColor,
+                                          mutedColor: mutedIconColor,
+                                          onTap: () {
+                                            HapticFeedback.selectionClick();
+                                            setState(() => _tabIndex = 1);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
 
-                    // 3. Central Prominent Liquid Glass '+ Add' Button
-                    GestureDetector(
-                      onTap: () => showQuickCaptureSheet(context),
-                      child: Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isDark
-                                ? const [Color(0xFF3B3E52), Color(0xFF202330)]
-                                : const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark ? Colors.white.withValues(alpha: 0.22) : const Color(0xFFA78BFA),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isDark ? Colors.black.withValues(alpha: 0.4) : const Color(0xFF8B5CF6).withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
+                                  // Dumping Bin
+                                  Expanded(
+                                    child: DragTarget<Task>(
+                                      onWillAcceptWithDetails: (_) => true,
+                                      onAcceptWithDetails: (details) {
+                                        final task = details.data;
+                                        final now = DateTime.now().toIso8601String();
+                                        ref.read(boardProvider.notifier).patchTask(
+                                          task.id,
+                                          {'binned': true, 'cold': false, 'binned_at': now},
+                                          (t) => t.copyWith(binned: true, cold: false, binnedAt: now, binnedAtSet: true),
+                                        );
+                                        HapticFeedback.heavyImpact();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Moved "${displayTitle(task.title)}" to Dumping bin'),
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      builder: (ctx, candidateData, rejectedData) {
+                                        final isHovered = candidateData.isNotEmpty;
+                                        return _buildDockItem(
+                                          icon: AppIcons.dumpingBin,
+                                          activeIcon: AppIcons.dumpingBinActive,
+                                          label: 'Bin',
+                                          active: _tabIndex == 2 || isHovered,
+                                          badgeCount: binCount,
+                                          accentColor: activeIconColor,
+                                          mutedColor: mutedIconColor,
+                                          onTap: () {
+                                            HapticFeedback.selectionClick();
+                                            setState(() => _tabIndex = 2);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+
+                                  // Search Tab
+                                  Expanded(
+                                    child: _buildDockItem(
+                                      icon: AppIcons.search,
+                                      activeIcon: AppIcons.search,
+                                      label: 'Search',
+                                      active: false,
+                                      accentColor: activeIconColor,
+                                      mutedColor: mutedIconColor,
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        showQuickSearchSheet(context);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
+                          ),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
                       ),
-                    ),
+                      const SizedBox(width: 8),
 
-                    // 4. Dumping Bin Tab
-                    _buildNavItem(
-                      icon: Icons.delete_outline_rounded,
-                      activeIcon: Icons.delete_rounded,
-                      label: 'Bin',
-                      active: _tabIndex == 2,
-                      badgeCount: binCount,
-                      activeColor: AppColors.danger,
-                      mutedColor: mutedIconColor,
-                      onTap: () => setState(() => _tabIndex = 2),
-                    ),
-                  ],
+                      // 2. Circular Floating Plus (+) Button
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (_showSpeedDial)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10, right: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildSpeedDialItem(
+                                    icon: Icons.mic_rounded,
+                                    label: 'Voice Note',
+                                    isDark: isDark,
+                                    onTap: () => showQuickCaptureSheet(context, initialAction: 'voice'),
+                                  ),
+                                  _buildSpeedDialItem(
+                                    icon: Icons.camera_alt_rounded,
+                                    label: 'Camera',
+                                    isDark: isDark,
+                                    onTap: () => showQuickCaptureSheet(context, initialAction: 'camera'),
+                                  ),
+                                  _buildSpeedDialItem(
+                                    icon: Icons.photo_library_rounded,
+                                    label: 'Gallery',
+                                    isDark: isDark,
+                                    onTap: () => showQuickCaptureSheet(context, initialAction: 'gallery'),
+                                  ),
+                                  _buildSpeedDialItem(
+                                    icon: Icons.attach_file_rounded,
+                                    label: 'Document',
+                                    isDark: isDark,
+                                    onTap: () => showQuickCaptureSheet(context, initialAction: 'file'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                if (_showSpeedDial) {
+                                  setState(() => _showSpeedDial = false);
+                                } else {
+                                  showQuickCaptureSheet(context);
+                                }
+                              },
+                              onLongPress: () {
+                                HapticFeedback.heavyImpact();
+                                setState(() => _showSpeedDial = !_showSpeedDial);
+                              },
+                              borderRadius: BorderRadius.circular(26),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDark ? AppColors.ink : AppColors.lightInk,
+                                  border: Border.all(
+                                    color: isDark ? AppColors.line : AppColors.lightLine,
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.add_rounded,
+                                    color: isDark ? AppColors.accentInk : AppColors.lightAccentInk,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    ),
+    );
+  }
+
+  Widget _buildSpeedDialItem({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _showSpeedDial = false);
+          onTap();
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.panel : AppColors.lightPanel,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isDark ? AppColors.line : AppColors.lightLine,
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: isDark ? AppColors.ink : AppColors.lightInk,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11.5,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
+                border: Border.all(color: isDark ? AppColors.line : AppColors.lightLine, width: 1.0),
+              ),
+              child: Center(
+                child: Icon(icon, color: isDark ? AppColors.ink : AppColors.lightInk, size: 18),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({
+  Widget _buildDockItem({
     required IconData icon,
     required IconData activeIcon,
     required String label,
     required bool active,
-    required Color activeColor,
+    required Color accentColor,
     required Color mutedColor,
     int badgeCount = 0,
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        decoration: BoxDecoration(
-          color: active ? activeColor.withValues(alpha: 0.14) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  active ? activeIcon : icon,
-                  size: 20,
-                  color: active ? activeColor : mutedColor,
-                ),
-                if (badgeCount > 0)
-                  Positioned(
-                    top: -4,
-                    right: -8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: activeColor,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: isDark ? const Color(0xFF14151C) : Colors.white, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
-                      child: Text(
-                        '$badgeCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 44,
+          margin: const EdgeInsets.symmetric(horizontal: 1),
+          decoration: BoxDecoration(
+            color: active
+                ? (isDark ? AppColors.panel2 : AppColors.lightPanel2)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    active ? activeIcon : icon,
+                    size: 16,
+                    color: active ? accentColor : mutedColor,
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -3,
+                      right: -7,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.panel3 : AppColors.lightPanel3,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: isDark ? AppColors.line : AppColors.lightLine,
+                            width: 0.8,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : '$badgeCount',
+                          style: TextStyle(
+                            color: isDark ? AppColors.ink : AppColors.lightInk,
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'monospace',
+                            height: 1.0,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? activeColor : mutedColor,
-                fontSize: 10.5,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                letterSpacing: -0.2,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: active ? accentColor : mutedColor,
+                  fontSize: 9,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  height: 1.0,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlarmClock } from "lucide-react";
+import { AlarmClock, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { deadlineBuckets, fmtDate } from "@/lib/board-helpers";
 import type { Cluster, Task } from "@/lib/types";
@@ -16,7 +16,7 @@ export default function DeadlinesPanel({
   clusters: Cluster[];
   onOpenTask: (id: number, directEdit?: boolean) => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const { overdue, soon, upcoming } = deadlineBuckets(tasks, clusters);
   if (!overdue.length && !soon.length && !upcoming.length) return null;
 
@@ -26,22 +26,23 @@ export default function DeadlinesPanel({
   function row(t: Task, kind: "overdue" | "soon" | "up") {
     return (
       <div
-        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-accent"
+        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 hover:bg-[var(--accent-soft)] transition-colors"
         key={t.id}
         onClick={() => onOpenTask(t.id)}
       >
-        <span className="size-2 shrink-0 rounded-full" style={{ background: clusterColor(t.cluster_id) }} />
-        <span className="min-w-0 flex-1 truncate text-[13.5px]">{t.title}</span>
+        <span className="size-1.5 shrink-0 rounded-full" style={{ background: clusterColor(t.cluster_id) }} />
+        <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">{t.title}</span>
         <span
           className={cn(
-            "shrink-0 text-xs font-semibold whitespace-nowrap",
-            kind === "overdue" && "text-(--overdue)",
-            kind === "soon" && "text-(--soon)"
+            "shrink-0 text-[11px] font-mono",
+            kind === "overdue" && "text-rose-500 font-medium",
+            kind === "soon" && "text-amber-500",
+            kind === "up" && "text-[var(--muted)]"
           )}
         >
           {fmtDate(t.deadline)}
         </span>
-        <span className="hidden shrink-0 truncate text-[11.5px] whitespace-nowrap text-muted-foreground sm:inline">
+        <span className="hidden shrink-0 truncate text-[11px] font-mono text-[var(--muted)] sm:inline">
           · {clusterName(t.cluster_id)}
         </span>
       </div>
@@ -51,59 +52,69 @@ export default function DeadlinesPanel({
   return (
     <div
       className={cn(
-        "mb-4.5 rounded-(--radius) border border-border border-l-4 bg-card px-3.75 py-3 shadow-(--shadow)",
-        overdue.length ? "border-l-(--overdue)" : "border-l-(--soon)"
+        "mb-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2.5 shadow-xs transition-all",
+        overdue.length && "border-l-4 border-l-rose-500"
       )}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="flex shrink-0 items-center gap-1.5 text-[16.5px] font-semibold [font-family:var(--serif)]">
-          <AlarmClock className="size-4.25 text-(--clay)" />
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-[var(--ink)]">
+          <AlarmClock className="size-3.5 text-[var(--muted)]" />
           Deadlines
         </span>
-        <span className="flex flex-wrap gap-1.5">
+
+        <div className="flex flex-wrap items-center gap-1.5">
           {overdue.length > 0 && (
-            <span className="rounded-full px-2.5 py-0.5 text-xs text-white" style={{ background: "var(--overdue)" }}>
+            <span className="rounded-md px-2 py-0.5 text-[10.5px] font-mono font-medium text-rose-500 bg-rose-500/10 border border-rose-500/20">
               {overdue.length} overdue
             </span>
           )}
           {soon.length > 0 && (
-            <span className="rounded-full px-2.5 py-0.5 text-xs text-white" style={{ background: "var(--soon)" }}>
-              {soon.length} due soon
+            <span className="rounded-md px-2 py-0.5 text-[10.5px] font-mono font-medium text-amber-500 bg-amber-500/10 border border-amber-500/20">
+              {soon.length} soon
             </span>
           )}
           {upcoming.length > 0 && (
-            <span className="rounded-full border border-primary px-2.5 py-0.5 text-xs text-foreground">{upcoming.length} this week</span>
+            <span className="rounded-md px-2 py-0.5 text-[10.5px] font-mono text-[var(--muted)] bg-[var(--panel-2)] border border-[var(--line)]">
+              {upcoming.length} this week
+            </span>
           )}
-        </span>
-        <button className="ml-auto cursor-pointer border-0 bg-transparent text-[12.5px] text-muted-foreground hover:text-primary" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "Hide" : "Show"}
+        </div>
+
+        <button
+          type="button"
+          className="ml-auto flex items-center gap-1 cursor-pointer border-0 bg-transparent text-[11.5px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <span>{expanded ? "Collapse" : "View"}</span>
+          {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
         </button>
       </div>
+
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="mt-2.5 flex flex-col gap-0.5 pt-0.5">
+            <div className="mt-2.5 flex flex-col gap-0.5 border-t border-[var(--line)] pt-2">
               {overdue.length > 0 && (
                 <>
-                  <div className="mt-2 mb-0.5 px-0.5 text-[11px] font-bold tracking-wide text-(--overdue) uppercase">Overdue / missed</div>
+                  <div className="mt-1 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-rose-500">Overdue / missed</div>
                   {overdue.map((t) => row(t, "overdue"))}
                 </>
               )}
               {soon.length > 0 && (
                 <>
-                  <div className="mt-2 mb-0.5 px-0.5 text-[11px] font-bold tracking-wide text-(--soon) uppercase">Due soon (next 2 days)</div>
+                  <div className="mt-2 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-amber-500">Due soon (next 2 days)</div>
                   {soon.map((t) => row(t, "soon"))}
                 </>
               )}
               {upcoming.length > 0 && (
                 <>
-                  <div className="mt-2 mb-0.5 px-0.5 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">Upcoming this week</div>
+                  <div className="mt-2 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-[var(--muted)]">Upcoming this week</div>
                   {upcoming.map((t) => row(t, "up"))}
                 </>
               )}

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,13 +48,40 @@ Future<PickedFile?> pickMedia() async {
   return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
 }
 
+/// Take photo with camera.
+Future<PickedFile?> pickImageFromCamera() async {
+  final picker = ImagePicker();
+  final XFile? file = await picker.pickImage(source: ImageSource.camera);
+  if (file == null) return null;
+  final bytes = await file.readAsBytes();
+  final mime = file.mimeType ?? _guessMime(file.name);
+  return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
+}
+
+/// Pick image from gallery.
+Future<PickedFile?> pickImageFromGallery() async {
+  final picker = ImagePicker();
+  final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+  if (file == null) return null;
+  final bytes = await file.readAsBytes();
+  final mime = file.mimeType ?? _guessMime(file.name);
+  return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
+}
+
 /// Any file type, via the system document picker.
 Future<PickedFile?> pickDocument() async {
   final result = await FilePicker.platform.pickFiles(withData: true);
   if (result == null || result.files.isEmpty) return null;
   final f = result.files.first;
-  final bytes = f.bytes ?? (f.path != null ? await File(f.path!).readAsBytes() : Uint8List(0));
-  return PickedFile(path: f.path ?? '', bytes: bytes, name: f.name, mime: _guessMime(f.name), size: bytes.length);
+  Uint8List bytes = f.bytes ?? Uint8List(0);
+  String filePath = '';
+  if (!kIsWeb) {
+    filePath = f.path ?? '';
+    if (bytes.isEmpty && filePath.isNotEmpty) {
+      bytes = await File(filePath).readAsBytes();
+    }
+  }
+  return PickedFile(path: filePath, bytes: bytes, name: f.name, mime: _guessMime(f.name), size: bytes.length);
 }
 
 String _guessMime(String filename) {

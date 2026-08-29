@@ -127,10 +127,10 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
 
   return (
     <form
-      className={`mb-4 flex items-center gap-2 rounded-2xl border bg-white/90 dark:bg-[#16161a]/85 py-2 pr-2 pl-3.5 shadow-sm dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] backdrop-blur-md transition-all overflow-hidden ${
+      className={`mb-5 flex items-center gap-2 rounded-xl border bg-[var(--panel)] px-3 py-2 shadow-xs transition-all ${
         isDragging 
-          ? "border-zinc-400 bg-zinc-100/80 dark:border-white/40 dark:bg-white/[0.08] ring-2 ring-zinc-400/20 dark:ring-white/20" 
-          : "border-zinc-200/90 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/15 focus-within:border-zinc-400 dark:focus-within:border-white/25 focus-within:bg-white dark:focus-within:bg-[#19191e]"
+          ? "border-[var(--ink)] bg-[var(--accent-soft)] ring-1 ring-[var(--ink)]" 
+          : "border-[var(--line)] hover:border-[var(--line-strong)] focus-within:border-[var(--ink)] focus-within:shadow-sm"
       }`}
       onSubmit={handleSubmit}
       onDragOver={handleDragOver}
@@ -146,12 +146,12 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
       />
       
       {/* Quick Action Icons */}
-      <div className="flex items-center gap-0.5 text-zinc-500 dark:text-zinc-400 shrink-0">
+      <div className="flex items-center gap-0.5 text-[var(--ink3)] shrink-0">
         <Button 
           type="button" 
           variant="ghost" 
           size="icon" 
-          className={`size-8 rounded-xl transition-colors hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100 ${isRecording ? "text-rose-500 hover:text-rose-600 hover:bg-rose-500/10" : ""}`}
+          className={`size-7 transition-colors hover:text-[var(--ink)] ${isRecording ? "text-[var(--ink)]" : ""}`}
           onClick={toggleRecording}
           title={isRecording ? "Stop Recording" : "Record Audio"}
         >
@@ -161,7 +161,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
           type="button" 
           variant="ghost" 
           size="icon" 
-          className="size-8 rounded-xl hidden sm:inline-flex text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="size-7 text-[var(--ink3)] hover:text-[var(--ink)] hidden sm:inline-flex"
           onClick={() => triggerFileInput("image/*")}
           title="Add Image"
         >
@@ -171,7 +171,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
           type="button" 
           variant="ghost" 
           size="icon" 
-          className="size-8 rounded-xl hidden sm:inline-flex text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="size-7 text-[var(--ink3)] hover:text-[var(--ink)] hidden sm:inline-flex"
           onClick={() => triggerFileInput("video/*")}
           title="Add Video"
         >
@@ -181,7 +181,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
           type="button" 
           variant="ghost" 
           size="icon" 
-          className="size-8 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="size-7 text-[var(--ink3)] hover:text-[var(--ink)]"
           onClick={() => triggerFileInput()}
           title="Add File"
         >
@@ -191,7 +191,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
           type="button" 
           variant="ghost" 
           size="icon" 
-          className="size-8 rounded-xl hidden sm:inline-flex text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="size-7 text-[var(--ink3)] hover:text-[var(--ink)] hidden sm:inline-flex"
           onClick={() => {
             if (!value.startsWith("http")) {
               setValue("https://" + value);
@@ -205,9 +205,9 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
 
       <div className="flex flex-1 items-center gap-2 overflow-x-auto hide-scrollbar">
         {attachedFiles.map((file, i) => (
-          <div key={i} className="flex items-center gap-1.5 rounded-lg bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/10 px-2 py-1 text-xs text-zinc-800 dark:text-zinc-200 whitespace-nowrap">
+          <div key={i} className="flex items-center gap-1.5 border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink)] whitespace-nowrap">
             <span className="max-w-28 truncate">{file.name}</span>
-            <button type="button" onClick={() => removeFile(i)} className="text-zinc-400 hover:text-rose-500">
+            <button type="button" onClick={() => removeFile(i)} className="text-[var(--ink3)] hover:text-[var(--ink)]">
               <X className="size-3" />
             </button>
           </div>
@@ -244,7 +244,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
             type="text"
             placeholder={isDragging ? "Drop files here..." : attachedFiles.length > 0 ? "Add a description..." : "Add a task and press Enter..."}
             autoComplete="off"
-            className="min-w-10 flex-1 border-0 bg-transparent text-[14px] text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            className="min-w-10 flex-1 border-0 bg-transparent text-[14px] text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
@@ -255,7 +255,7 @@ export default function QuickAdd({ onAdd }: { onAdd: (title: string, files?: Fil
         <Button 
           type="submit" 
           size="sm" 
-          className="rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white shrink-0 gap-1 px-3.5 h-8 text-[12.5px] shadow-xs transition-all"
+          className="bg-[var(--ink)] text-[var(--bg)] shrink-0 gap-1 px-3 h-7 text-[12px] transition-opacity hover:opacity-80"
         >
           <Plus className="size-3.5" /> Add
         </Button>

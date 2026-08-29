@@ -119,106 +119,99 @@ export const RESEARCH_PRESETS: PresetEquation[] = [
     paramB: { name: "Equivalence Vol (V_eq)", value: 10, min: 5, max: 15, step: 0.5 },
   },
 
-  // ── Astrophysics & Relativity ──
+  // ── Mathematics: Waves, Distributions & Transforms ──
+  {
+    name: "Standard Gaussian Bell Curve",
+    discipline: "Mathematics",
+    category: "Statistics & Probability",
+    latex: "f(x) = \\frac{1}{\\sqrt{2\\pi a^2}} e^{-\\frac{x^2}{2a^2}}",
+    mathExpr: "(1 / (sqrt(2 * pi) * a)) * exp(- (x^2) / (2 * a^2))",
+    defaultXMin: -4,
+    defaultXMax: 4,
+    paramA: { name: "Standard Deviation (σ)", value: 1, min: 0.2, max: 3, step: 0.1 },
+  },
+  {
+    name: "Lorentzian (Cauchy) Peak",
+    discipline: "Mathematics",
+    category: "Spectral Distribution",
+    latex: "L(x) = \\frac{1}{\\pi} \\frac{\\gamma}{x^2 + \\gamma^2}",
+    mathExpr: "(1 / pi) * (a / (x^2 + a^2 + 0.001))",
+    defaultXMin: -5,
+    defaultXMax: 5,
+    paramA: { name: "HWHM Width (γ)", value: 0.5, min: 0.1, max: 2, step: 0.05 },
+  },
+  {
+    name: "Airy Disk Diffraction",
+    discipline: "Mathematics",
+    category: "Special Functions",
+    latex: "I(x) = \\left(\\frac{2 J_1(x)}{x}\\right)^2 \\approx \\left(\\frac{\\sin(a x) - a x \\cos(a x)}{(a x)^2}\\right)^2",
+    mathExpr: "((sin(a * max(abs(x), 0.01)) - a * max(abs(x), 0.01) * cos(a * max(abs(x), 0.01))) / (a * max(abs(x), 0.01))^2)^2",
+    defaultXMin: -8,
+    defaultXMax: 8,
+    paramA: { name: "Aperture Scale (a)", value: 1, min: 0.3, max: 3, step: 0.1 },
+  },
+  {
+    name: "Logistic Growth Sigmoid",
+    discipline: "Mathematics",
+    category: "Differential Models",
+    latex: "P(t) = \\frac{L}{1 + e^{-k(t - t_0)}}",
+    mathExpr: "a / (1 + exp(-b * (x - 2)))",
+    defaultXMin: -4,
+    defaultXMax: 8,
+    paramA: { name: "Carrying Capacity (L)", value: 10, min: 2, max: 20, step: 1 },
+    paramB: { name: "Growth Rate (k)", value: 1, min: 0.2, max: 3, step: 0.1 },
+  },
+
+  // ── Astrophysics: Radiation & Relativity ──
   {
     name: "Planck Blackbody Radiation",
     discipline: "Astrophysics",
-    category: "Thermodynamics",
-    latex: "I(\\lambda) = \\frac{2hc^2}{\\lambda^5 \\left(e^{\\frac{hc}{\\lambda k_B T}} - 1\\right)}",
-    mathExpr: "1 / (x^5 * (exp(a / max(x, 0.2)) - 1))",
-    defaultXMin: 0.2,
-    defaultXMax: 5,
-    paramA: { name: "Temperature scale (a)", value: 2, min: 0.5, max: 5, step: 0.2 },
+    category: "Radiative Transfer",
+    latex: "B_\\lambda(T) = \\frac{2hc^2}{\\lambda^5} \\frac{1}{e^{\\frac{hc}{\\lambda k_B T}} - 1}",
+    mathExpr: "(1 / (max(x, 0.1)^5)) / (exp(a / max(x, 0.1)) - 1 + 0.0001)",
+    defaultXMin: 0.1,
+    defaultXMax: 8,
+    paramA: { name: "Temperature Factor (a)", value: 2.5, min: 0.5, max: 6, step: 0.2 },
   },
   {
     name: "Schwarzschild Effective Potential",
     discipline: "Astrophysics",
     category: "General Relativity",
-    latex: "V_{eff}(r) = -\\frac{M}{r} + \\frac{L^2}{2r^2} - \\frac{M L^2}{r^3}",
-    mathExpr: "-1 / max(x, 0.5) + a / (2 * max(x, 0.5)^2) - a / max(x, 0.5)^3",
-    defaultXMin: 0.6,
+    latex: "V_{\\text{eff}}(r) = -\\frac{M}{r} + \\frac{L^2}{2r^2} - \\frac{M L^2}{r^3}",
+    mathExpr: "-1 / max(x, 0.5) + a^2 / (2 * max(x, 0.5)^2) - a^2 / max(x, 0.5)^3",
+    defaultXMin: 0.8,
     defaultXMax: 10,
-    paramA: { name: "Angular Momentum (L²)", value: 4, min: 1, max: 10, step: 0.5 },
-  },
-
-  // ── Mathematics & Analysis ──
-  {
-    name: "Sinc Function sinc(x)",
-    discipline: "Mathematics",
-    category: "Signal Processing",
-    latex: "f(x) = \\frac{\\sin(a x)}{a x}",
-    mathExpr: "sin(a * max(abs(x), 0.0001)) / (a * max(abs(x), 0.0001))",
-    defaultXMin: -10,
-    defaultXMax: 10,
-    paramA: { name: "Frequency (a)", value: 1, min: 0.2, max: 4, step: 0.1 },
-  },
-  {
-    name: "Logistic Sigmoid",
-    discipline: "Mathematics",
-    category: "Statistics & Machine Learning",
-    latex: "\\sigma(x) = \\frac{1}{1 + e^{-a x}}",
-    mathExpr: "1 / (1 + exp(-a * x))",
-    defaultXMin: -6,
-    defaultXMax: 6,
-    paramA: { name: "Growth Rate (a)", value: 1, min: 0.2, max: 3, step: 0.1 },
-  },
-  {
-    name: "Fourier Square Wave (3 Terms)",
-    discipline: "Mathematics",
-    category: "Fourier Analysis",
-    latex: "f(x) = \\sin(x) + \\frac{1}{3}\\sin(3x) + \\frac{1}{5}\\sin(5x)",
-    mathExpr: "sin(x) + (1/3)*sin(3*x) + (1/5)*sin(5*x)",
-    defaultXMin: -6.28,
-    defaultXMax: 6.28,
-    paramA: { name: "Scale (a)", value: 1, min: 0.5, max: 2, step: 0.1 },
-  },
-  {
-    name: "Cubic Polynomial Catastrophe",
-    discipline: "Mathematics",
-    category: "Algebra",
-    latex: "f(x) = x^3 - a x + b",
-    mathExpr: "x^3 - a * x + b",
-    defaultXMin: -3,
-    defaultXMax: 3,
-    paramA: { name: "Linear (a)", value: 3, min: -5, max: 8, step: 0.5 },
-    paramB: { name: "Offset (b)", value: 0, min: -4, max: 4, step: 0.5 },
+    paramA: { name: "Angular Momentum (L)", value: 3.5, min: 1.5, max: 6, step: 0.2 },
   },
 ];
 
-/**
- * Parses user input formula into valid executable JS Math expression.
- */
-function compileMathExpression(expr: string): (x: number, a: number, b: number) => number {
+function evaluateExpression(expr: string, x: number, a: number, b: number): number {
   try {
-    // Replace standard math functions: sin, cos, tan, exp, log, ln, sqrt, abs, sinh, cosh, tanh, asin, acos, atan, pi, e
-    let code = expr
+    let sanitized = expr
+      .replace(/pi/gi, String(Math.PI))
+      .replace(/\be\b/g, String(Math.E))
+      .replace(/exp/g, "Math.exp")
+      .replace(/sqrt/g, "Math.sqrt")
+      .replace(/abs/g, "Math.abs")
+      .replace(/cos/g, "Math.cos")
+      .replace(/sin/g, "Math.sin")
+      .replace(/tan/g, "Math.tan")
+      .replace(/log/g, "Math.log10")
+      .replace(/ln/g, "Math.log")
       .replace(/\^/g, "**")
-      .replace(/\bpi\b/gi, "Math.PI")
-      .replace(/\be\b/g, "Math.E")
-      .replace(/\bsin\b/g, "Math.sin")
-      .replace(/\bcos\b/g, "Math.cos")
-      .replace(/\btan\b/g, "Math.tan")
-      .replace(/\basin\b/g, "Math.asin")
-      .replace(/\bacos\b/g, "Math.acos")
-      .replace(/\batan\b/g, "Math.atan")
-      .replace(/\bsinh\b/g, "Math.sinh")
-      .replace(/\bcosh\b/g, "Math.cosh")
-      .replace(/\btanh\b/g, "Math.tanh")
-      .replace(/\bexp\b/g, "Math.exp")
-      .replace(/\bln\b/g, "Math.log")
-      .replace(/\blog\b/g, "Math.log10")
-      .replace(/\bsqrt\b/g, "Math.sqrt")
-      .replace(/\babs\b/g, "Math.abs")
       .replace(/\bmax\b/g, "Math.max")
       .replace(/\bmin\b/g, "Math.min");
 
-    // Clean multiple Math.Math occurrences
-    code = code.replace(/Math\.Math\./g, "Math.");
+    sanitized = sanitized.replace(/([0-9])([a-zA-Z])/g, "$1 * $2");
+    sanitized = sanitized.replace(/\bx\b/g, `(${x})`);
+    sanitized = sanitized.replace(/\ba\b/g, `(${a})`);
+    sanitized = sanitized.replace(/\bb\b/g, `(${b})`);
 
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
-    return new Function("x", "a", "b", `try { return ${code}; } catch(e) { return 0; }`) as any;
+    const val = new Function(`return ${sanitized}`)();
+    return typeof val === "number" && !isNaN(val) && isFinite(val) ? val : 0;
   } catch {
-    return () => 0;
+    return 0;
   }
 }
 
@@ -228,137 +221,124 @@ export default function EquationGraphVisualizer() {
   const [customEquationInput, setCustomEquationInput] = useState<string>(RESEARCH_PRESETS[0].mathExpr);
   const [latexFormulaInput, setLatexFormulaInput] = useState<string>(RESEARCH_PRESETS[0].latex);
 
+  const [paramA, setParamA] = useState<number>(RESEARCH_PRESETS[0].paramA.value);
+  const [paramB, setParamB] = useState<number>(RESEARCH_PRESETS[0].paramB?.value ?? 1);
+
   const [xMin, setXMin] = useState<number>(RESEARCH_PRESETS[0].defaultXMin);
   const [xMax, setXMax] = useState<number>(RESEARCH_PRESETS[0].defaultXMax);
-  const [paramA, setParamA] = useState<number>(RESEARCH_PRESETS[0].paramA.value);
-  const [paramB, setParamB] = useState<number>(RESEARCH_PRESETS[0].paramB?.value || 1);
-  const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copiedLatex, setCopiedLatex] = useState(false);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
 
-  function copyLatexFormula(latex: string) {
-    navigator.clipboard.writeText(latex);
-    setCopiedLatex(true);
-    setTimeout(() => setCopiedLatex(false), 1500);
-  }
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  function selectPreset(p: PresetEquation) {
+  const selectPreset = (p: PresetEquation) => {
     setSelectedPreset(p);
     setCustomEquationInput(p.mathExpr);
     setLatexFormulaInput(p.latex);
+    setParamA(p.paramA.value);
+    setParamB(p.paramB?.value ?? 1);
     setXMin(p.defaultXMin);
     setXMax(p.defaultXMax);
-    setParamA(p.paramA.value);
-    setParamB(p.paramB?.value || 1);
-  }
+  };
 
-  // Calculate curve points
-  const { points, minY, maxY } = useMemo(() => {
-    const N = 350;
-    const dx = (xMax - xMin) / N;
+  const points = useMemo(() => {
     const pts: Array<{ x: number; y: number }> = [];
-    const fn = compileMathExpression(customEquationInput);
+    const steps = 300;
+    const dx = (xMax - xMin) / steps;
+    for (let i = 0; i <= steps; i++) {
+      const x = xMin + i * dx;
+      const y = evaluateExpression(customEquationInput, x, paramA, paramB);
+      pts.push({ x, y });
+    }
+    return pts;
+  }, [customEquationInput, paramA, paramB, xMin, xMax]);
 
+  const { minY, maxY } = useMemo(() => {
+    if (!points.length) return { minY: -1, maxY: 1 };
     let min = Infinity;
     let max = -Infinity;
-
-    for (let i = 0; i <= N; i++) {
-      const x = xMin + i * dx;
-      const y = fn(x, paramA, paramB);
-      if (!isNaN(y) && isFinite(y)) {
-        pts.push({ x, y });
-        if (y < min) min = y;
-        if (y > max) max = y;
-      }
+    points.forEach((p) => {
+      if (p.y < min) min = p.y;
+      if (p.y > max) max = p.y;
+    });
+    if (min === max) {
+      min -= 1;
+      max += 1;
     }
-
-    if (!isFinite(min) || !isFinite(max) || min === max) {
-      min = -1;
-      max = 1;
-    }
-
-    const yPad = (max - min) * 0.1 || 0.5;
-    return {
-      points: pts,
-      minY: min - yPad,
-      maxY: max + yPad,
-    };
-  }, [customEquationInput, xMin, xMax, paramA, paramB]);
+    const margin = (max - min) * 0.15 || 0.5;
+    return { minY: min - margin, maxY: max + margin };
+  }, [points]);
 
   const svgW = 600;
-  const svgH = 280;
-  const pad = { top: 25, right: 30, bottom: 40, left: 55 };
+  const svgH = 260;
+  const pad = { top: 25, right: 30, bottom: 35, left: 50 };
   const plotW = svgW - pad.left - pad.right;
   const plotH = svgH - pad.top - pad.bottom;
 
-  function toSvgX(x: number) {
-    return pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
-  }
+  const toSvgX = (x: number) => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+  const toSvgY = (y: number) => pad.top + ((maxY - y) / (maxY - minY)) * plotH;
 
-  function toSvgY(y: number) {
-    return pad.top + plotH - ((y - minY) / (maxY - minY)) * plotH;
-  }
+  const polylineStr = useMemo(() => {
+    return points
+      .map((p) => `${toSvgX(p.x).toFixed(1)},${toSvgY(p.y).toFixed(1)}`)
+      .join(" ");
+  }, [points, xMin, xMax, minY, maxY]);
 
-  const polylineStr = points.map((p) => `${toSvgX(p.x)},${toSvgY(p.y)}`).join(" ");
+  const copyLatexFormula = (latex: string) => {
+    navigator.clipboard.writeText(latex);
+    setCopiedLatex(true);
+    setTimeout(() => setCopiedLatex(false), 1500);
+  };
 
-  // Export SVG / PNG
-  function exportImage(type: "svg" | "png") {
-    const svgEl = svgRef.current;
-    if (!svgEl) return;
-
-    const svgData = new XMLSerializer().serializeToString(svgEl);
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-
-    if (type === "svg") {
-      const url = URL.createObjectURL(svgBlob);
+  const exportImage = (format: "png" | "svg") => {
+    if (!svgRef.current) return;
+    if (format === "svg") {
+      const serializer = new XMLSerializer();
+      const source = serializer.serializeToString(svgRef.current);
+      const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `curve_plot_${Date.now()}.svg`;
-      document.body.appendChild(a);
+      a.download = `${selectedPreset.name.replace(/\s+/g, "_")}.svg`;
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      return;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = svgW * 2;
-    canvas.height = svgH * 2;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.fillStyle = "#101014";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
+    } else {
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgRef.current);
+      const img = new Image();
+      const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = svgW * 2;
+        canvas.height = svgH * 2;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const pngUrl = canvas.toDataURL("image/png");
           const a = document.createElement("a");
-          a.href = url;
-          a.download = `curve_plot_${Date.now()}.png`;
-          document.body.appendChild(a);
+          a.href = pngUrl;
+          a.download = `${selectedPreset.name.replace(/\s+/g, "_")}.png`;
           a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
         }
-      }, "image/png");
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-  }
+      };
+      img.src = url;
+    }
+  };
 
   const filteredPresets = RESEARCH_PRESETS.filter(
     (p) => selectedDiscipline === "All" || p.discipline === selectedDiscipline
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5 text-[var(--ink)]">
       {/* Discipline Category Filter & Preset Selector */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-mono">
-          <span className="text-[10.5px] uppercase font-bold text-zinc-400 dark:text-zinc-500 mr-1 shrink-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[11px] font-mono no-scrollbar">
+          <span className="text-[10px] uppercase font-mono text-[var(--muted)] mr-1 shrink-0">
             Discipline:
           </span>
           {["All", "Physics", "Chemistry", "Mathematics", "Astrophysics"].map((d) => (
@@ -367,10 +347,10 @@ export default function EquationGraphVisualizer() {
               type="button"
               onClick={() => setSelectedDiscipline(d)}
               className={cn(
-                "rounded-lg px-2.5 py-1 transition-all cursor-pointer shrink-0 font-medium",
+                "rounded-md px-2 py-0.5 transition-all cursor-pointer shrink-0 font-medium border",
                 selectedDiscipline === d
-                  ? "bg-purple-600 text-white font-bold shadow-xs"
-                  : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.08]"
+                  ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
+                  : "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
               )}
             >
               {d}
@@ -379,17 +359,17 @@ export default function EquationGraphVisualizer() {
         </div>
 
         {/* Model Chips */}
-        <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto pr-1">
+        <div className="flex flex-wrap items-center gap-1 max-h-24 overflow-y-auto pr-1">
           {filteredPresets.map((preset) => (
             <button
               key={preset.name}
               type="button"
               onClick={() => selectPreset(preset)}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all cursor-pointer shadow-2xs",
+                "rounded-md px-2 py-0.5 text-[11px] font-mono transition-all cursor-pointer border",
                 selectedPreset.name === preset.name
-                  ? "bg-purple-600 text-white font-semibold shadow-xs"
-                  : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/[0.08]"
+                  ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
+                  : "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
               )}
             >
               {preset.name}
@@ -399,39 +379,35 @@ export default function EquationGraphVisualizer() {
       </div>
 
       {/* Editable Custom Formula Input Bar */}
-      <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-500/10 p-3.5 space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <span className="text-[11px] font-mono uppercase text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
-            <Sparkles className="size-3.5" />
-            <span>Custom Equation Formula f(x, a, b)</span>
+      <div className="rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-3 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <span className="text-[10.5px] font-mono uppercase text-[var(--muted)] font-bold flex items-center gap-1.5">
+            <Sparkles className="size-3" />
+            <span>Formula f(x, a, b)</span>
           </span>
-          <span className="text-[10.5px] font-mono text-zinc-400 dark:text-zinc-500">
-            Supports: sin, cos, tan, exp, ln, sqrt, ^, abs, pi, e
+          <span className="text-[10px] font-mono text-[var(--ink3)]">
+            sin, cos, tan, exp, ln, sqrt, ^, abs, pi, e
           </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Input
-            value={customEquationInput}
-            onChange={(e) => setCustomEquationInput(e.target.value)}
-            placeholder="Type any formula, e.g. sin(a * x) * exp(-b * x^2) or x^3 - 3*x"
-            className="h-10 text-[13.5px] font-mono rounded-xl bg-white dark:bg-[#15151c] border-purple-500/25"
-          />
-        </div>
+        <Input
+          value={customEquationInput}
+          onChange={(e) => setCustomEquationInput(e.target.value)}
+          placeholder="Type formula, e.g. sin(a * x) * exp(-b * x^2)"
+          className="h-8.5 text-[13px] font-mono rounded-lg bg-[var(--bg)] border-[var(--line)]"
+        />
 
-        {/* Live LaTeX preview of formula */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-500/15 text-[13px]">
-          <div className="text-zinc-900 dark:text-zinc-100">
-            <MathRenderer text={`$$y = ${latexFormulaInput || customEquationInput}$$`} displayMode={true} />
-          </div>
+        {/* Live LaTeX preview */}
+        <div className="pt-1 border-t border-[var(--line)] text-[12.5px]">
+          <MathRenderer text={`$$y = ${latexFormulaInput || customEquationInput}$$`} displayMode={true} />
         </div>
       </div>
 
       {/* Parameter Sliders */}
-      <div className="flex flex-wrap items-center gap-4 bg-zinc-50/80 dark:bg-[#1a1a20] rounded-xl border border-zinc-200/80 dark:border-white/[0.06] p-3 shadow-xs">
+      <div className="flex flex-wrap items-center gap-4 bg-[var(--panel-2)] rounded-xl border border-[var(--line)] p-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11.5px] font-mono text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
-            Parameter A: <b className="text-purple-600 dark:text-purple-400">{paramA}</b>
+          <span className="text-[11px] font-mono text-[var(--muted)] whitespace-nowrap">
+            A: <b className="text-[var(--ink)]">{paramA}</b>
           </span>
           <input
             type="range"
@@ -440,13 +416,13 @@ export default function EquationGraphVisualizer() {
             step={0.05}
             value={paramA}
             onChange={(e) => setParamA(parseFloat(e.target.value))}
-            className="w-28 accent-purple-600 cursor-pointer"
+            className="w-24 accent-[var(--ink)] cursor-pointer"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11.5px] font-mono text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
-            Parameter B: <b className="text-purple-600 dark:text-purple-400">{paramB}</b>
+          <span className="text-[11px] font-mono text-[var(--muted)] whitespace-nowrap">
+            B: <b className="text-[var(--ink)]">{paramB}</b>
           </span>
           <input
             type="range"
@@ -455,40 +431,40 @@ export default function EquationGraphVisualizer() {
             step={0.1}
             value={paramB}
             onChange={(e) => setParamB(parseFloat(e.target.value))}
-            className="w-28 accent-purple-600 cursor-pointer"
+            className="w-24 accent-[var(--ink)] cursor-pointer"
           />
         </div>
       </div>
 
       {/* SVG Interactive Wave Visualizer */}
-      <div className="relative rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#101014] p-3 shadow-sm overflow-hidden">
+      <div className="relative rounded-xl border border-[var(--line)] bg-[#000000] p-2 overflow-hidden">
         {/* Action overlay */}
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-white/85 dark:bg-black/70 backdrop-blur-md rounded-xl p-1 border border-zinc-200/80 dark:border-white/10 shadow-xs">
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-black/80 backdrop-blur-md rounded-lg p-1 border border-white/10">
           <button
             type="button"
             onClick={() => setDialogOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-600 dark:text-purple-300 border border-purple-500/30 px-2.5 py-1 text-[11.5px] font-medium transition-all cursor-pointer shadow-2xs"
-            title="View full equation dialog with formula library"
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-mono text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="View in Dialog"
           >
-            <Maximize2 className="size-3.5" />
-            <span className="hidden sm:inline">View in Dialog</span>
+            <Maximize2 className="size-3" />
+            <span className="hidden sm:inline">Dialog</span>
           </button>
           <button
             type="button"
             onClick={() => exportImage("png")}
-            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11.5px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            title="Download PNG image"
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-mono text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Download PNG"
           >
-            <Download className="size-3.5" />
+            <Download className="size-3" />
             <span>PNG</span>
           </button>
           <button
             type="button"
             onClick={() => exportImage("svg")}
-            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11.5px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            title="Download SVG vector"
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-mono text-zinc-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Download SVG"
           >
-            <Download className="size-3.5" />
+            <Download className="size-3" />
             <span>SVG</span>
           </button>
         </div>
@@ -510,7 +486,7 @@ export default function EquationGraphVisualizer() {
           }}
           onMouseLeave={() => setHoverCoord(null)}
         >
-          <rect width={svgW} height={svgH} fill="#101014" rx="12" />
+          <rect width={svgW} height={svgH} fill="#000000" rx="8" />
 
           {/* Coordinate Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
@@ -522,7 +498,7 @@ export default function EquationGraphVisualizer() {
                 y1={y}
                 x2={svgW - pad.right}
                 y2={y}
-                stroke="#27272a"
+                stroke="#222222"
                 strokeDasharray="2 3"
                 strokeWidth="1"
               />
@@ -538,21 +514,21 @@ export default function EquationGraphVisualizer() {
                 y1={pad.top}
                 x2={x}
                 y2={svgH - pad.bottom}
-                stroke="#27272a"
+                stroke="#222222"
                 strokeDasharray="2 3"
                 strokeWidth="1"
               />
             );
           })}
 
-          {/* X = 0 and Y = 0 Zero axes */}
+          {/* Axes */}
           {minY <= 0 && maxY >= 0 && (
             <line
               x1={pad.left}
               y1={toSvgY(0)}
               x2={svgW - pad.right}
               y2={toSvgY(0)}
-              stroke="#52525b"
+              stroke="#444444"
               strokeWidth="1.5"
             />
           )}
@@ -562,39 +538,31 @@ export default function EquationGraphVisualizer() {
               y1={pad.top}
               x2={toSvgX(0)}
               y2={svgH - pad.bottom}
-              stroke="#52525b"
+              stroke="#444444"
               strokeWidth="1.5"
             />
           )}
 
           {/* Axis numeric ticks */}
-          <text x={pad.left - 8} y={pad.top + 8} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
+          <text x={pad.left - 6} y={pad.top + 8} textAnchor="end" fill="#666666" fontSize="9" fontFamily="monospace">
             {maxY.toFixed(2)}
           </text>
-          <text x={pad.left - 8} y={svgH - pad.bottom} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
+          <text x={pad.left - 6} y={svgH - pad.bottom} textAnchor="end" fill="#666666" fontSize="9" fontFamily="monospace">
             {minY.toFixed(2)}
           </text>
-          <text x={pad.left} y={svgH - pad.bottom + 16} textAnchor="start" fill="#71717a" fontSize="10" fontFamily="monospace">
+          <text x={pad.left} y={svgH - pad.bottom + 14} textAnchor="start" fill="#666666" fontSize="9" fontFamily="monospace">
             {xMin.toFixed(1)}
           </text>
-          <text x={svgW - pad.right} y={svgH - pad.bottom + 16} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
+          <text x={svgW - pad.right} y={svgH - pad.bottom + 14} textAnchor="end" fill="#666666" fontSize="9" fontFamily="monospace">
             {xMax.toFixed(1)}
           </text>
 
-          {/* Render Curve with vibrant gradient */}
-          <defs>
-            <linearGradient id="multiGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#c084fc" />
-              <stop offset="50%" stopColor="#38bdf8" />
-              <stop offset="100%" stopColor="#34d399" />
-            </linearGradient>
-          </defs>
-
+          {/* Crisp Monochrome Curve */}
           {polylineStr && (
             <polyline
               fill="none"
-              stroke="url(#multiGradient)"
-              strokeWidth="3"
+              stroke="#FFFFFF"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               points={polylineStr}
@@ -609,35 +577,34 @@ export default function EquationGraphVisualizer() {
                 y1={pad.top}
                 x2={toSvgX(hoverCoord.x)}
                 y2={svgH - pad.bottom}
-                stroke="#a855f7"
+                stroke="#666666"
                 strokeDasharray="2 2"
                 strokeWidth="1"
               />
               <circle
                 cx={toSvgX(hoverCoord.x)}
                 cy={toSvgY(hoverCoord.y)}
-                r="5"
-                fill="#ec4899"
-                stroke="#ffffff"
-                strokeWidth="2"
+                r="4"
+                fill="#FFFFFF"
+                stroke="#000000"
+                strokeWidth="1.5"
               />
               <rect
-                x={Math.min(svgW - pad.right - 100, Math.max(pad.left, toSvgX(hoverCoord.x) - 45))}
-                y={Math.max(pad.top, toSvgY(hoverCoord.y) - 30)}
-                width="90"
-                height="22"
-                rx="6"
-                fill="#18181b"
-                stroke="#3f3f46"
+                x={Math.min(svgW - pad.right - 90, Math.max(pad.left, toSvgX(hoverCoord.x) - 45))}
+                y={Math.max(pad.top, toSvgY(hoverCoord.y) - 26)}
+                width="84"
+                height="18"
+                rx="4"
+                fill="#111111"
+                stroke="#333333"
               />
               <text
-                x={Math.min(svgW - pad.right - 55, Math.max(pad.left + 45, toSvgX(hoverCoord.x)))}
-                y={Math.max(pad.top + 14, toSvgY(hoverCoord.y) - 16)}
+                x={Math.min(svgW - pad.right - 48, Math.max(pad.left + 42, toSvgX(hoverCoord.x)))}
+                y={Math.max(pad.top + 12, toSvgY(hoverCoord.y) - 14)}
                 textAnchor="middle"
-                fill="#f4f4f5"
-                fontSize="9.5"
+                fill="#FFFFFF"
+                fontSize="9"
                 fontFamily="monospace"
-                fontWeight="bold"
               >
                 {`(${hoverCoord.x.toFixed(2)}, ${hoverCoord.y.toFixed(2)})`}
               </text>
@@ -646,7 +613,7 @@ export default function EquationGraphVisualizer() {
         </svg>
 
         {/* Domain Zoom controls */}
-        <div className="flex items-center justify-between pt-2 px-1 text-[11.5px] font-mono text-zinc-500">
+        <div className="flex items-center justify-between pt-1.5 px-1 text-[10.5px] font-mono text-[var(--muted)]">
           <span>Domain: [{xMin}, {xMax}]</span>
           <div className="flex items-center gap-1">
             <button
@@ -655,10 +622,10 @@ export default function EquationGraphVisualizer() {
                 setXMin((v) => v * 0.8);
                 setXMax((v) => v * 0.8);
               }}
-              className="rounded-md border border-zinc-200 dark:border-white/10 px-2 py-0.5 hover:bg-zinc-100 dark:hover:bg-white/10"
+              className="rounded border border-white/10 px-1.5 py-0.2 hover:bg-white/10 text-white cursor-pointer"
               title="Zoom In"
             >
-              <ZoomIn className="size-3" />
+              <ZoomIn className="size-2.5" />
             </button>
             <button
               type="button"
@@ -666,32 +633,32 @@ export default function EquationGraphVisualizer() {
                 setXMin((v) => v * 1.25);
                 setXMax((v) => v * 1.25);
               }}
-              className="rounded-md border border-zinc-200 dark:border-white/10 px-2 py-0.5 hover:bg-zinc-100 dark:hover:bg-white/10"
+              className="rounded border border-white/10 px-1.5 py-0.2 hover:bg-white/10 text-white cursor-pointer"
               title="Zoom Out"
             >
-              <ZoomOut className="size-3" />
+              <ZoomOut className="size-2.5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Fullscreen Equation & Wave Studio Dialog */}
+      {/* Fullscreen Equation Studio Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           showCloseButton={false}
-          className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] gap-0 p-0 overflow-hidden rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#121216] shadow-2xl backdrop-blur-2xl text-zinc-900 dark:text-zinc-100 flex flex-col"
+          className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl text-[var(--ink)] flex flex-col"
         >
           {/* Dialog Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400">
-                <Activity className="size-4.5" />
+              <div className="flex size-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)]">
+                <Activity className="size-4" />
               </div>
               <div>
-                <DialogTitle className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <DialogTitle className="text-[15px] font-medium tracking-tight text-[var(--ink)]">
                   Equation Studio &amp; Wave Visualizer
                 </DialogTitle>
-                <DialogDescription className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <DialogDescription className="text-[11.5px] text-[var(--muted)]">
                   Interactive multi-disciplinary function modeler with LaTeX rendering
                 </DialogDescription>
               </div>
@@ -699,24 +666,24 @@ export default function EquationGraphVisualizer() {
             <button
               type="button"
               onClick={() => setDialogOpen(false)}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+              className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
             >
-              <X className="size-4.5" />
+              <X className="size-4" />
             </button>
           </div>
 
           {/* Dialog Body */}
-          <div className="p-6 overflow-y-auto space-y-5 flex-1 max-h-[calc(90vh-80px)]">
-            {/* Equation & Formula Hero Card */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-500/10 p-4 shadow-xs">
+          <div className="p-6 overflow-y-auto space-y-4 flex-1 max-h-[calc(90vh-80px)]">
+            {/* Equation & Formula Card */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-4">
               <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono uppercase bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold px-2 py-0.5 rounded-md">
+                  <span className="text-[10.5px] font-mono uppercase bg-[var(--bg)] text-[var(--muted)] border border-[var(--line)] px-2 py-0.5 rounded">
                     {selectedPreset.discipline} · {selectedPreset.category}
                   </span>
-                  <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">{selectedPreset.name}</span>
+                  <span className="text-[13px] font-medium text-[var(--ink)]">{selectedPreset.name}</span>
                 </div>
-                <div className="text-[15px] text-zinc-900 dark:text-zinc-100 pt-1 overflow-x-auto no-scrollbar">
+                <div className="text-[14px] text-[var(--ink)] pt-1 overflow-x-auto no-scrollbar">
                   <MathRenderer text={`$$${latexFormulaInput || selectedPreset.latex}$$`} displayMode={true} />
                 </div>
               </div>
@@ -727,155 +694,39 @@ export default function EquationGraphVisualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => copyLatexFormula(latexFormulaInput || selectedPreset.latex)}
-                  className="rounded-xl border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-500/10 text-xs"
+                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
                 >
-                  {copiedLatex ? <Check className="size-3.5 mr-1.5 text-emerald-500" /> : <Copy className="size-3.5 mr-1.5" />}
-                  {copiedLatex ? "Copied LaTeX!" : "Copy LaTeX"}
+                  {copiedLatex ? <Check className="size-3 mr-1.5 text-emerald-500" /> : <Copy className="size-3 mr-1.5" />}
+                  {copiedLatex ? "Copied" : "Copy LaTeX"}
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   onClick={() => exportImage("png")}
-                  className="rounded-xl border-zinc-200 dark:border-white/10 text-xs"
+                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
                 >
-                  <Download className="size-3.5 mr-1.5" /> PNG
+                  <Download className="size-3 mr-1.5" /> PNG
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   onClick={() => exportImage("svg")}
-                  className="rounded-xl border-zinc-200 dark:border-white/10 text-xs"
+                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
                 >
-                  <Download className="size-3.5 mr-1.5" /> SVG
+                  <Download className="size-3 mr-1.5" /> SVG
                 </Button>
               </div>
             </div>
 
-            {/* Interactive Graph Canvas */}
-            <div className="relative rounded-2xl border border-zinc-200 dark:border-white/10 bg-[#101014] p-3 shadow-inner overflow-hidden">
-              <svg
-                viewBox={`0 0 ${svgW} ${svgH}`}
-                className="w-full h-auto select-none"
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const mouseX = e.clientX - rect.left;
-                  const normX = (mouseX / rect.width) * svgW;
-                  if (normX >= pad.left && normX <= svgW - pad.right) {
-                    const xVal = xMin + ((normX - pad.left) / plotW) * (xMax - xMin);
-                    const nearest = points.reduce((prev, curr) => (Math.abs(curr.x - xVal) < Math.abs(prev.x - xVal) ? curr : prev), points[0]);
-                    if (nearest) setHoverCoord({ x: nearest.x, y: nearest.y });
-                  }
-                }}
-                onMouseLeave={() => setHoverCoord(null)}
-              >
-                <rect width={svgW} height={svgH} fill="#101014" rx="12" />
+            {/* Presets Catalog */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] block">
+                Preset Equation Catalog
+              </span>
 
-                {/* Coordinate Grid lines */}
-                {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
-                  const y = pad.top + plotH * pct;
-                  return (
-                    <line key={`y-${pct}`} x1={pad.left} y1={y} x2={svgW - pad.right} y2={y} stroke="#27272a" strokeDasharray="2 3" strokeWidth="1" />
-                  );
-                })}
-                {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
-                  const x = pad.left + plotW * pct;
-                  return (
-                    <line key={`x-${pct}`} x1={x} y1={pad.top} x2={x} y2={svgH - pad.bottom} stroke="#27272a" strokeDasharray="2 3" strokeWidth="1" />
-                  );
-                })}
-
-                {/* Axis lines */}
-                {minY <= 0 && maxY >= 0 && (
-                  <line x1={pad.left} y1={toSvgY(0)} x2={svgW - pad.right} y2={toSvgY(0)} stroke="#52525b" strokeWidth="1.5" />
-                )}
-                {xMin <= 0 && xMax >= 0 && (
-                  <line x1={toSvgX(0)} y1={pad.top} x2={toSvgX(0)} y2={svgH - pad.bottom} stroke="#52525b" strokeWidth="1.5" />
-                )}
-
-                {/* Axis Labels */}
-                <text x={pad.left - 8} y={pad.top + 8} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
-                  {maxY.toFixed(2)}
-                </text>
-                <text x={pad.left - 8} y={svgH - pad.bottom} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
-                  {minY.toFixed(2)}
-                </text>
-                <text x={pad.left} y={svgH - pad.bottom + 16} textAnchor="start" fill="#71717a" fontSize="10" fontFamily="monospace">
-                  {xMin.toFixed(1)}
-                </text>
-                <text x={svgW - pad.right} y={svgH - pad.bottom + 16} textAnchor="end" fill="#71717a" fontSize="10" fontFamily="monospace">
-                  {xMax.toFixed(1)}
-                </text>
-
-                {/* Curve */}
-                {polylineStr && (
-                  <polyline
-                    fill="none"
-                    stroke="url(#multiGradient)"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={polylineStr}
-                  />
-                )}
-
-                {/* Hover Probe */}
-                {hoverCoord && (
-                  <g>
-                    <line x1={toSvgX(hoverCoord.x)} y1={pad.top} x2={toSvgX(hoverCoord.x)} y2={svgH - pad.bottom} stroke="#a855f7" strokeDasharray="2 2" strokeWidth="1" />
-                    <circle cx={toSvgX(hoverCoord.x)} cy={toSvgY(hoverCoord.y)} r="5" fill="#ec4899" stroke="#ffffff" strokeWidth="2" />
-                    <rect
-                      x={Math.min(svgW - pad.right - 100, Math.max(pad.left, toSvgX(hoverCoord.x) - 45))}
-                      y={Math.max(pad.top, toSvgY(hoverCoord.y) - 30)}
-                      width="90"
-                      height="22"
-                      rx="6"
-                      fill="#18181b"
-                      stroke="#3f3f46"
-                    />
-                    <text
-                      x={Math.min(svgW - pad.right - 55, Math.max(pad.left + 45, toSvgX(hoverCoord.x)))}
-                      y={Math.max(pad.top + 14, toSvgY(hoverCoord.y) - 16)}
-                      textAnchor="middle"
-                      fill="#f4f4f5"
-                      fontSize="9.5"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      {`(${hoverCoord.x.toFixed(2)}, ${hoverCoord.y.toFixed(2)})`}
-                    </text>
-                  </g>
-                )}
-              </svg>
-            </div>
-
-            {/* Presets & Formulas Browser Grid in Dialog */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-semibold uppercase tracking-wider font-mono text-zinc-500 dark:text-zinc-400">
-                  Preset Equation Catalog
-                </span>
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px] font-mono">
-                  {["All", "Physics", "Chemistry", "Mathematics", "Astrophysics"].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setSelectedDiscipline(d)}
-                      className={cn(
-                        "rounded-lg px-2 py-0.5 transition-all cursor-pointer shrink-0 font-medium",
-                        selectedDiscipline === d
-                          ? "bg-purple-600 text-white font-bold"
-                          : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.08]"
-                      )}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
                 {filteredPresets.map((p) => {
                   const isSelected = selectedPreset.name === p.name;
                   return (
@@ -884,21 +735,21 @@ export default function EquationGraphVisualizer() {
                       type="button"
                       onClick={() => selectPreset(p)}
                       className={cn(
-                        "flex flex-col text-left justify-between rounded-xl border p-3 transition-all cursor-pointer",
+                        "flex flex-col text-left justify-between rounded-lg border p-2.5 transition-all cursor-pointer",
                         isSelected
-                          ? "border-purple-500/60 bg-purple-500/10 shadow-sm ring-1 ring-purple-500/30"
-                          : "border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]"
+                          ? "border-[var(--ink)] bg-[var(--accent-soft)]"
+                          : "border-[var(--line)] bg-[var(--bg)] hover:border-[var(--line-strong)] hover:bg-[var(--panel)]"
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[12.5px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                        <span className="text-[12px] font-medium text-[var(--ink)] truncate">
                           {p.name}
                         </span>
-                        <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400 uppercase">
+                        <span className="text-[9.5px] font-mono text-[var(--muted)] uppercase">
                           {p.discipline}
                         </span>
                       </div>
-                      <div className="mt-1.5 text-[12px] text-zinc-700 dark:text-zinc-300 font-mono">
+                      <div className="mt-1 text-[11.5px] text-[var(--muted)] font-mono">
                         <MathRenderer text={`$$${p.latex}$$`} displayMode={false} />
                       </div>
                     </button>

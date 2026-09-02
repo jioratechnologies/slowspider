@@ -89,6 +89,8 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
       if (!card) return;
       dragId = Number(card.dataset.id);
       card.classList.add("dragging");
+      // Reveals the floating Freeze/Bin drop rail (CSS: body[data-dnd] .dnd-rail).
+      document.body.setAttribute("data-dnd", "task");
       if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = "move";
         try {
@@ -100,6 +102,7 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
       const card = (e.target as HTMLElement)?.closest<HTMLElement>(".card");
       card?.classList.remove("dragging");
       dragId = null;
+      document.body.removeAttribute("data-dnd");
       document.querySelectorAll(".dragover").forEach((el) => el.classList.remove("dragover"));
     }
     function onDragOver(e: DragEvent) {
@@ -165,6 +168,7 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
         window.getSelection()?.removeAllRanges();
       } catch {}
       cdrag = { id: Number(col.dataset.cluster), ghost, offX: e.clientX - r.left, offY: e.clientY - r.top, dropStash: null };
+      document.body.setAttribute("data-dnd", "cluster");
       try {
         grip.setPointerCapture(e.pointerId);
       } catch {}
@@ -224,6 +228,7 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
         .forEach((c) => c.classList.remove("cluster-dragging"));
       document.querySelectorAll("#coldStore,#dumpBin,[data-drop='coldStore'],[data-drop='dumpBin']").forEach((s) => s.classList.remove("dragover"));
       document.body.style.userSelect = "";
+      document.body.removeAttribute("data-dnd");
       cdrag = null;
       const { callbacks } = ctxRef.current;
       if (drop === "coldStore") callbacks.coldCluster(id);
@@ -357,6 +362,7 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
     document.addEventListener("pointercancel", endSDrag);
 
     return () => {
+      document.body.removeAttribute("data-dnd");
       document.removeEventListener("dragstart", onDragStart);
       document.removeEventListener("dragend", onDragEnd);
       document.removeEventListener("dragover", onDragOver);

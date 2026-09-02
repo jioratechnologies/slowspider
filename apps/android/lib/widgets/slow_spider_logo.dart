@@ -4,18 +4,18 @@ class SlowSpiderLogo extends StatelessWidget {
   final double size;
   final bool showText;
 
-  const SlowSpiderLogo({
-    super.key,
-    this.size = 28,
-    this.showText = false,
-  });
+  const SlowSpiderLogo({super.key, this.size = 28, this.showText = false});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final strokeColor = isDark ? const Color(0xFFF2F3F5) : const Color(0xFF181920);
+    final strokeColor = isDark
+        ? const Color(0xFFF2F3F5)
+        : const Color(0xFF181920);
     final bgColor = isDark ? const Color(0xFF1E1F25) : const Color(0xFFEFF1F5);
-    final borderColor = isDark ? const Color(0xFF2E303B) : const Color(0xFFD1D5DB);
+    final borderColor = isDark
+        ? const Color(0xFF2E303B)
+        : const Color(0xFFD1D5DB);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -79,7 +79,8 @@ class _SpiderLogoPainter extends CustomPainter {
     canvas.drawPath(path2, strokePaint);
 
     final dotPaint = Paint()
-      ..color = const Color(0xFFFBBF24) // Amber 400
+      ..color =
+          const Color(0xFFFBBF24) // Amber 400
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -90,5 +91,6 @@ class _SpiderLogoPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SpiderLogoPainter oldDelegate) => oldDelegate.strokeColor != strokeColor;
+  bool shouldRepaint(covariant _SpiderLogoPainter oldDelegate) =>
+      oldDelegate.strokeColor != strokeColor;
 }

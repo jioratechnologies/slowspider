@@ -1,14 +1,16 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/typography.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/helpers.dart';
 import '../models/models.dart';
 import '../state/board_provider.dart';
+import '../design/icons.dart';
 
 enum _SearchFilter { all, tasks, clusters, notes }
 
@@ -26,10 +28,12 @@ class _AppleMusicSearchSheet extends ConsumerStatefulWidget {
   const _AppleMusicSearchSheet();
 
   @override
-  ConsumerState<_AppleMusicSearchSheet> createState() => _AppleMusicSearchSheetState();
+  ConsumerState<_AppleMusicSearchSheet> createState() =>
+      _AppleMusicSearchSheetState();
 }
 
-class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> {
+class _AppleMusicSearchSheetState
+    extends ConsumerState<_AppleMusicSearchSheet> {
   final _searchCtrl = TextEditingController();
   _SearchFilter _filter = _SearchFilter.all;
 
@@ -43,14 +47,15 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final sheetBg = isDark ? const Color(0xE6141620) : const Color(0xF7FFFFFF);
-    final sheetBorder = isDark ? const Color(0xFF2A2D3D) : const Color(0xFFE2E4EB);
-    final searchBg = isDark ? const Color(0xFF222534) : const Color(0xFFECEEF2);
-    final cardBg = isDark ? const Color(0xFF1B1D28) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF292C3D) : const Color(0xFFE5E7EB);
+    final sheetBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final sheetBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final searchBg = isDark ? AppColors.panel3 : AppColors.lightPanel3;
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
     final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
 
     final board = ref.watch(boardProvider);
@@ -82,7 +87,8 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
       }
     }
 
-    final totalMatches = matchedTasks.length + matchedClusters.length + matchedNotes.length;
+    final totalMatches =
+        matchedTasks.length + matchedClusters.length + matchedNotes.length;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
@@ -114,7 +120,9 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                     width: 36,
                     height: 4.5,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF383C50) : const Color(0xFFD1D5DB),
+                      color: isDark
+                          ? AppColors.lineStrong
+                          : AppColors.lightLineStrong,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -129,21 +137,40 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                         controller: _searchCtrl,
                         autofocus: true,
                         onChanged: (_) => setState(() {}),
-                        style: GoogleFonts.inter(color: textColor, fontSize: 14.5, fontWeight: FontWeight.w500),
+                        style: AppType.sans(
+                          color: textColor,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Search tasks, clusters, notes...',
-                          hintStyle: GoogleFonts.inter(color: ink3Color, fontSize: 14),
-                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: ink3Color),
+                          hintStyle: AppType.sans(
+                            color: ink3Color,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: AppIcon(
+                            SpiderIcons.search,
+                            size: 20,
+                            color: ink3Color,
+                          ),
                           suffixIcon: _searchCtrl.text.isNotEmpty
                               ? IconButton(
-                                  icon: Icon(Icons.cancel_rounded, size: 18, color: ink3Color),
-                                  onPressed: () => setState(() => _searchCtrl.clear()),
+                                  icon: AppIcon(
+                                    SpiderIcons.closeCircle,
+                                    size: 18,
+                                    color: ink3Color,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _searchCtrl.clear()),
                                 )
                               : null,
                           filled: true,
                           fillColor: searchBg,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
@@ -154,7 +181,10 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.2),
+                            borderSide: const BorderSide(
+                              color: AppColors.ink,
+                              width: 1.2,
+                            ),
                           ),
                         ),
                       ),
@@ -162,9 +192,15 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                     const SizedBox(width: 8),
                     TextButton(
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        foregroundColor: AppColors.accent,
-                        textStyle: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        foregroundColor: isDark ? p.ink : AppColors.lightInk,
+                        textStyle: AppType.sans(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Cancel'),
@@ -182,7 +218,11 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                       const SizedBox(width: 6),
                       _buildFilterChip('Tasks', _SearchFilter.tasks, isDark),
                       const SizedBox(width: 6),
-                      _buildFilterChip('Clusters', _SearchFilter.clusters, isDark),
+                      _buildFilterChip(
+                        'Clusters',
+                        _SearchFilter.clusters,
+                        isDark,
+                      ),
                       const SizedBox(width: 6),
                       _buildFilterChip('Notes', _SearchFilter.notes, isDark),
                     ],
@@ -192,23 +232,43 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
 
                 // 4. Results List / Empty State / Quick Suggestions
                 if (query.isEmpty)
-                  _buildSuggestionsView(context, data, textColor, mutedColor, ink3Color, cardBg, cardBorder, isDark)
+                  _buildSuggestionsView(
+                    context,
+                    data,
+                    textColor,
+                    mutedColor,
+                    ink3Color,
+                    cardBg,
+                    cardBorder,
+                    isDark,
+                  )
                 else if (totalMatches == 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(Icons.search_off_rounded, size: 40, color: ink3Color),
+                          AppIcon(
+                            SpiderIcons.searchOff,
+                            size: 40,
+                            color: ink3Color,
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             'No results for "$query"',
-                            style: GoogleFonts.inter(color: textColor, fontSize: 14, fontWeight: FontWeight.w600),
+                            style: AppType.sans(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Try searching with different keywords.',
-                            style: GoogleFonts.inter(color: mutedColor, fontSize: 12),
+                            style: AppType.sans(
+                              color: mutedColor,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -222,7 +282,10 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                       children: [
                         // Matched Clusters
                         if (matchedClusters.isNotEmpty) ...[
-                          _buildSectionHeader('CLUSTERS (${matchedClusters.length})', ink3Color),
+                          _buildSectionHeader(
+                            'CLUSTERS (${matchedClusters.length})',
+                            ink3Color,
+                          ),
                           const SizedBox(height: 6),
                           for (final c in matchedClusters) ...[
                             _buildResultCard(
@@ -235,7 +298,8 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                                 ),
                               ),
                               title: c.name,
-                              subtitle: '${data?.tasks.where((t) => t.clusterId == c.id).length ?? 0} tasks',
+                              subtitle:
+                                  '${data?.tasks.where((t) => t.clusterId == c.id).length ?? 0} tasks',
                               cardBg: cardBg,
                               cardBorder: cardBorder,
                               textColor: textColor,
@@ -252,17 +316,24 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
 
                         // Matched Tasks
                         if (matchedTasks.isNotEmpty) ...[
-                          _buildSectionHeader('TASKS (${matchedTasks.length})', ink3Color),
+                          _buildSectionHeader(
+                            'TASKS (${matchedTasks.length})',
+                            ink3Color,
+                          ),
                           const SizedBox(height: 6),
                           for (final t in matchedTasks) ...[
                             _buildResultCard(
-                              leading: Icon(
-                                t.done ? AppIcons.taskCheck : Icons.radio_button_unchecked_rounded,
+                              leading: AppIcon(
+                                t.done
+                                    ? SpiderIcons.taskCheck
+                                    : SpiderIcons.circle,
                                 size: 18,
-                                color: t.done ? const Color(0xFF10B981) : mutedColor,
+                                color: t.done ? AppColors.muted : mutedColor,
                               ),
                               title: displayTitle(t.title),
-                              subtitle: t.notes.isNotEmpty ? t.notes : 'Task in board',
+                              subtitle: t.notes.isNotEmpty
+                                  ? t.notes
+                                  : 'Task in board',
                               isDone: t.done,
                               cardBg: cardBg,
                               cardBorder: cardBorder,
@@ -280,11 +351,18 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
 
                         // Matched Notes
                         if (matchedNotes.isNotEmpty) ...[
-                          _buildSectionHeader('NOTES (${matchedNotes.length})', ink3Color),
+                          _buildSectionHeader(
+                            'NOTES (${matchedNotes.length})',
+                            ink3Color,
+                          ),
                           const SizedBox(height: 6),
                           for (final n in matchedNotes) ...[
                             _buildResultCard(
-                              leading: Icon(AppIcons.notes, size: 18, color: const Color(0xFF38BDF8)),
+                              leading: AppIcon(
+                                SpiderIcons.notes,
+                                size: 18,
+                                color: AppColors.muted,
+                              ),
                               title: displayTitle(n.body),
                               subtitle: '${n.sizeBytes} B • ${n.kind.name}',
                               cardBg: cardBg,
@@ -313,6 +391,7 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
   }
 
   Widget _buildFilterChip(String label, _SearchFilter value, bool isDark) {
+    final p = isDark ? SpiderPalette.dark : SpiderPalette.light;
     final active = _filter == value;
     return GestureDetector(
       onTap: () => setState(() => _filter = value),
@@ -321,16 +400,18 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: active
-              ? const Color(0xFF8B5CF6)
-              : (isDark ? const Color(0xFF222534) : const Color(0xFFECEEF2)),
+              ? p.ink
+              : (isDark ? AppColors.panel3 : AppColors.lightPanel3),
           borderRadius: BorderRadius.circular(999),
           border: active
               ? null
-              : Border.all(color: isDark ? const Color(0xFF2D3142) : const Color(0xFFE2E4EB)),
+              : Border.all(
+                  color: isDark ? AppColors.line : AppColors.lightLine,
+                ),
           boxShadow: active
               ? [
                   BoxShadow(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+                    color: AppColors.ink.withValues(alpha: 0.35),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -339,8 +420,10 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
-            color: active ? Colors.white : (isDark ? const Color(0xFF949BAE) : const Color(0xFF4B5563)),
+          style: AppType.sans(
+            color: active
+                ? p.onInk
+                : (isDark ? AppColors.muted : AppColors.muted),
             fontSize: 12,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
@@ -352,7 +435,7 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
   Widget _buildSectionHeader(String title, Color ink3Color) {
     return Text(
       title,
-      style: GoogleFonts.inter(
+      style: AppType.sans(
         color: ink3Color,
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -396,11 +479,13 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                     children: [
                       Text(
                         title.isNotEmpty ? title : 'Untitled',
-                        style: GoogleFonts.inter(
+                        style: AppType.sans(
                           color: isDone ? mutedColor : textColor,
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
-                          decoration: isDone ? TextDecoration.lineThrough : null,
+                          decoration: isDone
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -408,14 +493,18 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5),
+                        style: AppType.sans(color: mutedColor, fontSize: 11.5),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, size: 18, color: mutedColor.withValues(alpha: 0.6)),
+                AppIcon(
+                  SpiderIcons.chevronRight,
+                  size: 18,
+                  color: mutedColor.withValues(alpha: 0.6),
+                ),
               ],
             ),
           ),
@@ -444,10 +533,10 @@ class _AppleMusicSearchSheetState extends ConsumerState<_AppleMusicSearchSheet> 
           const SizedBox(height: 8),
           for (final t in recentTasks) ...[
             _buildResultCard(
-              leading: Icon(
-                t.done ? AppIcons.taskCheck : Icons.radio_button_unchecked_rounded,
+              leading: AppIcon(
+                t.done ? SpiderIcons.taskCheck : SpiderIcons.circle,
                 size: 18,
-                color: t.done ? const Color(0xFF10B981) : mutedColor,
+                color: t.done ? AppColors.muted : mutedColor,
               ),
               title: displayTitle(t.title),
               subtitle: t.notes.isNotEmpty ? t.notes : 'Task in board',

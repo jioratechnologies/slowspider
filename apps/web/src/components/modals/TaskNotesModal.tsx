@@ -29,10 +29,10 @@ export default function TaskNotesModal({
 
   return (
     <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent showCloseButton={false} className="max-h-[88vh] sm:max-w-[560px] flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#16161a] shadow-xl dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
-        <DialogHeader className="px-6 py-4.5 border-b border-zinc-100 dark:border-white/[0.08] flex-row items-center justify-between space-y-0">
+      <DialogContent showCloseButton={false} className="max-h-[88vh] sm:max-w-[560px] flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl backdrop-blur-2xl">
+        <DialogHeader className="px-6 py-4.5 border-b border-[var(--line)] flex-row items-center justify-between space-y-0">
           <div>
-            <DialogTitle className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+            <DialogTitle className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight text-[var(--ink)]">
               <NotebookPen className="size-4 text-indigo-500 dark:text-indigo-400" />
               <span>Notes for &quot;{task?.title || "Untitled"}&quot;</span>
             </DialogTitle>

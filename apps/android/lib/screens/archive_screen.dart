@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/typography.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/helpers.dart';
 import '../models/models.dart';
 import '../state/board_provider.dart';
+import '../design/icons.dart';
 
 enum ArchiveFilter { all, clusters, tasks }
 
@@ -46,20 +47,27 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final topBarBg = isDark ? const Color(0xE6181926) : const Color(0xF2FFFFFF);
-    final topBarBorder = isDark ? const Color(0xFF2C3042) : const Color(0xFFE2E4EB);
-    final cardBg = isDark ? const Color(0xFF1B1D28) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF292C3D) : const Color(0xFFE2E4EA);
+    final topBarBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final topBarBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
 
     final board = ref.watch(boardProvider);
     final controller = ref.read(boardProvider.notifier);
     final data = board.data;
 
-    final coldClusters = data?.clusters.where((c) => c.status == ClusterStatus.cold).toList() ?? [];
-    final coldTasks = data?.tasks.where((t) => t.cold && !t.binned).toList() ?? [];
-    final binClusters = data?.clusters.where((c) => c.status == ClusterStatus.binned).toList() ?? [];
+    final coldClusters =
+        data?.clusters.where((c) => c.status == ClusterStatus.cold).toList() ??
+        [];
+    final coldTasks =
+        data?.tasks.where((t) => t.cold && !t.binned).toList() ?? [];
+    final binClusters =
+        data?.clusters
+            .where((c) => c.status == ClusterStatus.binned)
+            .toList() ??
+        [];
     final binTasks = data?.tasks.where((t) => t.binned).toList() ?? [];
 
     final activeClusters = _bin ? binClusters : coldClusters;
@@ -70,14 +78,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final binTotal = binClusters.length + binTasks.length;
 
     String clusterName(int? id) =>
-        data?.clusters.where((c) => c.id == id).cast<Cluster?>().firstWhere((_) => true, orElse: () => null)?.name ?? 'Floating';
+        data?.clusters
+            .where((c) => c.id == id)
+            .cast<Cluster?>()
+            .firstWhere((_) => true, orElse: () => null)
+            ?.name ??
+        'Floating';
 
     List<Task> getClusterTasks(int clusterId) {
       return data?.tasks.where((t) => t.clusterId == clusterId).toList() ?? [];
     }
 
-    final showClusters = _filter == ArchiveFilter.all || _filter == ArchiveFilter.clusters;
-    final showTasks = _filter == ArchiveFilter.all || _filter == ArchiveFilter.tasks;
+    final showClusters =
+        _filter == ArchiveFilter.all || _filter == ArchiveFilter.clusters;
+    final showTasks =
+        _filter == ArchiveFilter.all || _filter == ArchiveFilter.tasks;
 
     return Scaffold(
       appBar: AppBar(
@@ -87,7 +102,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         elevation: 0,
         title: Text(
           _bin ? 'Dumping Bin' : 'Cold Store',
-          style: GoogleFonts.inter(
+          style: AppType.sans(
             color: textColor,
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -105,7 +120,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF14151E) : const Color(0xFFF3F4F6),
+              color: isDark ? AppColors.panel : AppColors.lightPanel2,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: cardBorder),
             ),
@@ -120,14 +135,20 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: !_bin
-                            ? (isDark ? const Color(0xFF222536) : Colors.white)
+                            ? (isDark ? AppColors.panel3 : Colors.white)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
-                        border: !_bin ? Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.35)) : null,
+                        border: !_bin
+                            ? Border.all(
+                                color: AppColors.muted.withValues(alpha: 0.35),
+                              )
+                            : null,
                         boxShadow: !_bin
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF0EA5E9).withValues(alpha: isDark ? 0.15 : 0.05),
+                                  color: AppColors.muted.withValues(
+                                    alpha: isDark ? 0.15 : 0.05,
+                                  ),
                                   blurRadius: 6,
                                 ),
                               ]
@@ -137,18 +158,20 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            AppIcons.coldStore,
+                          AppIcon(
+                            SpiderIcons.coldStore,
                             size: 15,
-                            color: !_bin ? const Color(0xFF38BDF8) : mutedColor,
+                            color: !_bin ? AppColors.muted : mutedColor,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             'Cold store ($coldTotal)',
-                            style: GoogleFonts.inter(
-                              color: !_bin ? const Color(0xFF38BDF8) : mutedColor,
+                            style: AppType.sans(
+                              color: !_bin ? AppColors.muted : mutedColor,
                               fontSize: 12.5,
-                              fontWeight: !_bin ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight: !_bin
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
                             ),
                           ),
                         ],
@@ -167,14 +190,20 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: _bin
-                            ? (isDark ? const Color(0xFF2A1C20) : Colors.white)
+                            ? (isDark ? AppColors.panel2 : Colors.white)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
-                        border: _bin ? Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.35)) : null,
+                        border: _bin
+                            ? Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.35),
+                              )
+                            : null,
                         boxShadow: _bin
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.05),
+                                  color: AppColors.danger.withValues(
+                                    alpha: isDark ? 0.15 : 0.05,
+                                  ),
                                   blurRadius: 6,
                                 ),
                               ]
@@ -184,18 +213,20 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            AppIcons.dumpingBin,
+                          AppIcon(
+                            SpiderIcons.dumpingBin,
                             size: 15,
-                            color: _bin ? const Color(0xFFF43F5E) : mutedColor,
+                            color: _bin ? AppColors.danger : mutedColor,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             'Bin ($binTotal)',
-                            style: GoogleFonts.inter(
-                              color: _bin ? const Color(0xFFF43F5E) : mutedColor,
+                            style: AppType.sans(
+                              color: _bin ? AppColors.danger : mutedColor,
                               fontSize: 12.5,
-                              fontWeight: _bin ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight: _bin
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
                             ),
                           ),
                         ],
@@ -214,19 +245,25 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF132536) : const Color(0xFFEFF6FF),
+                color: isDark ? AppColors.panel : AppColors.lightPanel2,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AppColors.muted.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(AppIcons.coldStore, size: 16, color: Color(0xFF38BDF8)),
+                  const AppIcon(
+                    SpiderIcons.coldStore,
+                    size: 16,
+                    color: AppColors.muted,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Cloud Storage: Zipped & Archived (70% space saved). Items inactive > 4mo auto-archive here.',
-                      style: GoogleFonts.inter(
-                        color: isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0369A1),
+                      style: AppType.sans(
+                        color: isDark ? AppColors.muted : AppColors.muted,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -239,19 +276,25 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF26181B) : const Color(0xFFFFF1F2),
+                color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AppColors.danger.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(AppIcons.dumpingBin, size: 16, color: Color(0xFFF43F5E)),
+                  const AppIcon(
+                    SpiderIcons.dumpingBin,
+                    size: 16,
+                    color: AppColors.danger,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Removed for good after 14 days. Restore anytime before expiration.',
-                      style: GoogleFonts.inter(
-                        color: isDark ? const Color(0xFFFDA4AF) : const Color(0xFFBE123C),
+                      style: AppType.sans(
+                        color: isDark ? AppColors.danger : AppColors.danger,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -301,20 +344,26 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(
-                      _bin ? AppIcons.dumpingBin : AppIcons.coldStore,
+                    AppIcon(
+                      _bin ? SpiderIcons.dumpingBin : SpiderIcons.coldStore,
                       size: 40,
-                      color: _bin ? const Color(0xFFF43F5E) : const Color(0xFF38BDF8),
+                      color: _bin ? AppColors.danger : AppColors.muted,
                     ),
                     const SizedBox(height: 10),
                     Text(
                       _bin ? 'Bin is empty' : 'No cold items',
-                      style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w600, fontSize: 14),
+                      style: AppType.sans(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _bin ? 'Deleted tasks and clusters will appear here.' : 'Paused projects and frozen tasks appear here.',
-                      style: GoogleFonts.inter(color: mutedColor, fontSize: 12),
+                      _bin
+                          ? 'Deleted tasks and clusters will appear here.'
+                          : 'Paused projects and frozen tasks appear here.',
+                      style: AppType.sans(color: mutedColor, fontSize: 12),
                     ),
                   ],
                 ),
@@ -324,8 +373,11 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             LayoutBuilder(
               builder: (ctx, constraints) {
                 final isTablet = constraints.maxWidth >= 720;
-                final colCount = constraints.maxWidth >= 1050 ? 3 : (isTablet ? 2 : 1);
-                final colWidth = (constraints.maxWidth - (colCount - 1) * 10) / colCount;
+                final colCount = constraints.maxWidth >= 1050
+                    ? 3
+                    : (isTablet ? 2 : 1);
+                final colWidth =
+                    (constraints.maxWidth - (colCount - 1) * 10) / colCount;
 
                 final List<Widget> items = [
                   if (showClusters)
@@ -349,8 +401,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       _buildArchiveCard(
                         context: context,
                         title: displayTitle(t.title),
-                        subtitle: _bin ? 'task • deletes in ${_calcDaysLeft(t.binnedAt)}' : 'task • ${clusterName(t.clusterId)}',
-                        color: _bin ? const Color(0xFFF43F5E) : const Color(0xFF38BDF8),
+                        subtitle: _bin
+                            ? 'task • deletes in ${_calcDaysLeft(t.binnedAt)}'
+                            : 'task • ${clusterName(t.clusterId)}',
+                        color: _bin ? AppColors.danger : AppColors.muted,
                         isCluster: false,
                         cardBg: cardBg,
                         cardBorder: cardBorder,
@@ -358,34 +412,62 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                         mutedColor: mutedColor,
                         isDark: isDark,
                         primaryLabel: _bin ? 'Restore' : 'Resume',
-                        primaryIcon: _bin ? Icons.restore_rounded : Icons.play_arrow_rounded,
-                        primaryColor: const Color(0xFF10B981),
+                        primaryIcon: _bin
+                            ? SpiderIcons.restore
+                            : SpiderIcons.play,
+                        primaryColor: AppColors.muted,
                         onPrimary: () {
                           if (_bin) {
                             controller.patchTask(
                               t.id,
-                              {'binned': false, 'binned_at': null, 'cold': false},
-                              (tt) => tt.copyWith(binned: false, binnedAt: null, binnedAtSet: true, cold: false),
+                              {
+                                'binned': false,
+                                'binned_at': null,
+                                'cold': false,
+                              },
+                              (tt) => tt.copyWith(
+                                binned: false,
+                                binnedAt: null,
+                                binnedAtSet: true,
+                                cold: false,
+                              ),
                             );
                           } else {
                             controller.patchTask(
                               t.id,
-                              {'cold': false, 'binned': false, 'binned_at': null},
-                              (tt) => tt.copyWith(cold: false, binned: false, binnedAt: null, binnedAtSet: true),
+                              {
+                                'cold': false,
+                                'binned': false,
+                                'binned_at': null,
+                              },
+                              (tt) => tt.copyWith(
+                                cold: false,
+                                binned: false,
+                                binnedAt: null,
+                                binnedAtSet: true,
+                              ),
                             );
                           }
                         },
                         secondaryLabel: _bin ? 'Delete now' : 'Bin',
-                        secondaryIcon: _bin ? Icons.close_rounded : AppIcons.delete,
-                        secondaryColor: const Color(0xFFEF4444),
+                        secondaryIcon: _bin
+                            ? SpiderIcons.close
+                            : SpiderIcons.delete,
+                        secondaryColor: AppColors.danger,
                         onSecondary: () {
                           if (_bin) {
                             controller.deleteTaskForever(t.id);
                           } else {
                             controller.patchTask(
                               t.id,
-                              {'binned': true, 'binned_at': DateTime.now().toIso8601String()},
-                              (tt) => tt.copyWith(binned: true, binnedAt: DateTime.now().toIso8601String()),
+                              {
+                                'binned': true,
+                                'binned_at': DateTime.now().toIso8601String(),
+                              },
+                              (tt) => tt.copyWith(
+                                binned: true,
+                                binnedAt: DateTime.now().toIso8601String(),
+                              ),
                             );
                           }
                         },
@@ -397,12 +479,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     crossAxisAlignment: WrapCrossAlignment.start,
-                    children: items.map((w) => SizedBox(width: colWidth, child: w)).toList(),
+                    children: items
+                        .map((w) => SizedBox(width: colWidth, child: w))
+                        .toList(),
                   );
                 }
 
                 return Column(
-                  children: items.map((w) => Padding(padding: const EdgeInsets.only(bottom: 8), child: w)).toList(),
+                  children: items
+                      .map(
+                        (w) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: w,
+                        ),
+                      )
+                      .toList(),
                 );
               },
             ),
@@ -432,13 +523,19 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: active
-                ? (isDark ? const Color(0xFF262938) : const Color(0xFF1E293B))
-                : (isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF1F3F9)),
+                ? (isDark ? AppColors.panel3 : AppColors.lightInk)
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : AppColors.lightPanel2),
             borderRadius: BorderRadius.circular(9),
             border: Border.all(
               color: active
-                  ? (isDark ? Colors.white.withValues(alpha: 0.16) : Colors.transparent)
-                  : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0)),
+                  ? (isDark
+                        ? Colors.white.withValues(alpha: 0.16)
+                        : Colors.transparent)
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : AppColors.lightLine),
               width: 0.9,
             ),
           ),
@@ -447,8 +544,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  color: active ? Colors.white : (isDark ? const Color(0xFF949BAE) : const Color(0xFF64748B)),
+                style: AppType.sans(
+                  color: active
+                      ? Colors.white
+                      : (isDark ? AppColors.muted : AppColors.lightMuted),
                   fontSize: 12,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                 ),
@@ -458,16 +557,20 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: active
-                      ? (isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.22))
-                      : (isDark ? const Color(0xFF222533) : const Color(0xFFE2E8F0)),
+                      ? (isDark
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.22))
+                      : (isDark ? AppColors.panel3 : AppColors.lightLine),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: Text(
                   '$count',
-                  style: GoogleFonts.inter(
+                  style: AppType.sans(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
-                    color: active ? Colors.white : (isDark ? const Color(0xFF949BAE) : const Color(0xFF64748B)),
+                    color: active
+                        ? Colors.white
+                        : (isDark ? AppColors.muted : AppColors.lightMuted),
                   ),
                 ),
               ),
@@ -501,7 +604,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         border: Border.all(color: cardBorder),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.02),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.18)
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 5,
             offset: const Offset(0, 1.5),
           ),
@@ -526,7 +631,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                         color: catColor,
                         borderRadius: BorderRadius.circular(3),
                         boxShadow: [
-                          BoxShadow(color: catColor.withValues(alpha: 0.6), blurRadius: 4),
+                          BoxShadow(
+                            color: catColor.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                          ),
                         ],
                       ),
                     ),
@@ -535,8 +643,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     // Cluster Title
                     Expanded(
                       child: Text(
-                        cluster.name.isNotEmpty ? cluster.name : 'Untitled Cluster',
-                        style: GoogleFonts.inter(
+                        cluster.name.isNotEmpty
+                            ? cluster.name
+                            : 'Untitled Cluster',
+                        style: AppType.sans(
                           color: textColor,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -551,12 +661,19 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                       onTap: onToggleExpand,
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF222536) : const Color(0xFFF1F3F9),
+                          color: isDark
+                              ? AppColors.panel3
+                              : AppColors.lightPanel2,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isDark ? const Color(0xFF2D3248) : const Color(0xFFE2E6F0),
+                            color: isDark
+                                ? AppColors.lineStrong
+                                : AppColors.lightLine,
                             width: 0.8,
                           ),
                         ),
@@ -565,7 +682,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                           children: [
                             Text(
                               '${clusterTasks.length} tasks',
-                              style: GoogleFonts.inter(
+                              style: AppType.sans(
                                 color: mutedColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -575,8 +692,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                             AnimatedRotation(
                               turns: isExpanded ? 0.5 : 0.0,
                               duration: const Duration(milliseconds: 180),
-                              child: Icon(
-                                Icons.keyboard_arrow_down_rounded,
+                              child: AppIcon(
+                                SpiderIcons.chevronDown,
                                 size: 15,
                                 color: mutedColor,
                               ),
@@ -596,8 +713,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     Padding(
                       padding: const EdgeInsets.only(left: 17),
                       child: Text(
-                        isBin ? 'cluster • deletes in ${_calcDaysLeft(cluster.binnedAt)}' : '${clusterTasks.length} tasks archived',
-                        style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5),
+                        isBin
+                            ? 'cluster • deletes in ${_calcDaysLeft(cluster.binnedAt)}'
+                            : '${clusterTasks.length} tasks archived',
+                        style: AppType.sans(color: mutedColor, fontSize: 11.5),
                       ),
                     ),
                     Row(
@@ -610,33 +729,49 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                               controller.patchCluster(
                                 cluster.id,
                                 {'status': 'active', 'binned_at': null},
-                                (cc) => cc.copyWith(status: ClusterStatus.active, binnedAt: null, binnedAtSet: true),
+                                (cc) => cc.copyWith(
+                                  status: ClusterStatus.active,
+                                  binnedAt: null,
+                                  binnedAtSet: true,
+                                ),
                               );
                             } else {
                               controller.patchCluster(
                                 cluster.id,
                                 {'status': 'active'},
-                                (cc) => cc.copyWith(status: ClusterStatus.active),
+                                (cc) =>
+                                    cc.copyWith(status: ClusterStatus.active),
                               );
                             }
                           },
                           borderRadius: BorderRadius.circular(7),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                              color: AppColors.muted.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(7),
-                              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AppColors.muted.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(isBin ? Icons.restore_rounded : Icons.play_arrow_rounded, size: 13, color: const Color(0xFF10B981)),
+                                AppIcon(
+                                  isBin
+                                      ? SpiderIcons.restore
+                                      : SpiderIcons.play,
+                                  size: 13,
+                                  color: AppColors.muted,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   isBin ? 'Restore' : 'Resume',
-                                  style: GoogleFonts.inter(
-                                    color: const Color(0xFF10B981),
+                                  style: AppType.sans(
+                                    color: AppColors.muted,
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -655,28 +790,45 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                             } else {
                               controller.patchCluster(
                                 cluster.id,
-                                {'status': 'binned', 'binned_at': DateTime.now().toIso8601String()},
-                                (cc) => cc.copyWith(status: ClusterStatus.binned, binnedAt: DateTime.now().toIso8601String()),
+                                {
+                                  'status': 'binned',
+                                  'binned_at': DateTime.now().toIso8601String(),
+                                },
+                                (cc) => cc.copyWith(
+                                  status: ClusterStatus.binned,
+                                  binnedAt: DateTime.now().toIso8601String(),
+                                ),
                               );
                             }
                           },
                           borderRadius: BorderRadius.circular(7),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                              color: AppColors.danger.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(7),
-                              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(isBin ? Icons.close_rounded : AppIcons.delete, size: 13, color: const Color(0xFFEF4444)),
+                                AppIcon(
+                                  isBin
+                                      ? SpiderIcons.close
+                                      : SpiderIcons.delete,
+                                  size: 13,
+                                  color: AppColors.danger,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   isBin ? 'Delete now' : 'Bin',
-                                  style: GoogleFonts.inter(
-                                    color: const Color(0xFFEF4444),
+                                  style: AppType.sans(
+                                    color: AppColors.danger,
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -697,20 +849,22 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           if (isExpanded) ...[
             Container(
               height: 1,
-              color: isDark ? const Color(0xFF282C3D) : const Color(0xFFE5E9F2),
+              color: isDark ? AppColors.line : AppColors.lightPanel3,
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF141620) : const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                color: isDark ? AppColors.panel : AppColors.lightBg,
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(14),
+                ),
               ),
               child: clusterTasks.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
                         'No tasks inside this cluster',
-                        style: GoogleFonts.inter(
+                        style: AppType.sans(
                           color: mutedColor,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -725,7 +879,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                             Divider(
                               height: 12,
                               thickness: 0.8,
-                              color: isDark ? const Color(0xFF222534) : const Color(0xFFEAEFF8),
+                              color: isDark
+                                  ? AppColors.panel3
+                                  : AppColors.lightPanel2,
                             ),
                           _buildSubTaskRow(
                             task: clusterTasks[i],
@@ -760,7 +916,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           width: 6,
           height: 6,
           decoration: BoxDecoration(
-            color: task.done ? const Color(0xFF10B981) : (isBin ? const Color(0xFFF43F5E) : const Color(0xFF38BDF8)),
+            color: task.done
+                ? AppColors.muted
+                : (isBin ? AppColors.danger : AppColors.muted),
             shape: BoxShape.circle,
           ),
         ),
@@ -770,7 +928,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         Expanded(
           child: Text(
             displayTitle(task.title),
-            style: GoogleFonts.inter(
+            style: AppType.sans(
               color: task.done ? mutedColor : textColor,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
@@ -789,13 +947,23 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               controller.patchTask(
                 task.id,
                 {'binned': false, 'binned_at': null, 'cold': false},
-                (tt) => tt.copyWith(binned: false, binnedAt: null, binnedAtSet: true, cold: false),
+                (tt) => tt.copyWith(
+                  binned: false,
+                  binnedAt: null,
+                  binnedAtSet: true,
+                  cold: false,
+                ),
               );
             } else {
               controller.patchTask(
                 task.id,
                 {'cold': false, 'binned': false, 'binned_at': null},
-                (tt) => tt.copyWith(cold: false, binned: false, binnedAt: null, binnedAtSet: true),
+                (tt) => tt.copyWith(
+                  cold: false,
+                  binned: false,
+                  binnedAt: null,
+                  binnedAtSet: true,
+                ),
               );
             }
           },
@@ -803,13 +971,13 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+              color: AppColors.muted.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               isBin ? 'Restore' : 'Resume',
-              style: GoogleFonts.inter(
-                color: const Color(0xFF10B981),
+              style: AppType.sans(
+                color: AppColors.muted,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -827,7 +995,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               controller.patchTask(
                 task.id,
                 {'binned': true, 'binned_at': DateTime.now().toIso8601String()},
-                (tt) => tt.copyWith(binned: true, binnedAt: DateTime.now().toIso8601String()),
+                (tt) => tt.copyWith(
+                  binned: true,
+                  binnedAt: DateTime.now().toIso8601String(),
+                ),
               );
             }
           },
@@ -835,13 +1006,13 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+              color: AppColors.danger.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               isBin ? 'Delete' : 'Bin',
-              style: GoogleFonts.inter(
-                color: const Color(0xFFEF4444),
+              style: AppType.sans(
+                color: AppColors.danger,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -888,7 +1059,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         border: Border.all(color: cardBorder),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.02),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.18)
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 5,
             offset: const Offset(0, 1.5),
           ),
@@ -907,7 +1080,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                   color: color,
                   borderRadius: BorderRadius.circular(isCluster ? 3 : 999),
                   boxShadow: [
-                    BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 4),
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.6),
+                      blurRadius: 4,
+                    ),
                   ],
                 ),
               ),
@@ -917,7 +1093,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               Expanded(
                 child: Text(
                   title.isNotEmpty ? title : 'Untitled',
-                  style: GoogleFonts.inter(
+                  style: AppType.sans(
                     color: textColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -938,7 +1114,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 padding: const EdgeInsets.only(left: 17),
                 child: Text(
                   subtitle,
-                  style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5),
+                  style: AppType.sans(color: mutedColor, fontSize: 11.5),
                 ),
               ),
               Row(
@@ -949,20 +1125,25 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     onTap: onPrimary,
                     borderRadius: BorderRadius.circular(7),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: primaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: primaryColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(primaryIcon, size: 13, color: primaryColor),
+                          AppIcon(primaryIcon, size: 13, color: primaryColor),
                           const SizedBox(width: 4),
                           Text(
                             primaryLabel,
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: primaryColor,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -979,20 +1160,29 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     onTap: onSecondary,
                     borderRadius: BorderRadius.circular(7),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: secondaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: secondaryColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: secondaryColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(secondaryIcon, size: 13, color: secondaryColor),
+                          AppIcon(
+                            secondaryIcon,
+                            size: 13,
+                            color: secondaryColor,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             secondaryLabel,
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: secondaryColor,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,

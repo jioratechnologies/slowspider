@@ -1,14 +1,16 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/typography.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../models/models.dart';
 import '../state/auth_provider.dart';
 import '../state/board_provider.dart';
 import '../state/workspace_members_provider.dart';
+import '../design/icons.dart';
 
 Future<void> showWorkspaceDialog(BuildContext context) {
   return showDialog(
@@ -24,9 +26,7 @@ class WorkspaceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
-        child: _WorkspaceModalDialog(isFullScreen: true),
-      ),
+      body: Center(child: _WorkspaceModalDialog(isFullScreen: true)),
     );
   }
 }
@@ -36,7 +36,8 @@ class _WorkspaceModalDialog extends ConsumerStatefulWidget {
   const _WorkspaceModalDialog({this.isFullScreen = false});
 
   @override
-  ConsumerState<_WorkspaceModalDialog> createState() => _WorkspaceModalDialogState();
+  ConsumerState<_WorkspaceModalDialog> createState() =>
+      _WorkspaceModalDialogState();
 }
 
 class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
@@ -73,7 +74,7 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Invitation sent to $val'),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: AppColors.muted,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -92,13 +93,13 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
 
   Color _avatarColor(String email) {
     const colors = [
-      Color(0xFF8B5CF6), // Violet
-      Color(0xFF0EA5E9), // Sky
-      Color(0xFF10B981), // Emerald
-      Color(0xFFF59E0B), // Amber
-      Color(0xFFEC4899), // Pink
-      Color(0xFF6366F1), // Indigo
-      Color(0xFF14B8A6), // Teal
+      AppColors.ink, // Violet
+      AppColors.muted, // Sky
+      AppColors.muted, // Emerald
+      AppColors.gold, // Amber
+      AppColors.ink, // Pink
+      AppColors.ink, // Indigo
+      AppColors.muted, // Teal
     ];
     final hash = email.codeUnits.fold(0, (prev, elem) => prev + elem);
     return colors[hash % colors.length];
@@ -108,14 +109,15 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final dialogBg = isDark ? const Color(0xF2161822) : const Color(0xF7FFFFFF);
-    final topBarBorder = isDark ? const Color(0xFF2A2E40) : const Color(0xFFE2E4EB);
-    final cardBg = isDark ? const Color(0xFF1D202D) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF2C3044) : const Color(0xFFE2E4EA);
-    final inputBg = isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F6);
+    final dialogBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final topBarBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
     final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
 
     final board = ref.watch(boardProvider);
@@ -139,11 +141,15 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
             children: [
               Row(
                 children: [
-                  Icon(AppIcons.workspace, size: 18, color: AppColors.accent),
+                  AppIcon(
+                    SpiderIcons.workspace,
+                    size: 18,
+                    color: p.gold,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Workspaces & Members',
-                    style: GoogleFonts.inter(
+                    style: AppType.sans(
                       color: textColor,
                       fontSize: 15.5,
                       fontWeight: FontWeight.w700,
@@ -152,7 +158,7 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                 ],
               ),
               IconButton(
-                icon: Icon(Icons.close_rounded, size: 20, color: mutedColor),
+                icon: AppIcon(SpiderIcons.close, size: 20, color: mutedColor),
                 onPressed: () => Navigator.pop(context),
                 tooltip: 'Close',
                 constraints: const BoxConstraints(),
@@ -170,16 +176,22 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
             children: [
               // Pending Invitations (if any)
               if (members.myPendingInvites.isNotEmpty) ...[
-                _sectionHeader('PENDING INVITATIONS', count: members.myPendingInvites.length, isAlert: true),
+                _sectionHeader(
+                  'PENDING INVITATIONS',
+                  count: members.myPendingInvites.length,
+                  isAlert: true,
+                ),
                 const SizedBox(height: 8),
                 for (final inv in members.myPendingInvites)
                   Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF261D36) : const Color(0xFFFAF5FF),
+                      color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFA855F7).withValues(alpha: 0.35)),
+                      border: Border.all(
+                        color: AppColors.ink.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -187,10 +199,14 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFA855F7).withValues(alpha: 0.2),
+                            color: AppColors.ink.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(AppIcons.workspace, color: Color(0xFFA855F7), size: 16),
+                          child: const AppIcon(
+                            SpiderIcons.workspace,
+                            color: AppColors.ink,
+                            size: 16,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -199,34 +215,62 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                             children: [
                               Text(
                                 inv.workspaceName,
-                                style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w700, fontSize: 13),
+                                style: AppType.sans(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
                               ),
                               if (inv.invitedByEmail != null)
                                 Text(
                                   'Invited by ${inv.invitedByEmail}',
-                                  style: GoogleFonts.inter(color: mutedColor, fontSize: 11),
+                                  style: AppType.sans(
+                                    color: mutedColor,
+                                    fontSize: 11,
+                                  ),
                                 ),
                             ],
                           ),
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            backgroundColor: AppColors.muted,
+                            foregroundColor: p.onInk,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onPressed: () async {
-                            final wsId = await membersController.acceptInvite(inv.token);
-                            if (wsId != null) await boardController.switchWorkspace(wsId);
+                            final wsId = await membersController.acceptInvite(
+                              inv.token,
+                            );
+                            if (wsId != null) {
+                              await boardController.switchWorkspace(wsId);
+                            }
                             await boardController.loadWorkspaces();
                           },
-                          child: const Text('Accept', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            'Accept',
+                            style: TextStyle(
+                              color: p.onInk,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 4),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.danger),
-                          onPressed: () => membersController.declineMyInvite(inv.id),
+                          icon: const AppIcon(
+                            SpiderIcons.close,
+                            size: 16,
+                            color: AppColors.danger,
+                          ),
+                          onPressed: () =>
+                              membersController.declineMyInvite(inv.id),
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.all(4),
                         ),
@@ -241,7 +285,10 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
               const SizedBox(height: 8),
 
               if (board.workspaces.isEmpty && board.workspacesLoading)
-                const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else
                 for (final w in board.workspaces) ...[
                   _buildWorkspaceCard(
@@ -259,7 +306,8 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                       await membersController.load();
                       if (context.mounted) Navigator.pop(context);
                     },
-                    onRename: () => _renameDialog(context, boardController, w.id, w.name),
+                    onRename: () =>
+                        _renameDialog(context, boardController, w.id, w.name),
                   ),
                   const SizedBox(height: 6),
                 ],
@@ -281,10 +329,13 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                         child: TextField(
                           controller: _newNameCtrl,
                           autofocus: true,
-                          style: GoogleFonts.inter(color: textColor, fontSize: 13),
+                          style: AppType.sans(color: textColor, fontSize: 13),
                           decoration: InputDecoration(
                             hintText: 'Enter workspace name...',
-                            hintStyle: GoogleFonts.inter(color: ink3Color, fontSize: 13),
+                            hintStyle: AppType.sans(
+                              color: ink3Color,
+                              fontSize: 13,
+                            ),
                             border: InputBorder.none,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
@@ -310,17 +361,31 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                           setState(() => _creating = false);
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.accent,
                             borderRadius: BorderRadius.circular(7),
                           ),
-                          child: Text('Create', style: GoogleFonts.inter(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            'Create',
+                            style: AppType.sans(
+                              color: Colors.white,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, size: 16, color: mutedColor),
+                        icon: AppIcon(
+                          SpiderIcons.close,
+                          size: 16,
+                          color: mutedColor,
+                        ),
                         onPressed: () => setState(() => _creating = false),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
@@ -335,7 +400,7 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F8),
+                      color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: cardBorder),
                     ),
@@ -343,12 +408,16 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(AppIcons.quickAdd, size: 15, color: AppColors.accent),
+                        AppIcon(
+                          SpiderIcons.quickAdd,
+                          size: 15,
+                          color: p.ink,
+                        ),
                         const SizedBox(width: 5),
                         Text(
                           'New workspace',
-                          style: GoogleFonts.inter(
-                            color: AppColors.accent,
+                          style: AppType.sans(
+                            color: p.ink,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -361,38 +430,61 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
               const SizedBox(height: 18),
 
               // Collaborators Section
-              _sectionHeader('COLLABORATORS & INVITES', count: members.members.length),
+              _sectionHeader(
+                'COLLABORATORS & INVITES',
+                count: members.members.length,
+              ),
               const SizedBox(height: 8),
 
               // Redesigned Clean Single-Outline Invite Email Field with Inline Action Pill
               TextField(
                 controller: _inviteCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.inter(color: textColor, fontSize: 13.5),
+                style: AppType.sans(color: textColor, fontSize: 13.5),
                 decoration: InputDecoration(
                   hintText: 'Invite collaborator by email...',
-                  hintStyle: GoogleFonts.inter(color: ink3Color, fontSize: 13),
-                  prefixIcon: Icon(Icons.mail_outline_rounded, size: 19, color: ink3Color),
+                  hintStyle: AppType.sans(color: ink3Color, fontSize: 13),
+                  prefixIcon: AppIcon(
+                    SpiderIcons.mail,
+                    size: 19,
+                    color: ink3Color,
+                  ),
                   suffixIcon: Padding(
                     padding: const EdgeInsets.only(right: 6, top: 4, bottom: 4),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
+                        backgroundColor: p.ink,
+                        foregroundColor: p.onInk,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         minimumSize: const Size(0, 34),
                       ),
-                      onPressed: _inviting ? null : () => _sendInvite(membersController),
+                      onPressed: _inviting
+                          ? null
+                          : () => _sendInvite(membersController),
                       child: _inviting
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: p.onInk,
+                              ),
+                            )
                           : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Invite', style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                                Text(
+                                  'Invite',
+                                  style: AppType.sans(
+                                    color: p.onInk,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.arrow_forward_rounded, size: 13),
+                                AppIcon(SpiderIcons.arrowRight, size: 13, color: p.onInk),
                               ],
                             ),
                     ),
@@ -400,7 +492,10 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                   filled: true,
                   fillColor: inputBg,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: cardBorder),
@@ -411,7 +506,10 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppColors.accent,
+                      width: 1.5,
+                    ),
                   ),
                 ),
                 onSubmitted: (_) => _sendInvite(membersController),
@@ -420,7 +518,10 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
 
               // Members List
               if (members.members.isEmpty && members.loading)
-                const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()))
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else ...[
                 for (final m in members.members) ...[
                   _buildMemberCard(
@@ -433,7 +534,14 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                     textColor: textColor,
                     mutedColor: mutedColor,
                     isDark: isDark,
-                    onRemove: m.role != 'owner' ? () => _confirmRemoveMember(context, membersController, m.userId, m.email ?? m.userId) : null,
+                    onRemove: m.role != 'owner'
+                        ? () => _confirmRemoveMember(
+                            context,
+                            membersController,
+                            m.userId,
+                            m.email ?? m.userId,
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 6),
                 ],
@@ -447,15 +555,29 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.danger,
-                    side: BorderSide(color: const Color(0xFFEF4444).withValues(alpha: 0.35)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(
+                      color: AppColors.danger.withValues(alpha: 0.35),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: () async {
                     Navigator.pop(context);
                     await ref.read(authProvider.notifier).signOut();
                   },
-                  icon: const Icon(AppIcons.signOut, size: 16, color: AppColors.danger),
-                  label: Text('Sign out', style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                  icon: const AppIcon(
+                    SpiderIcons.signOut,
+                    size: 16,
+                    color: AppColors.danger,
+                  ),
+                  label: Text(
+                    'Sign out',
+                    style: AppType.sans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -466,7 +588,7 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
 
     if (widget.isFullScreen) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0F1016) : const Color(0xFFF9FAFC),
+        backgroundColor: isDark ? AppColors.bg : AppColors.lightBg,
         body: SafeArea(child: content),
       );
     }
@@ -487,7 +609,9 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                 border: Border.all(color: cardBorder),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark ? Colors.black.withValues(alpha: 0.45) : Colors.black.withValues(alpha: 0.08),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.45)
+                        : Colors.black.withValues(alpha: 0.08),
                     blurRadius: 28,
                     offset: const Offset(0, 10),
                   ),
@@ -502,39 +626,40 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
   }
 
   Widget _sectionHeader(String title, {int? count, bool isAlert = false}) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            color: isAlert ? const Color(0xFFA855F7) : const Color(0xFF8B92A7),
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.4,
-          ),
-        ),
-        if (count != null) ...[
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-            decoration: BoxDecoration(
-              color: isAlert
-                  ? const Color(0xFFA855F7).withValues(alpha: 0.2)
-                  : const Color(0xFF26293A),
-              borderRadius: BorderRadius.circular(999),
+    return Builder(builder: (cntx) {
+      final p = cntx.ink;
+      return Row(
+        children: [
+          Text(
+            title,
+            style: AppType.sans(
+              color: p.inkMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
             ),
-            child: Text(
-              '$count',
-              style: GoogleFonts.inter(
-                color: isAlert ? const Color(0xFFA855F7) : const Color(0xFF949BAE),
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
+          ),
+          if (count != null) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: p.ink,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$count',
+                style: AppType.sans(
+                  color: p.onInk,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ],
-    );
+      );
+    });
   }
 
   Widget _buildWorkspaceCard({
@@ -550,16 +675,13 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
     required VoidCallback onSwitch,
     required VoidCallback onRename,
   }) {
+    final p = context.ink;
     return Container(
       decoration: BoxDecoration(
-        color: isActive
-            ? (isDark ? const Color(0xFF232038) : const Color(0xFFFAF5FF))
-            : cardBg,
+        color: isActive ? p.surfaceAlt : cardBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive
-              ? const Color(0xFF8B5CF6).withValues(alpha: 0.5)
-              : cardBorder,
+          color: isActive ? p.ink.withValues(alpha: 0.18) : cardBorder,
           width: isActive ? 1.4 : 1,
         ),
       ),
@@ -577,13 +699,18 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: (isActive ? AppColors.accent : (isDark ? const Color(0xFF2A2D3E) : const Color(0xFFE5E7EB))).withValues(alpha: 0.2),
+                    color: isActive
+                        ? p.ink.withValues(alpha: 0.10)
+                        : p.line.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActive ? p.ink.withValues(alpha: 0.18) : p.line,
+                    ),
                   ),
-                  child: Icon(
-                    AppIcons.workspace,
+                  child: AppIcon(
+                    SpiderIcons.workspace,
                     size: 16,
-                    color: isActive ? AppColors.accent : mutedColor,
+                    color: isActive ? p.ink : mutedColor,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -595,24 +722,29 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                         children: [
                           Text(
                             workspace.name,
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: textColor,
                               fontSize: 13.5,
-                              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                              fontWeight: isActive
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
                             ),
                           ),
                           if (isActive) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1.5,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                color: p.ink,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 'ACTIVE',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF8B5CF6),
+                                style: AppType.sans(
+                                  color: p.onInk,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -623,13 +755,13 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
                       ),
                       Text(
                         workspace.role.toUpperCase(),
-                        style: GoogleFonts.inter(color: mutedColor, fontSize: 10.5),
+                        style: AppType.sans(color: mutedColor, fontSize: 10.5),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: Icon(AppIcons.edit, size: 15, color: ink3Color),
+                  icon: AppIcon(SpiderIcons.edit, size: 15, color: p.inkMuted),
                   tooltip: 'Rename',
                   onPressed: onRename,
                   constraints: const BoxConstraints(),
@@ -672,7 +804,7 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
             backgroundColor: avatarColor.withValues(alpha: 0.2),
             child: Text(
               initials,
-              style: GoogleFonts.inter(
+              style: AppType.sans(
                 color: avatarColor,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w700,
@@ -686,20 +818,28 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
               children: [
                 Text(
                   email,
-                  style: GoogleFonts.inter(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: AppType.sans(
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   role,
-                  style: GoogleFonts.inter(color: mutedColor, fontSize: 10.5),
+                  style: AppType.sans(color: mutedColor, fontSize: 10.5),
                 ),
               ],
             ),
           ),
           if (onRemove != null)
             IconButton(
-              icon: const Icon(Icons.person_remove_outlined, size: 16, color: AppColors.danger),
+              icon: const AppIcon(
+                SpiderIcons.userRemove,
+                size: 16,
+                color: AppColors.danger,
+              ),
               tooltip: 'Remove collaborator',
               onPressed: onRemove,
               constraints: const BoxConstraints(),
@@ -710,19 +850,30 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
     );
   }
 
-  void _renameDialog(BuildContext context, BoardController controller, int id, String current) {
+  void _renameDialog(
+    BuildContext context,
+    BoardController controller,
+    int id,
+    String current,
+  ) {
     final ctrl = TextEditingController(text: current);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Rename Workspace', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(
+          'Rename Workspace',
+          style: AppType.sans(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: const InputDecoration(labelText: 'Workspace name'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               final v = ctrl.text.trim();
@@ -738,14 +889,25 @@ class _WorkspaceModalDialogState extends ConsumerState<_WorkspaceModalDialog> {
     );
   }
 
-  void _confirmRemoveMember(BuildContext context, WorkspaceMembersController controller, String userId, String email) {
+  void _confirmRemoveMember(
+    BuildContext context,
+    WorkspaceMembersController controller,
+    String userId,
+    String email,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove Collaborator', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(
+          'Remove Collaborator',
+          style: AppType.sans(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
         content: Text('Remove $email from this workspace?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () {

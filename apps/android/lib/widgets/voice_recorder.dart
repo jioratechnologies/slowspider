@@ -2,9 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+
+import '../design/icons.dart';
+import '../core/app_theme.dart';
 
 /// Mirrors apps/mobile/src/components/VoiceRecorder.tsx (built on expo-audio there; `record`
 /// package here). Records to a local m4a file, then hands (path, durationMs) to the caller
@@ -14,7 +19,12 @@ class VoiceRecorder extends StatefulWidget {
   final bool disabled;
   final bool compact;
 
-  const VoiceRecorder({super.key, required this.onRecorded, this.disabled = false, this.compact = false});
+  const VoiceRecorder({
+    super.key,
+    required this.onRecorded,
+    this.disabled = false,
+    this.compact = false,
+  });
 
   @override
   State<VoiceRecorder> createState() => _VoiceRecorderState();
@@ -39,14 +49,19 @@ class _VoiceRecorderState extends State<VoiceRecorder> {
     if (!await _recorder.hasPermission()) return;
     final dir = await getTemporaryDirectory();
     _path = '${dir.path}/voice-${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: _path!);
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: _path!,
+    );
     _startedAt = DateTime.now();
     setState(() {
       _recording = true;
       _elapsed = Duration.zero;
     });
     _ticker = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      if (_startedAt != null && mounted) setState(() => _elapsed = DateTime.now().difference(_startedAt!));
+      if (_startedAt != null && mounted) {
+        setState(() => _elapsed = DateTime.now().difference(_startedAt!));
+      }
     });
   }
 
@@ -70,8 +85,8 @@ class _VoiceRecorderState extends State<VoiceRecorder> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
-    final inputBg = isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F6);
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
     final textColor = theme.colorScheme.onSurface;
 
     if (_recording) {
@@ -83,18 +98,26 @@ class _VoiceRecorderState extends State<VoiceRecorder> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.16),
+              color: AppColors.danger.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEF4444)),
+              border: Border.all(color: AppColors.danger),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.stop_circle_rounded, size: 16, color: Color(0xFFEF4444)),
+                const AppIcon(
+                  SpiderIcons.stopCircle,
+                  size: 16,
+                  color: AppColors.danger,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   _fmt(_elapsed),
-                  style: GoogleFonts.inter(color: const Color(0xFFEF4444), fontSize: 12.5, fontWeight: FontWeight.w700),
+                  style: AppType.sans(
+                    color: AppColors.danger,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -105,7 +128,7 @@ class _VoiceRecorderState extends State<VoiceRecorder> {
 
     if (widget.compact) {
       return IconButton(
-        icon: const Icon(Icons.mic_none_rounded),
+        icon: const AppIcon(SpiderIcons.mic),
         color: textColor,
         onPressed: widget.disabled ? null : _start,
       );
@@ -126,11 +149,15 @@ class _VoiceRecorderState extends State<VoiceRecorder> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.mic_rounded, size: 16, color: Color(0xFF10B981)),
+              const AppIcon(SpiderIcons.mic, size: 16, color: AppColors.muted),
               const SizedBox(width: 6),
               Text(
                 'Record voice',
-                style: GoogleFonts.inter(color: textColor, fontSize: 12.5, fontWeight: FontWeight.w600),
+                style: AppType.sans(
+                  color: textColor,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

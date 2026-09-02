@@ -1,5 +1,8 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+import '../core/app_theme.dart';
 
 /// Exact 1:1 vector reproduction of the Lucide `Atom` icon used in the web app.
 class AtomIcon extends StatelessWidget {
@@ -10,7 +13,7 @@ class AtomIcon extends StatelessWidget {
   const AtomIcon({
     super.key,
     this.size = 18.0,
-    this.color = const Color(0xFFA855F7),
+    this.color = AppColors.ink,
     this.strokeWidth = 1.8,
   });
 
@@ -20,10 +23,7 @@ class AtomIcon extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _AtomPainter(
-          color: color,
-          strokeWidth: strokeWidth,
-        ),
+        painter: _AtomPainter(color: color, strokeWidth: strokeWidth),
       ),
     );
   }
@@ -60,14 +60,20 @@ class _AtomPainter extends CustomPainter {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(-math.pi / 4);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: rx * 2, height: ry * 2), strokePaint);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: rx * 2, height: ry * 2),
+      strokePaint,
+    );
     canvas.restore();
 
     // 3. Diagonal Orbital Ring 2 (+45 deg)
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(math.pi / 4);
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: rx * 2, height: ry * 2), strokePaint);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: rx * 2, height: ry * 2),
+      strokePaint,
+    );
     canvas.restore();
   }
 

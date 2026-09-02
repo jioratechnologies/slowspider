@@ -6,7 +6,7 @@ import * as db from "@/lib/board-actions";
 import { signOutAction } from "@/lib/auth-actions";
 import { downloadICS, downloadJSON, readJSONFile } from "@/lib/ics";
 import { uploadMedia } from "@/lib/note-media";
-import { COLORS, clusterProgress, isClusterActive, isTaskLive, tasksIn } from "@/lib/board-helpers";
+import { COLORS, clusterProgress, deadlineBuckets, isClusterActive, isTaskLive, tasksIn } from "@/lib/board-helpers";
 import type { BoardData, Category, Cluster, Milestone, SortMode, Task } from "@/lib/types";
 import type { NewNote } from "@/components/notes/NotesPanel";
 import type { TaskPatch } from "../modals/TaskModal";
@@ -15,6 +15,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { AnimatePresence, motion } from "framer-motion";
 
 import TopBar from "./TopBar";
+import Sidebar from "./Sidebar";
+import { Snowflake, Trash2 } from "lucide-react";
 import QuickAdd from "./QuickAdd";
 import Tray from "./Tray";
 import CategoryFilter from "./CategoryFilter";
@@ -86,6 +88,32 @@ export default function Board({
   const [standalone, setStandalone] = useState(false);
   const [notify, setNotify] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    // One-shot hydration of the persisted sidebar preference.
+    if (localStorage.getItem("slowspider.nav") === "collapsed") setNavCollapsed(true);
+  }, []);
+
+  function toggleNav() {
+    setNavCollapsed((v) => {
+      localStorage.setItem("slowspider.nav", v ? "expanded" : "collapsed");
+      return !v;
+    });
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleNav();
+      }
+      if (e.key === "Escape") setMobileNavOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     if (!justFrozen) return;
@@ -653,35 +681,57 @@ export default function Board({
 
   const visibleClusters = clusters.filter((c: Cluster) => isClusterActive(c) && (!activeCategory || c.category_id === activeCategory));
 
+  const deadlineBkts = deadlineBuckets(tasks, clusters);
+  const deadlinesCount = deadlineBkts.overdue.length + deadlineBkts.soon.length;
+  const calendarCount = liveTasks.filter((t) => t.deadline).length;
+  const coldCount = clusters.filter((c) => c.status === "cold").length + tasks.filter((t) => t.cold).length;
+  const binCount = clusters.filter((c) => c.status === "binned").length + tasks.filter((t) => t.binned).length;
+  const railVisible = coldOpen || binOpen;
+
   return (
     <>
       <input ref={importInputRef} type="file" accept="application/json" className="hidden" onChange={handleImportFile} />
-      <TopBar
-        workspaceId={workspaceId}
-        workspaces={workspaces}
-        search={search}
-        onSearchChange={setSearch}
-        sortMode={sortMode}
-        onToggleSort={toggleSort}
-        calendarOpen={calendarOpen}
-        onToggleCalendar={() => setCalendarOpen((v) => !v)}
-        onAddCluster={() => openClusterModal(null)}
-        onManageCategories={() => setCategoryModalOpen(true)}
-        onExportICS={exportICS}
-        onExportJSON={exportJSON}
-        onImportData={triggerImport}
-        onOpenCollaborators={() => setCollaboratorsOpen(true)}
-        theme={theme}
-        onCycleTheme={cycleTheme}
-        notifyState={notifyLabel}
-        onToggleNotify={toggleNotify}
-        installAvailable={!standalone}
-        onInstall={doInstall}
-        userEmail={userEmail}
-        onSignOut={signOut}
-        onPinCalculator={() => setPinnedCalculator(true)}
-      />
-      <main className="mx-auto max-w-[1600px] px-4 sm:px-6 py-4 pb-28 md:pb-8">
+      <div className="flex min-h-dvh">
+        <Sidebar
+          workspaceId={workspaceId}
+          workspaces={workspaces}
+          onOpenCollaborators={() => setCollaboratorsOpen(true)}
+          counts={{ board: liveTasks.length, calendar: calendarCount, deadlines: deadlinesCount, cold: coldCount, bin: binCount }}
+          calendarOpen={calendarOpen}
+          coldOpen={coldOpen}
+          binOpen={binOpen}
+          theme={theme}
+          notifyState={notifyLabel}
+          installAvailable={!standalone}
+          userEmail={userEmail}
+          collapsed={navCollapsed}
+          mobileOpen={mobileNavOpen}
+          onToggleCollapse={toggleNav}
+          onCloseMobile={() => setMobileNavOpen(false)}
+          onGoBoard={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onToggleCalendar={() => setCalendarOpen((v) => !v)}
+          onToggleCold={() => setColdOpen((v) => !v)}
+          onToggleBin={() => setBinOpen((v) => !v)}
+          onAddCluster={() => openClusterModal(null)}
+          onManageCategories={() => setCategoryModalOpen(true)}
+          onOpenResearch={() => setResearchToolsOpen(true)}
+          onCycleTheme={cycleTheme}
+          onToggleNotify={toggleNotify}
+          onInstall={doInstall}
+          onExportJSON={exportJSON}
+          onImportData={triggerImport}
+          onExportICS={exportICS}
+          onSignOut={signOut}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar
+            search={search}
+            onSearchChange={setSearch}
+            sortMode={sortMode}
+            onToggleSort={toggleSort}
+            onMenu={() => setMobileNavOpen(true)}
+          />
+          <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 sm:px-6 py-4 pb-28 md:pb-8">
         <CalendarPanel
           open={calendarOpen}
           tasks={tasks}
@@ -692,8 +742,14 @@ export default function Board({
         <DeadlinesPanel tasks={tasks} clusters={clusters} onOpenTask={openTask} />
         <QuickAdd onAdd={addTask} />
 
-        {/* Board & Side Rail Container */}
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+        {/* Board & Side Rail Container — rail only exists while Freezer/Bin is open */}
+        <div
+          className={
+            railVisible
+              ? "grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]"
+              : "grid items-start"
+          }
+        >
           <div className="min-w-0 flex flex-col gap-3">
             <Tray
               tasks={tasksIn(tasks, null, search, sortMode)}
@@ -744,33 +800,35 @@ export default function Board({
             </div>
           </div>
 
-          <aside className="flex flex-col gap-3 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto [&_.stash]:mt-0">
-            <ColdStore
-              clusters={clusters}
-              tasks={tasks}
-              categories={categories}
-              open={coldOpen}
-              justFrozen={justFrozen}
-              onToggleOpen={() => setColdOpen((v) => !v)}
-              onResumeCluster={resumeCluster}
-              onBinCluster={binCluster}
-              onResumeTask={resumeTask}
-              onBinTask={binTask}
-              taskCount={taskCountColdInCluster}
-            />
-            <DumpBin
-              clusters={clusters}
-              tasks={tasks}
-              open={binOpen}
-              onToggleOpen={() => setBinOpen((v) => !v)}
-              onRestoreCluster={resumeCluster}
-              onDeleteClusterForever={deleteClusterForeverConfirm}
-              onRestoreTask={restoreTask}
-              onDeleteTaskForever={deleteTaskForeverConfirm}
-              onEmptyBin={emptyBinForever}
-              taskCount={taskCountInCluster}
-            />
-          </aside>
+          {railVisible && (
+            <aside className="flex flex-col gap-3 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto [&_.stash]:mt-0">
+              <ColdStore
+                clusters={clusters}
+                tasks={tasks}
+                categories={categories}
+                open={coldOpen}
+                justFrozen={justFrozen}
+                onToggleOpen={() => setColdOpen((v) => !v)}
+                onResumeCluster={resumeCluster}
+                onBinCluster={binCluster}
+                onResumeTask={resumeTask}
+                onBinTask={binTask}
+                taskCount={taskCountColdInCluster}
+              />
+              <DumpBin
+                clusters={clusters}
+                tasks={tasks}
+                open={binOpen}
+                onToggleOpen={() => setBinOpen((v) => !v)}
+                onRestoreCluster={resumeCluster}
+                onDeleteClusterForever={deleteClusterForeverConfirm}
+                onRestoreTask={restoreTask}
+                onDeleteTaskForever={deleteTaskForeverConfirm}
+                onEmptyBin={emptyBinForever}
+                taskCount={taskCountInCluster}
+              />
+            </aside>
+          )}
         </div>
         <div className="mt-8 mb-2 text-center text-[11px] text-[var(--ink3)]">
           Synced to your Slow Spider account ·{" "}
@@ -778,7 +836,9 @@ export default function Board({
             Export a backup
           </a>
         </div>
-      </main>
+          </main>
+        </div>
+      </div>
 
       <TaskModal
         task={editingTask}
@@ -855,6 +915,18 @@ export default function Board({
         onClose={() => setResearchToolsOpen(false)}
         onPinCalculator={() => setPinnedCalculator(true)}
       />
+
+      {/* Floating Freeze/Bin drop targets — materialize only while dragging (body[data-dnd]) */}
+      <div className="dnd-rail" aria-hidden>
+        <div className="dnd-zone" data-drop="coldStore" title="Drop to freeze">
+          <Snowflake className="size-4" strokeWidth={1.75} />
+          <span>Freeze</span>
+        </div>
+        <div className="dnd-zone dnd-zone-danger" data-drop="dumpBin" title="Drop to bin">
+          <Trash2 className="size-4" strokeWidth={1.75} />
+          <span>Bin</span>
+        </div>
+      </div>
 
       <MobileBottomBar
         onQuickAdd={() => {

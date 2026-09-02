@@ -101,8 +101,22 @@ export function CustomDatePicker({
     if (!open) return;
     updatePosition();
 
+    // Measure the rendered popover and re-clamp within the viewport —
+    // the static height guess in updatePosition runs small.
+    function fitToViewport() {
+      const el = popoverRef.current;
+      if (!el) return;
+      const h = el.offsetHeight;
+      const maxTop = window.innerHeight - h - 8;
+      setPos((p) => (p && p.top > maxTop ? { ...p, top: Math.max(8, maxTop) } : p));
+    }
+
     function handleScroll() {
       updatePosition();
+    }
+    function handleResize() {
+      updatePosition();
+      fitToViewport();
     }
     function handleClickOutside(e: MouseEvent) {
       const t = e.target as Node;
@@ -113,12 +127,14 @@ export function CustomDatePicker({
     }
 
     window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
+    window.addEventListener("resize", handleResize);
     document.addEventListener("mousedown", handleClickOutside);
+    const raf = requestAnimationFrame(fitToViewport);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("resize", handleResize);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [open, updatePosition]);
@@ -159,7 +175,7 @@ export function CustomDatePicker({
           onChange={handleInputChange}
           placeholder={placeholder}
           className={cn(
-            "h-10 w-full rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/60 dark:bg-white/[0.03] pr-9 pl-3 text-[13px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-white/20 focus:bg-white dark:focus:bg-white/[0.05] focus:ring-0 focus:outline-none transition-all",
+            "h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--sunken)] pr-9 pl-3 text-[13px] text-[var(--ink)] placeholder:text-[var(--ink3)] focus:border-[var(--line-strong)] focus:ring-0 focus:outline-none transition-all",
             className
           )}
         />
@@ -169,7 +185,7 @@ export function CustomDatePicker({
             if (!open) updatePosition();
             setOpen((v) => !v);
           }}
-          className="absolute right-2.5 rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+          className="absolute right-2.5 rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
           title="Open calendar"
         >
           <CalendarIcon className="size-4" />
@@ -186,26 +202,26 @@ export function CustomDatePicker({
             left: `${pos.left}px`,
             zIndex: 999999,
           }}
-          className="w-[300px] sm:w-[310px] rounded-2xl border border-zinc-200 dark:border-white/15 bg-white dark:bg-[#16161c] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.4)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 select-none"
+          className="w-[300px] sm:w-[310px] max-h-[calc(100dvh-16px)] overflow-y-auto no-scrollbar rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4 shadow-2xl backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 select-none"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-3">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
               onClick={() => shiftMonth(-1)}
               title="Previous month"
             >
               <ChevronLeft className="size-4" />
             </button>
 
-            <span className="text-[14.5px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">
+            <span className="text-[14.5px] font-semibold tracking-tight text-[var(--ink)] font-sans">
               {cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
             </span>
 
             <button
               type="button"
-              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
               onClick={() => shiftMonth(1)}
               title="Next month"
             >
@@ -216,7 +232,7 @@ export function CustomDatePicker({
           {/* Weekday Labels */}
           <div className="grid grid-cols-7 gap-1 pb-1">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[10.5px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 py-1">
+              <div key={w} className="text-center text-[10.5px] font-semibold uppercase text-[var(--ink3)] py-1">
                 {w}
               </div>
             ))}
@@ -236,10 +252,10 @@ export function CustomDatePicker({
                   onClick={() => handleSelectDate(d)}
                   className={cn(
                     "relative flex size-8 sm:size-9 items-center justify-center rounded-xl text-[12.5px] font-medium transition-all cursor-pointer",
-                    !inMonth && "text-zinc-300 dark:text-zinc-600 opacity-40 hover:opacity-80",
-                    inMonth && !isSelected && "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-white/[0.08] dark:hover:text-white",
-                    isToday && !isSelected && "border border-purple-500/40 text-purple-600 dark:text-purple-400 font-semibold",
-                    isSelected && "bg-purple-600 text-white font-bold shadow-md"
+                    !inMonth && "text-[var(--ink3)] opacity-40 hover:opacity-80",
+                    inMonth && !isSelected && !isToday && "text-[var(--ink)] hover:bg-[var(--accent-soft)]",
+                    isToday && !isSelected && "border border-[var(--line-strong)] text-[var(--ink)] font-semibold",
+                    isSelected && "bg-[var(--ink)] text-[var(--bg)] font-bold shadow-md"
                   )}
                 >
                   {d.getDate()}
@@ -249,7 +265,7 @@ export function CustomDatePicker({
           </div>
 
           {/* Footer actions */}
-          <div className="mt-3 flex items-center justify-between border-t border-zinc-100 dark:border-white/[0.08] pt-2.5">
+          <div className="mt-3 flex items-center justify-between border-t border-[var(--line)] pt-2.5">
             <button
               type="button"
               onClick={() => {
@@ -257,14 +273,14 @@ export function CustomDatePicker({
                 setInputValue("");
                 setOpen(false);
               }}
-              className="text-[11.5px] text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="text-[11.5px] text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={() => handleSelectDate(new Date())}
-              className="text-[11.5px] font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors cursor-pointer"
+              className="text-[11.5px] font-medium text-[var(--ink)] hover:underline underline-offset-2 transition-colors cursor-pointer"
             >
               Today
             </button>
@@ -333,8 +349,22 @@ export function CustomTimePicker({
     if (!open) return;
     updatePosition();
 
+    // Measure the rendered popover and re-clamp within the viewport —
+    // the static height guess in updatePosition runs small.
+    function fitToViewport() {
+      const el = popoverRef.current;
+      if (!el) return;
+      const h = el.offsetHeight;
+      const maxTop = window.innerHeight - h - 8;
+      setPos((p) => (p && p.top > maxTop ? { ...p, top: Math.max(8, maxTop) } : p));
+    }
+
     function handleScroll() {
       updatePosition();
+    }
+    function handleResize() {
+      updatePosition();
+      fitToViewport();
     }
     function handleClickOutside(e: MouseEvent) {
       const t = e.target as Node;
@@ -345,12 +375,14 @@ export function CustomTimePicker({
     }
 
     window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
+    window.addEventListener("resize", handleResize);
     document.addEventListener("mousedown", handleClickOutside);
+    const raf = requestAnimationFrame(fitToViewport);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("resize", handleResize);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [open, updatePosition]);
@@ -394,7 +426,7 @@ export function CustomTimePicker({
           onChange={handleInputChange}
           placeholder={placeholder}
           className={cn(
-            "h-10 w-full rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/60 dark:bg-white/[0.03] pr-9 pl-3 text-[13px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-white/20 focus:bg-white dark:focus:bg-white/[0.05] focus:ring-0 focus:outline-none disabled:opacity-40 transition-all",
+            "h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--sunken)] pr-9 pl-3 text-[13px] text-[var(--ink)] placeholder:text-[var(--ink3)] focus:border-[var(--line-strong)] focus:ring-0 focus:outline-none disabled:opacity-40 transition-all",
             className
           )}
         />
@@ -405,7 +437,7 @@ export function CustomTimePicker({
             if (!open) updatePosition();
             setOpen((v) => !v);
           }}
-          className="absolute right-2.5 rounded-lg p-1 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors disabled:opacity-40 cursor-pointer"
+          className="absolute right-2.5 rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors disabled:opacity-40 cursor-pointer"
           title="Open time presets"
         >
           <Clock className="size-4" />
@@ -422,11 +454,11 @@ export function CustomTimePicker({
             left: `${pos.left}px`,
             zIndex: 999999,
           }}
-          className="w-[260px] rounded-2xl border border-zinc-200 dark:border-white/15 bg-white dark:bg-[#16161c] p-3.5 shadow-[0_24px_70px_rgba(0,0,0,0.4)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 select-none"
+          className="w-[260px] max-h-[calc(100dvh-16px)] overflow-y-auto no-scrollbar rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-3.5 shadow-2xl backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 select-none"
         >
           {/* Quick Presets */}
           <div className="mb-3">
-            <span className="text-[10.5px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 block mb-1.5">
+            <span className="text-[10.5px] font-semibold uppercase text-[var(--ink3)] block mb-1.5">
               Quick Presets
             </span>
             <div className="flex flex-wrap gap-1">
@@ -442,8 +474,8 @@ export function CustomTimePicker({
                   className={cn(
                     "rounded-lg px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer",
                     value === p.time
-                      ? "bg-purple-600 text-white font-semibold"
-                      : "bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/[0.08]"
+                      ? "bg-[var(--ink)] text-[var(--bg)] font-semibold"
+                      : "bg-[var(--panel-2)] text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)]"
                   )}
                 >
                   {p.label} <span className="font-mono text-[10px] opacity-70">({p.time})</span>
@@ -453,14 +485,14 @@ export function CustomTimePicker({
           </div>
 
           {/* Hour and Minute Selector */}
-          <div className="border-t border-zinc-100 dark:border-white/[0.08] pt-2.5">
-            <span className="text-[10.5px] font-semibold uppercase text-zinc-400 dark:text-zinc-500 block mb-1.5">
+          <div className="border-t border-[var(--line)] pt-2.5">
+            <span className="text-[10.5px] font-semibold uppercase text-[var(--ink3)] block mb-1.5">
               Select Time
             </span>
             <div className="grid grid-cols-2 gap-2 text-center">
               <div>
-                <span className="text-[10px] font-mono text-zinc-400 block mb-1">Hour</span>
-                <div className="max-h-28 overflow-y-auto space-y-1 rounded-xl border border-zinc-100 dark:border-white/[0.06] p-1 bg-zinc-50/50 dark:bg-black/20 hide-scrollbar">
+                <span className="text-[10px] font-mono text-[var(--muted)] block mb-1">Hour</span>
+                <div className="max-h-28 overflow-y-auto space-y-1 rounded-xl border border-[var(--line)] p-1 bg-[var(--sunken)] no-scrollbar">
                   {HOURS.map((h) => (
                     <button
                       key={h}
@@ -469,8 +501,8 @@ export function CustomTimePicker({
                       className={cn(
                         "w-full rounded-lg py-1 text-[12px] font-mono font-medium transition-colors cursor-pointer",
                         currentH === h
-                          ? "bg-purple-600 text-white font-bold"
-                          : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-white/10"
+                          ? "bg-[var(--ink)] text-[var(--bg)] font-bold"
+                          : "text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)]"
                       )}
                     >
                       {h}
@@ -480,8 +512,8 @@ export function CustomTimePicker({
               </div>
 
               <div>
-                <span className="text-[10px] font-mono text-zinc-400 block mb-1">Minute</span>
-                <div className="space-y-1 rounded-xl border border-zinc-100 dark:border-white/[0.06] p-1 bg-zinc-50/50 dark:bg-black/20">
+                <span className="text-[10px] font-mono text-[var(--muted)] block mb-1">Minute</span>
+                <div className="space-y-1 rounded-xl border border-[var(--line)] p-1 bg-[var(--sunken)]">
                   {MINUTES.map((m) => (
                     <button
                       key={m}
@@ -490,8 +522,8 @@ export function CustomTimePicker({
                       className={cn(
                         "w-full rounded-lg py-1.5 text-[12px] font-mono font-medium transition-colors cursor-pointer",
                         currentM === m
-                          ? "bg-purple-600 text-white font-bold"
-                          : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-white/10"
+                          ? "bg-[var(--ink)] text-[var(--bg)] font-bold"
+                          : "text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)]"
                       )}
                     >
                       {m}
@@ -503,7 +535,7 @@ export function CustomTimePicker({
           </div>
 
           {/* Footer actions */}
-          <div className="mt-3 flex items-center justify-between border-t border-zinc-100 dark:border-white/[0.08] pt-2">
+          <div className="mt-3 flex items-center justify-between border-t border-[var(--line)] pt-2">
             <button
               type="button"
               onClick={() => {
@@ -511,14 +543,14 @@ export function CustomTimePicker({
                 setInputValue("");
                 setOpen(false);
               }}
-              className="text-[11.5px] text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              className="text-[11.5px] text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-[11.5px] font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors cursor-pointer"
+              className="text-[11.5px] font-medium text-[var(--ink)] hover:underline underline-offset-2 transition-colors cursor-pointer"
             >
               Done
             </button>

@@ -51,8 +51,9 @@ export default function DeadlinesPanel({
 
   return (
     <div
+      id="deadlines-panel"
       className={cn(
-        "mb-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2.5 shadow-xs transition-all",
+        "mb-4 scroll-mt-20 rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2.5 shadow-xs transition-all",
         overdue.length && "border-l-4 border-l-rose-500"
       )}
     >

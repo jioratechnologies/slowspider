@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/api_client.dart';
 import '../core/app_theme.dart';
 import '../models/models.dart';
+import '../design/icons.dart';
 
 /// Storage objects are private, so the stored path is traded for a short-lived signed URL
 /// at render time rather than being linked directly. Mirrors apps/mobile's NoteMedia.tsx.
@@ -38,25 +39,52 @@ class _NoteMediaState extends State<NoteMedia> {
 
   @override
   Widget build(BuildContext context) {
-    if (_failed) return const Text("Couldn't load this file.", style: TextStyle(color: AppColors.ink3, fontSize: 12));
-    if (_signed == null) return const Text('Loading…', style: TextStyle(color: AppColors.ink3, fontSize: 12));
+    if (_failed) {
+      return const Text(
+        "Couldn't load this file.",
+        style: TextStyle(color: AppColors.ink3, fontSize: 12),
+      );
+    }
+    if (_signed == null) {
+      return const Text(
+        'Loading…',
+        style: TextStyle(color: AppColors.ink3, fontSize: 12),
+      );
+    }
 
-    if (widget.note.kind == NoteKind.voice) return _VoicePlayer(url: _signed!, durationMs: widget.note.durationMs);
+    if (widget.note.kind == NoteKind.voice) {
+      return _VoicePlayer(url: _signed!, durationMs: widget.note.durationMs);
+    }
     if (widget.note.kind == NoteKind.image) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: Image.network(_signed!, height: 190, width: double.infinity, fit: BoxFit.cover),
+        child: Image.network(
+          _signed!,
+          height: 190,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
       );
     }
 
     return InkWell(
-      onTap: () => launchUrl(Uri.parse(_signed!), mode: LaunchMode.externalApplication),
+      onTap: () =>
+          launchUrl(Uri.parse(_signed!), mode: LaunchMode.externalApplication),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(widget.note.kind == NoteKind.video ? Icons.play_circle_outline : Icons.open_in_new, size: 18, color: AppColors.low),
+          AppIcon(
+            widget.note.kind == NoteKind.video
+                ? SpiderIcons.playCircle
+                : SpiderIcons.openExternal,
+            size: 18,
+            color: AppColors.low,
+          ),
           const SizedBox(width: 8),
-          Text(widget.note.kind == NoteKind.video ? 'Play video' : 'Open file', style: const TextStyle(color: AppColors.low, fontSize: 14)),
+          Text(
+            widget.note.kind == NoteKind.video ? 'Play video' : 'Open file',
+            style: const TextStyle(color: AppColors.low, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -106,7 +134,8 @@ class _VoicePlayerState extends State<_VoicePlayer> {
     if (_playing) {
       await _player.pause();
     } else {
-      if (_total.inMilliseconds > 0 && _position >= _total - const Duration(milliseconds: 250)) {
+      if (_total.inMilliseconds > 0 &&
+          _position >= _total - const Duration(milliseconds: 250)) {
         await _player.seek(Duration.zero);
       }
       await _player.play(UrlSource(widget.url));
@@ -121,21 +150,35 @@ class _VoicePlayerState extends State<_VoicePlayer> {
   @override
   Widget build(BuildContext context) {
     final remaining = _total > _position ? _total - _position : Duration.zero;
-    final pct = _total.inMilliseconds > 0 ? (_position.inMilliseconds / _total.inMilliseconds).clamp(0.0, 1.0) : 0.0;
+    final pct = _total.inMilliseconds > 0
+        ? (_position.inMilliseconds / _total.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
     return Row(
       children: [
         IconButton(
-          icon: Icon(_playing ? Icons.pause_circle : Icons.play_circle, size: 30, color: AppColors.accent),
+          icon: AppIcon(
+            _playing ? SpiderIcons.pause : SpiderIcons.playCircle,
+            size: 30,
+            color: AppColors.accent,
+          ),
           onPressed: _toggle,
         ),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(value: pct, minHeight: 4, backgroundColor: AppColors.panel2, color: AppColors.accent),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 4,
+              backgroundColor: AppColors.panel2,
+              color: AppColors.accent,
+            ),
           ),
         ),
         const SizedBox(width: 8),
-        Text(_fmt(remaining), style: const TextStyle(color: AppColors.ink3, fontSize: 11)),
+        Text(
+          _fmt(remaining),
+          style: const TextStyle(color: AppColors.ink3, fontSize: 11),
+        ),
       ],
     );
   }

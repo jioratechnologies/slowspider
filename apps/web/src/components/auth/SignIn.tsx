@@ -123,20 +123,20 @@ export default function SignIn() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="relative w-full max-w-[390px] rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-8 shadow-sm"
+        className="relative w-full max-w-[390px] rounded-2xl border border-[var(--line)] bg-[var(--panel)] px-9 py-10 shadow-[0_8px_44px_rgba(58,52,38,0.09)] dark:shadow-[0_8px_44px_rgba(0,0,0,0.55)]"
       >
-        <div className="mb-6 flex items-center gap-3.5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--panel-2)]">
-            <svg width="24" height="auto" viewBox="0 0 143 100" fill="none" role="img" aria-label="Slow Spider">
+        <div className="mb-7 flex items-center gap-3.5">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--panel-2)]">
+            <svg width="26" height="auto" viewBox="0 0 143 100" fill="none" role="img" aria-label="Slow Spider">
               <g stroke="currentColor" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--ink)]">
                 <path d="M8 91 54 8 100 91" />
                 <path d="M43 91 89 8 135 91" />
               </g>
-              <circle cx="71.5" cy="87" r="11.5" className="fill-[var(--muted)]" />
+              <circle cx="71.5" cy="87" r="11.5" className="fill-[var(--logo-dot)]" />
             </svg>
           </div>
           <div>
-            <h1 className="m-0 text-[18px] font-semibold tracking-tight text-[var(--ink)]">Slow Spider</h1>
+            <h1 className="m-0 text-[20px] font-medium [font-family:var(--serif)] tracking-tight text-[var(--ink)]">Slow Spider</h1>
             <div className="text-[12px] text-[var(--muted)]">A calm, single-screen organizer</div>
           </div>
         </div>

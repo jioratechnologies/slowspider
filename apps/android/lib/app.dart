@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,14 +19,20 @@ import 'widgets/app_shell.dart';
 final _routerListenable = ValueNotifier<AuthStatus>(AuthStatus.restoring);
 
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.listen(authProvider, (prev, next) => _routerListenable.value = next.status);
+  ref.listen(
+    authProvider,
+    (prev, next) => _routerListenable.value = next.status,
+  );
 
   return GoRouter(
     initialLocation: '/',
     refreshListenable: _routerListenable,
     redirect: (context, state) {
       final status = ref.read(authProvider).status;
-      final loggingIn = state.matchedLocation == '/sign-in' || state.matchedLocation == '/sign-up' || state.matchedLocation == '/reset-password';
+      final loggingIn =
+          state.matchedLocation == '/sign-in' ||
+          state.matchedLocation == '/sign-up' ||
+          state.matchedLocation == '/reset-password';
       if (status == AuthStatus.restoring) return null;
       if (status == AuthStatus.signedOut && !loggingIn) return '/sign-in';
       if (status == AuthStatus.signedIn && loggingIn) return '/';
@@ -33,12 +40,30 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const AppShell()),
-      GoRoute(path: '/calendar', builder: (context, state) => const CalendarScreen()),
-      GoRoute(path: '/archive', builder: (context, state) => const ArchiveScreen()),
-      GoRoute(path: '/sign-in', builder: (context, state) => const SignInScreen()),
-      GoRoute(path: '/sign-up', builder: (context, state) => const SignUpScreen()),
-      GoRoute(path: '/reset-password', builder: (context, state) => const ResetPasswordScreen()),
-      GoRoute(path: '/workspace', builder: (context, state) => const WorkspaceScreen()),
+      GoRoute(
+        path: '/calendar',
+        builder: (context, state) => const CalendarScreen(),
+      ),
+      GoRoute(
+        path: '/archive',
+        builder: (context, state) => const ArchiveScreen(),
+      ),
+      GoRoute(
+        path: '/sign-in',
+        builder: (context, state) => const SignInScreen(),
+      ),
+      GoRoute(
+        path: '/sign-up',
+        builder: (context, state) => const SignUpScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/workspace',
+        builder: (context, state) => const WorkspaceScreen(),
+      ),
       GoRoute(
         path: '/task/:id',
         builder: (context, state) => TaskDetailScreen(
@@ -48,7 +73,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/cluster/:id',
-        builder: (context, state) => ClusterDetailScreen(clusterId: int.parse(state.pathParameters['id']!)),
+        builder: (context, state) => ClusterDetailScreen(
+          clusterId: int.parse(state.pathParameters['id']!),
+        ),
       ),
     ],
   );
@@ -65,21 +92,44 @@ class SlowSpiderApp extends ConsumerWidget {
 
     return Builder(
       builder: (context) {
-        final platformBrightness = MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.dark;
-        final theme = buildAppTheme(mode: themeMode, platformBrightness: platformBrightness);
+        final platformBrightness =
+            MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.dark;
+        final theme = buildAppTheme(
+          mode: themeMode,
+          platformBrightness: platformBrightness,
+        );
+        final isLight = theme.brightness == Brightness.light;
 
-        if (authStatus == AuthStatus.restoring) {
-          return MaterialApp(
-            theme: theme,
-            home: const Scaffold(body: Center(child: CircularProgressIndicator())),
-          );
-        }
+        // The system bars are part of the page, not a frame around it. Both go
+        // transparent so content runs edge to edge, with icon brightness
+        // inverted against whichever theme resolved.
+        final overlay = SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+          statusBarBrightness: isLight ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isLight
+              ? Brightness.dark
+              : Brightness.light,
+        );
 
-        return MaterialApp.router(
-          title: 'Slow Spider',
-          debugShowCheckedModeBanner: false,
-          theme: theme,
-          routerConfig: router,
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: overlay,
+          child: authStatus == AuthStatus.restoring
+              ? MaterialApp(
+                  theme: theme,
+                  debugShowCheckedModeBanner: false,
+                  home: const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              : MaterialApp.router(
+                  title: 'Slow Spider',
+                  debugShowCheckedModeBanner: false,
+                  theme: theme,
+                  routerConfig: router,
+                ),
         );
       },
     );

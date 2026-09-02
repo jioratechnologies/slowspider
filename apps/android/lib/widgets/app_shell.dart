@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/icons.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/helpers.dart';
 import '../models/models.dart';
 import '../screens/archive_screen.dart';
@@ -161,8 +162,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   // Board Tab
                                   Expanded(
                                     child: _buildDockItem(
-                                      icon: AppIcons.home,
-                                      activeIcon: AppIcons.homeActive,
+                                      icon: SpiderIcons.home,
+                                      activeIcon: SpiderIcons.homeActive,
                                       label: 'Board',
                                       active: _tabIndex == 0,
                                       accentColor: activeIconColor,
@@ -196,8 +197,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                       builder: (ctx, candidateData, rejectedData) {
                                         final isHovered = candidateData.isNotEmpty;
                                         return _buildDockItem(
-                                          icon: AppIcons.coldStore,
-                                          activeIcon: AppIcons.coldStore,
+                                          icon: SpiderIcons.coldStore,
+                                          activeIcon: SpiderIcons.coldStore,
                                           label: 'Cold',
                                           active: _tabIndex == 1 || isHovered,
                                           badgeCount: coldCount,
@@ -235,8 +236,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                       builder: (ctx, candidateData, rejectedData) {
                                         final isHovered = candidateData.isNotEmpty;
                                         return _buildDockItem(
-                                          icon: AppIcons.dumpingBin,
-                                          activeIcon: AppIcons.dumpingBinActive,
+                                          icon: SpiderIcons.dumpingBin,
+                                          activeIcon: SpiderIcons.dumpingBinActive,
                                           label: 'Bin',
                                           active: _tabIndex == 2 || isHovered,
                                           badgeCount: binCount,
@@ -254,8 +255,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   // Search Tab
                                   Expanded(
                                     child: _buildDockItem(
-                                      icon: AppIcons.search,
-                                      activeIcon: AppIcons.search,
+                                      icon: SpiderIcons.search,
+                                      activeIcon: SpiderIcons.search,
                                       label: 'Search',
                                       active: false,
                                       accentColor: activeIconColor,

@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/icons.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/helpers.dart';
 import '../core/latex_exporter.dart';
 import '../core/session_storage.dart';
@@ -47,6 +48,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentTheme = ref.watch(themeProvider);
+    final p = context.ink;
 
     final textColor = theme.colorScheme.onSurface;
     final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
@@ -94,7 +96,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               onPressed: controller.reload,
             ),
             IconButton(
-              icon: const Icon(AppIcons.signOut, color: AppColors.danger),
+              icon: const Icon(SpiderIcons.signOut, color: AppColors.danger),
               tooltip: 'Sign out',
               onPressed: () => ref.read(authProvider.notifier).signOut(),
             ),
@@ -222,7 +224,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () => ref.read(authProvider.notifier).signOut(),
-                          icon: const Icon(AppIcons.signOut, size: 16, color: AppColors.danger),
+                          icon: const Icon(SpiderIcons.signOut, size: 16, color: AppColors.danger),
                           label: Text(
                             'Sign Out',
                             style: GoogleFonts.inter(color: AppColors.danger, fontWeight: FontWeight.w600, fontSize: 13),
@@ -331,7 +333,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                     children: [
-                      Icon(AppIcons.search, size: 18, color: ink3Color),
+                      Icon(SpiderIcons.search, size: 18, color: ink3Color),
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
@@ -373,17 +375,17 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                                   clipBehavior: Clip.hardEdge,
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF1E2130) : const Color(0xFFF1F3F9),
+                                    color: p.surface,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: isDark ? const Color(0xFF2B2F44) : const Color(0xFFE2E6F0),
+                                      color: p.line,
                                       width: 0.9,
                                     ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(AppIcons.workspace, size: 12, color: AppColors.accent),
+                                      AppIcon(SpiderIcons.workspace, size: 12, color: p.ink),
                                       const SizedBox(width: 3),
                                       Flexible(
                                         child: Text(
@@ -398,7 +400,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 2),
-                                      Icon(AppIcons.workspaceSelector, size: 11, color: ink3Color),
+                                      AppIcon(SpiderIcons.workspaceSelector, size: 11, color: p.inkMuted),
                                     ],
                                   ),
                                 ),
@@ -412,7 +414,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 ),
           leading: _searchOpen
               ? IconButton(
-                  icon: Icon(AppIcons.back, color: textColor, size: 20),
+                  icon: Icon(SpiderIcons.back, color: textColor, size: 20),
                   onPressed: () => setState(() {
                     _searchOpen = false;
                     _searchCtrl.clear();
@@ -423,30 +425,34 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               ? [
                   if (_searchCtrl.text.isNotEmpty)
                     IconButton(
-                      icon: Icon(AppIcons.close, color: textColor, size: 18),
+                      icon: Icon(SpiderIcons.close, color: textColor, size: 18),
                       onPressed: () => setState(() => _searchCtrl.clear()),
                     ),
                   const SizedBox(width: 4),
                 ]
               : [
-                  // 1. Unified Action Toolbar (Research, Sort, New Cluster, Alerts)
+                  // 1. Unified Action Toolbar — redesigned pill
                   Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.panel : AppColors.lightPanel,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? AppColors.line : AppColors.lightLine,
-                        width: 1.0,
-                      ),
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: p.line, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark ? Colors.black.withValues(alpha: 0.22) : const Color(0xFF0F172A).withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Research Tools button
+                        // Research Tools
                         _navBarItem(
-                          customIcon: AtomIcon(size: 18, color: textColor, strokeWidth: 1.8),
+                          customIcon: AtomIcon(size: 18, color: p.inkMuted, strokeWidth: 1.8),
                           tooltip: 'Research Tools',
                           onTap: () {
                             HapticFeedback.lightImpact();
@@ -454,52 +460,82 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                           },
                         ),
                         _navDivider(isDark),
-                        // Sort Mode button
+                        // Sort Mode
                         _navBarItem(
-                          icon: board.sortMode == SortMode.smart ? AppIcons.smartSort : AppIcons.manualSort,
+                          icon: board.sortMode == SortMode.smart ? SpiderIcons.smartSort : SpiderIcons.manualSort,
                           tooltip: 'Sort: ${board.sortMode == SortMode.smart ? 'Smart' : 'Manual'}',
-                          color: textColor,
+                          color: p.inkMuted,
                           onTap: () {
                             HapticFeedback.selectionClick();
                             controller.toggleSortMode();
                           },
                         ),
                         _navDivider(isDark),
-                        // Calendar Button
+                        // Calendar
                         _navBarItem(
-                          icon: AppIcons.calendar,
+                          icon: SpiderIcons.calendar,
                           tooltip: 'Calendar',
-                          color: textColor,
+                          color: p.inkMuted,
                           onTap: () {
                             HapticFeedback.lightImpact();
                             context.push('/calendar');
                           },
                         ),
                         _navDivider(isDark),
-                        // New Cluster Button
-                        _navBarItem(
-                          icon: AppIcons.createCluster,
-                          tooltip: 'New Cluster',
-                          color: textColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            showCreateClusterSheet(context, onCreate: (name, color) => controller.createCluster(name: name, color: color, categoryId: _activeCategory));
-                          },
-                        ),
-                        _navDivider(isDark),
-                        // Notifications / Bell Button
-                        _navBarItem(
-                          icon: AppIcons.notifications,
-                          tooltip: 'Notifications',
-                          color: textColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No new notifications or invites.'), duration: Duration(seconds: 2)),
-                            );
-                          },
+                        // New Cluster — circular + with p.ink bg
+                        Tooltip(
+                          message: 'New Cluster',
+                          waitDuration: const Duration(milliseconds: 200),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                showCreateClusterSheet(context, onCreate: (name, color) => controller.createCluster(name: name, color: color, categoryId: _activeCategory));
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: p.ink,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: p.lineStrong, width: 1),
+                                ),
+                                child: AppIcon(SpiderIcons.plus, size: 14, color: p.onInk),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // Notifications — outside pill, as in screenshot
+                  Container(
+                    height: 38,
+                    width: 38,
+                    decoration: BoxDecoration(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: p.line, width: 1),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No new notifications or invites.'), duration: Duration(seconds: 2)),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Center(
+                          child: AppIcon(SpiderIcons.notifications, size: 18, color: p.inkMuted),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -679,10 +715,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.12),
+                                  color: p.ink.withValues(alpha: 0.10),
                                   borderRadius: BorderRadius.circular(7),
+                                  border: Border.all(color: p.line),
                                 ),
-                                child: Icon(currentTheme.icon, size: 15, color: AppColors.accent),
+                                child: AppIcon(currentTheme.icon, size: 15, color: p.ink),
                               ),
                               const SizedBox(width: 10),
                               Text('Theme: ${currentTheme.label}', style: GoogleFonts.inter(color: textColor, fontSize: 13, fontWeight: FontWeight.w500)),
@@ -713,7 +750,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                   color: const Color(0xFF0EA5E9).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(7),
                                 ),
-                                child: const Icon(AppIcons.manageCategories, size: 14.5, color: Color(0xFF0EA5E9)),
+                                child: const Icon(SpiderIcons.manageCategories, size: 14.5, color: Color(0xFF0EA5E9)),
                               ),
                               const SizedBox(width: 10),
                               Text('Manage categories...', style: GoogleFonts.inter(color: textColor, fontSize: 13, fontWeight: FontWeight.w500)),
@@ -731,7 +768,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                   color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(7),
                                 ),
-                                child: const Icon(AppIcons.members, size: 14.5, color: Color(0xFF8B5CF6)),
+                                child: const Icon(SpiderIcons.members, size: 14.5, color: Color(0xFF8B5CF6)),
                               ),
                               const SizedBox(width: 10),
                               Text('Workspaces & Members', style: GoogleFonts.inter(color: textColor, fontSize: 13, fontWeight: FontWeight.w500)),
@@ -750,7 +787,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                   color: AppColors.danger.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(7),
                                 ),
-                                child: const Icon(AppIcons.signOut, size: 14.5, color: AppColors.danger),
+                                child: const Icon(SpiderIcons.signOut, size: 14.5, color: AppColors.danger),
                               ),
                               const SizedBox(width: 10),
                               Text('Sign out', style: GoogleFonts.inter(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -829,7 +866,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                         // Main Single-Line Row
                         Row(
                           children: [
-                            // Interactive Filter Toggle Button
+                            // Interactive Filter Toggle Button — redesigned for light/dark contrast
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
@@ -838,36 +875,40 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                   setState(() => _filterExpanded = !_filterExpanded);
                                 },
                                 borderRadius: BorderRadius.circular(9),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: _filterExpanded
-                                        ? AppColors.accent.withValues(alpha: 0.12)
-                                        : Colors.transparent,
+                                    color: _filterExpanded ? p.ink : Colors.transparent,
                                     borderRadius: BorderRadius.circular(9),
+                                    border: _filterExpanded
+                                        ? Border.all(color: p.ink.withValues(alpha: 0.12), width: 1)
+                                        : null,
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
-                                        Icons.tune_rounded,
-                                        size: 14.5,
-                                        color: _filterExpanded ? AppColors.accent : mutedColor,
+                                      AppIcon(
+                                        SpiderIcons.sliders,
+                                        size: 14,
+                                        color: _filterExpanded ? p.onInk : mutedColor,
                                       ),
-                                      const SizedBox(width: 4.5),
+                                      const SizedBox(width: 5),
                                       Text(
                                         'Filter',
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: _filterExpanded ? AppColors.accent : mutedColor,
+                                          fontWeight: FontWeight.w700,
+                                          color: _filterExpanded ? p.onInk : mutedColor,
+                                          letterSpacing: -0.1,
                                         ),
                                       ),
-                                      const SizedBox(width: 2.5),
-                                      Icon(
-                                        _filterExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                                        size: 15,
-                                        color: _filterExpanded ? AppColors.accent : mutedColor,
+                                      const SizedBox(width: 3),
+                                      AppIcon(
+                                        _filterExpanded ? SpiderIcons.chevronUp : SpiderIcons.chevronDown,
+                                        size: 14,
+                                        color: _filterExpanded ? p.onInk : mutedColor,
                                       ),
                                     ],
                                   ),
@@ -1092,6 +1133,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final p = context.ink;
     final textColor = isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1E293B);
     final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF64748B);
     final catColor = color != null ? colorFromHex(color) : AppColors.accent;
@@ -1224,11 +1266,15 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   }
 
   Widget _navDivider(bool isDark) {
+    final p = context.ink;
     return Container(
       width: 1,
-      height: 22,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      color: isDark ? AppColors.line : AppColors.lightLine,
+      height: 18,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: p.line,
+        borderRadius: BorderRadius.circular(1),
+      ),
     );
   }
 
@@ -1280,6 +1326,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final doneCount = tasks.where((t) => t.done).length;
     final openCount = totalCount - doneCount;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final p = context.ink;
     final clusterColor = cluster != null ? colorFromHex(cluster.color) : AppColors.accent;
 
     return DragTarget<Task>(
@@ -1392,7 +1439,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                           color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: isDark ? AppColors.line : AppColors.lightLine,
+                            color: p.line,
                             width: 0.8,
                           ),
                         ),
@@ -1436,12 +1483,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                             color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: isDark ? AppColors.line : AppColors.lightLine,
+                              color: p.line,
                               width: 0.8,
                             ),
                           ),
                           alignment: Alignment.center,
-                          child: Icon(AppIcons.quickAdd, size: 17, color: textColor),
+                          child: Icon(SpiderIcons.quickAdd, size: 17, color: textColor),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -1458,12 +1505,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                               color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: isDark ? AppColors.line : AppColors.lightLine,
+                                color: p.line,
                                 width: 0.8,
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: Icon(AppIcons.moreHoriz, size: 16, color: textColor),
+                            child: Icon(SpiderIcons.moreHoriz, size: 16, color: textColor),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1480,13 +1527,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                             color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: isDark ? AppColors.line : AppColors.lightLine,
+                              color: p.line,
                               width: 0.8,
                             ),
                           ),
                           alignment: Alignment.center,
                           child: Icon(
-                            isCollapsed ? AppIcons.expandChevron : AppIcons.collapseChevron,
+                            isCollapsed ? SpiderIcons.expandChevron : SpiderIcons.collapseChevron,
                             size: 17,
                             color: textColor,
                           ),
@@ -1777,7 +1824,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 ],
               ),
             ),
-            ListTile(title: const Text('Floating'), onTap: () { Navigator.pop(ctx); controller.moveTask(t.id, null); }),
+            ListTile(title: Text('Floating'), onTap: () { Navigator.pop(ctx); controller.moveTask(t.id, null); }),
             for (final c in data.clusters.where(isClusterActive))
               ListTile(
                 leading: Container(width: 10, height: 10, decoration: BoxDecoration(color: colorFromHex(c.color), shape: BoxShape.circle)),
@@ -2048,7 +2095,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.copy_rounded),
-                  label: const Text('Copy LaTeX Code'),
+                  label: Text('Copy LaTeX Code'),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: latex));
                     Navigator.pop(ctx);

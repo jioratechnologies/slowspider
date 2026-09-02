@@ -78,7 +78,7 @@ export default function ArxivPaperCard({
           <button
             type="button"
             onClick={copyBibtex}
-            className="inline-flex items-center gap-1 rounded-lg border border-indigo-300/80 dark:border-indigo-500/30 bg-white dark:bg-[#1a1a24] px-2 py-1 text-[11.5px] font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--line-strong)] bg-[var(--panel-2)] px-2 py-1 text-[11.5px] font-medium text-[var(--ink)] hover:bg-[var(--sunken)] transition-colors cursor-pointer"
             title="Copy BibTeX Citation"
           >
             {copiedBibtex ? <Check className="size-3 text-emerald-500" /> : <Quote className="size-3" />}

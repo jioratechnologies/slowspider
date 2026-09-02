@@ -59,6 +59,7 @@ dependencies:
   # Reorderable lists for cluster/task manual sort
   path_provider: ^2.1.5
   # Modern typography
+  lucide_icons_flutter: ^3.1.17
   google_fonts: ^6.2.1
 
 dev_dependencies:
@@ -78,10 +79,42 @@ dependency_overrides:
 # The following section is specific to Flutter packages.
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+  # Kept on for framework internals (dropdown affordances, text-field handles).
+  # App iconography comes from Lucide — see lib/design/icons.dart.
   uses-material-design: true
+
+  # ── Typography ────────────────────────────────────────────────────────────
+  # Bundled rather than fetched at runtime, so the type is identical offline
+  # and on first launch instead of popping in after a network round-trip.
+  fonts:
+    # The voice — screen titles, cluster names, empty states.
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          weight: 400
+          style: italic
+
+    # The interface — every label, control and body run.
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+
+    # The measurements — counts, dates, progress, formulae.
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GeistMono-Medium.ttf
+          weight: 500
 
   # To add assets to your application, add an assets section, like this:
   # assets:

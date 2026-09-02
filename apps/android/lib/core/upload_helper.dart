@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -15,7 +16,13 @@ class PickedFile {
   final String mime;
   final int size;
 
-  PickedFile({required this.path, required this.bytes, required this.name, required this.mime, required this.size});
+  PickedFile({
+    required this.path,
+    required this.bytes,
+    required this.name,
+    required this.mime,
+    required this.size,
+  });
 }
 
 /// Same mapping the web's TaskAttachmentsSection uses, so both clients label files alike.
@@ -45,7 +52,13 @@ Future<PickedFile?> pickMedia() async {
   if (file == null) return null;
   final bytes = await file.readAsBytes();
   final mime = file.mimeType ?? _guessMime(file.name);
-  return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
+  return PickedFile(
+    path: file.path,
+    bytes: bytes,
+    name: file.name,
+    mime: mime,
+    size: bytes.length,
+  );
 }
 
 /// Take photo with camera.
@@ -55,7 +68,13 @@ Future<PickedFile?> pickImageFromCamera() async {
   if (file == null) return null;
   final bytes = await file.readAsBytes();
   final mime = file.mimeType ?? _guessMime(file.name);
-  return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
+  return PickedFile(
+    path: file.path,
+    bytes: bytes,
+    name: file.name,
+    mime: mime,
+    size: bytes.length,
+  );
 }
 
 /// Pick image from gallery.
@@ -65,7 +84,13 @@ Future<PickedFile?> pickImageFromGallery() async {
   if (file == null) return null;
   final bytes = await file.readAsBytes();
   final mime = file.mimeType ?? _guessMime(file.name);
-  return PickedFile(path: file.path, bytes: bytes, name: file.name, mime: mime, size: bytes.length);
+  return PickedFile(
+    path: file.path,
+    bytes: bytes,
+    name: file.name,
+    mime: mime,
+    size: bytes.length,
+  );
 }
 
 /// Any file type, via the system document picker.
@@ -81,22 +106,41 @@ Future<PickedFile?> pickDocument() async {
       bytes = await File(filePath).readAsBytes();
     }
   }
-  return PickedFile(path: filePath, bytes: bytes, name: f.name, mime: _guessMime(f.name), size: bytes.length);
+  return PickedFile(
+    path: filePath,
+    bytes: bytes,
+    name: f.name,
+    mime: _guessMime(f.name),
+    size: bytes.length,
+  );
 }
 
 String _guessMime(String filename) {
   final ext = filename.toLowerCase().split('.').last;
   const map = {
-    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
-    'mp4': 'video/mp4', 'mov': 'video/quicktime',
-    'mp3': 'audio/mpeg', 'm4a': 'audio/m4a', 'wav': 'audio/wav',
-    'pdf': 'application/pdf', 'txt': 'text/plain',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'mp4': 'video/mp4',
+    'mov': 'video/quicktime',
+    'mp3': 'audio/mpeg',
+    'm4a': 'audio/m4a',
+    'wav': 'audio/wav',
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
   };
   return map[ext] ?? 'application/octet-stream';
 }
 
 /// Uploads the bytes and returns the storage path plus the resolved size.
 Future<({String path, int size})> uploadPicked(PickedFile file) async {
-  final path = await ApiClient.instance.uploadMedia(file.bytes, file.name, file.mime, file.size);
+  final path = await ApiClient.instance.uploadMedia(
+    file.bytes,
+    file.name,
+    file.mime,
+    file.size,
+  );
   return (path: path, size: file.size);
 }

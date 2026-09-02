@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
+import '../core/app_theme.dart';
 
 /// Formats and renders mathematical LaTeX expressions and rich markdown text.
 class RenderedMathText extends StatelessWidget {
@@ -85,27 +87,69 @@ class RenderedMathText extends StatelessWidget {
   };
 
   static const Map<String, String> _superscripts = {
-    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-    '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
-    'n': 'ⁿ', 'i': 'ⁱ', 'x': 'ˣ', 'y': 'ʸ',
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹',
+    '+': '⁺',
+    '-': '⁻',
+    '=': '⁼',
+    '(': '⁽',
+    ')': '⁾',
+    'n': 'ⁿ',
+    'i': 'ⁱ',
+    'x': 'ˣ',
+    'y': 'ʸ',
   };
 
   static const Map<String, String> _subscripts = {
-    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
-    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
-    '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
-    'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ',
-    'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ',
-    'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ',
-    'v': 'ᵥ', 'x': 'ₓ',
+    '0': '₀',
+    '1': '₁',
+    '2': '₂',
+    '3': '₃',
+    '4': '₄',
+    '5': '₅',
+    '6': '₆',
+    '7': '₇',
+    '8': '₈',
+    '9': '₉',
+    '+': '₊',
+    '-': '₋',
+    '=': '₌',
+    '(': '₍',
+    ')': '₎',
+    'a': 'ₐ',
+    'e': 'ₑ',
+    'h': 'ₕ',
+    'i': 'ᵢ',
+    'j': 'ⱼ',
+    'k': 'ₖ',
+    'l': 'ₗ',
+    'm': 'ₘ',
+    'n': 'ₙ',
+    'o': 'ₒ',
+    'p': 'ₚ',
+    'r': 'ᵣ',
+    's': 'ₛ',
+    't': 'ₜ',
+    'u': 'ᵤ',
+    'v': 'ᵥ',
+    'x': 'ₓ',
   };
 
   static String renderMathString(String input) {
     var output = input;
 
     // 1. Replace fractions \frac{a}{b} -> (a / b)
-    output = output.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (m) {
+    output = output.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (
+      m,
+    ) {
       return '(${m[1]} / ${m[2]})';
     });
 
@@ -154,9 +198,10 @@ class RenderedMathText extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final defaultColor = style?.color ?? theme.colorScheme.onSurface;
-    final accentMath = mathColor ?? (isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED));
+    final accentMath = mathColor ?? (isDark ? AppColors.ink : AppColors.ink);
 
-    final baseStyle = style ?? GoogleFonts.inter(fontSize: 13.5, color: defaultColor, height: 1.4);
+    final baseStyle =
+        style ?? AppType.sans(fontSize: 13.5, color: defaultColor, height: 1.4);
 
     // Parse $$ ... $$ and $ ... $ tokens
     final spans = <InlineSpan>[];
@@ -165,44 +210,45 @@ class RenderedMathText extends StatelessWidget {
     int lastIndex = 0;
     for (final match in regex.allMatches(text)) {
       if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: text.substring(lastIndex, match.start),
-          style: baseStyle,
-        ));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
       }
 
       final rawMath = match.group(0)!;
       final rendered = renderMathString(rawMath);
 
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          margin: const EdgeInsets.symmetric(horizontal: 1.5),
-          decoration: BoxDecoration(
-            color: accentMath.withValues(alpha: isDark ? 0.16 : 0.1),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: Text(
-            rendered,
-            style: GoogleFonts.merriweather(
-              color: accentMath,
-              fontSize: (baseStyle.fontSize ?? 13.5) * 1.05,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            margin: const EdgeInsets.symmetric(horizontal: 1.5),
+            decoration: BoxDecoration(
+              color: accentMath.withValues(alpha: isDark ? 0.16 : 0.1),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              rendered,
+              style: AppType.serif(
+                color: accentMath,
+                fontSize: (baseStyle.fontSize ?? 13.5) * 1.05,
+                fontWeight: FontWeight.w600,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       lastIndex = match.end;
     }
 
     if (lastIndex < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastIndex),
-        style: baseStyle,
-      ));
+      spans.add(TextSpan(text: text.substring(lastIndex), style: baseStyle));
     }
 
     if (spans.isEmpty) {
@@ -210,14 +256,9 @@ class RenderedMathText extends StatelessWidget {
     }
 
     if (selectable) {
-      return SelectableText.rich(
-        TextSpan(children: spans),
-        style: baseStyle,
-      );
+      return SelectableText.rich(TextSpan(children: spans), style: baseStyle);
     }
 
-    return RichText(
-      text: TextSpan(children: spans),
-    );
+    return RichText(text: TextSpan(children: spans));
   }
 }

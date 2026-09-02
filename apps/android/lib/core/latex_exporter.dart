@@ -21,7 +21,8 @@ String exportClusterToLatex({
   String workspaceName = 'Research Workspace',
 }) {
   final now = DateTime.now();
-  final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  final dateStr =
+      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
   final buffer = StringBuffer();
   buffer.writeln(r'\documentclass[11pt,a4paper]{article}');
@@ -34,21 +35,44 @@ String exportClusterToLatex({
   buffer.writeln(r'\usepackage{geometry}');
   buffer.writeln(r'\geometry{margin=1in}');
   buffer.writeln();
-  buffer.writeln(r'\title{\textbf{' '${escapeLatex(cluster.name)}' r'}\\\large ' '${escapeLatex(workspaceName)}' r' -- Scientific Progress Report}');
+  buffer.writeln(
+    r'\title{\textbf{'
+    '${escapeLatex(cluster.name)}'
+    r'}\\\large '
+    '${escapeLatex(workspaceName)}'
+    r' -- Scientific Progress Report}',
+  );
   buffer.writeln(r'\author{Slow Spider Research Suite}');
-  buffer.writeln(r'\date{' '$dateStr' r'}');
+  buffer.writeln(
+    r'\date{'
+    '$dateStr'
+    r'}',
+  );
   buffer.writeln();
   buffer.writeln(r'\begin{document}');
   buffer.writeln(r'\maketitle');
   buffer.writeln();
   buffer.writeln(r'\begin{abstract}');
-  buffer.writeln('This research report compiles the active hypotheses, mathematical models, experimental tasks, and laboratory observations under the \\textbf{${escapeLatex(cluster.name)}} investigation cluster.');
+  buffer.writeln(
+    'This research report compiles the active hypotheses, mathematical models, experimental tasks, and laboratory observations under the \\textbf{${escapeLatex(cluster.name)}} investigation cluster.',
+  );
   buffer.writeln(r'\end{abstract}');
   buffer.writeln();
   buffer.writeln(r'\section{Cluster Overview}');
-  buffer.writeln(r'\textbf{Status:} ' '${cluster.status.name.toUpperCase()}' r'\\');
-  buffer.writeln(r'\textbf{Total Tasks:} ' '${tasks.length}' r'\\');
-  buffer.writeln(r'\textbf{Completed Tasks:} ' '${tasks.where((t) => t.done).length}');
+  buffer.writeln(
+    r'\textbf{Status:} '
+    '${cluster.status.name.toUpperCase()}'
+    r'\\',
+  );
+  buffer.writeln(
+    r'\textbf{Total Tasks:} '
+    '${tasks.length}'
+    r'\\',
+  );
+  buffer.writeln(
+    r'\textbf{Completed Tasks:} '
+    '${tasks.where((t) => t.done).length}',
+  );
   buffer.writeln();
   buffer.writeln(r'\section{Tasks \& Scientific Milestones}');
 
@@ -57,14 +81,29 @@ String exportClusterToLatex({
     buffer.writeln();
   } else {
     for (final t in tasks) {
-      final safeTitle = escapeLatex(t.title.isEmpty ? 'Untitled Investigation' : t.title);
-      buffer.writeln(r'\subsection{' '$safeTitle' r'}');
+      final safeTitle = escapeLatex(
+        t.title.isEmpty ? 'Untitled Investigation' : t.title,
+      );
+      buffer.writeln(
+        r'\subsection{'
+        '$safeTitle'
+        r'}',
+      );
       buffer.writeln(r'\begin{itemize}[leftmargin=*]');
-      buffer.writeln(r'  \item \textbf{Status:} ' '${t.done ? r"Completed (\checkmark)" : "In Progress"}');
-      buffer.writeln(r'  \item \textbf{Priority:} ' '${t.priority.name.toUpperCase()}');
+      buffer.writeln(
+        r'  \item \textbf{Status:} '
+        '${t.done ? r"Completed (\checkmark)" : "In Progress"}',
+      );
+      buffer.writeln(
+        r'  \item \textbf{Priority:} '
+        '${t.priority.name.toUpperCase()}',
+      );
       if (t.deadline != null) {
         final timePart = t.deadlineTime != null ? ' ${t.deadlineTime}' : '';
-        buffer.writeln(r'  \item \textbf{Target Deadline:} ' '${t.deadline}$timePart');
+        buffer.writeln(
+          r'  \item \textbf{Target Deadline:} '
+          '${t.deadline}$timePart',
+        );
       }
       buffer.writeln(r'\end{itemize}');
       buffer.writeln();
@@ -84,16 +123,26 @@ String exportClusterToLatex({
 
       final notes = notesByTask[t.id] ?? [];
       if (notes.isNotEmpty) {
-        buffer.writeln('\\paragraph{Attached Records (Total: ${notes.length}):}\n\\begin{enumerate}');
+        buffer.writeln(
+          '\\paragraph{Attached Records (Total: ${notes.length}):}\n\\begin{enumerate}',
+        );
         for (final n in notes) {
           if (n.kind == NoteKind.link) {
             final targetUrl = n.url ?? '#';
-            final textLabel = escapeLatex(n.body.isNotEmpty ? n.body : (n.url ?? 'Link'));
-            buffer.writeln('  \\item \\textbf{Reference Link:} \\href{$targetUrl}{$textLabel}');
+            final textLabel = escapeLatex(
+              n.body.isNotEmpty ? n.body : (n.url ?? 'Link'),
+            );
+            buffer.writeln(
+              '  \\item \\textbf{Reference Link:} \\href{$targetUrl}{$textLabel}',
+            );
           } else if (n.kind == NoteKind.code) {
-            buffer.writeln('  \\item \\textbf{Code Snippet:}\n\\begin{verbatim}\n${n.body}\n\\end{verbatim}');
+            buffer.writeln(
+              '  \\item \\textbf{Code Snippet:}\n\\begin{verbatim}\n${n.body}\n\\end{verbatim}',
+            );
           } else {
-            buffer.writeln('  \\item \\textbf{${n.kind.name.toUpperCase()}:} ${escapeLatex(n.body)}');
+            buffer.writeln(
+              '  \\item \\textbf{${n.kind.name.toUpperCase()}:} ${escapeLatex(n.body)}',
+            );
           }
         }
         buffer.writeln('\\end{enumerate}\n');
@@ -102,7 +151,9 @@ String exportClusterToLatex({
   }
 
   buffer.writeln(r'\section{Conclusion \& Next Steps}');
-  buffer.writeln(r'This document serves as an immutable research timestamp of results and ongoing derivations for submission to group meetings and manuscript drafts.');
+  buffer.writeln(
+    r'This document serves as an immutable research timestamp of results and ongoing derivations for submission to group meetings and manuscript drafts.',
+  );
   buffer.writeln();
   buffer.writeln(r'\end{document}');
 

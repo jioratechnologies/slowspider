@@ -13,8 +13,10 @@ class AuthState {
   const AuthState({required this.status, this.session, this.error});
 
   const AuthState.restoring() : this(status: AuthStatus.restoring);
-  const AuthState.signedOut({String? error}) : this(status: AuthStatus.signedOut, error: error);
-  const AuthState.signedIn(Session session) : this(status: AuthStatus.signedIn, session: session);
+  const AuthState.signedOut({String? error})
+    : this(status: AuthStatus.signedOut, error: error);
+  const AuthState.signedIn(Session session)
+    : this(status: AuthStatus.signedIn, session: session);
 }
 
 /// Auth/session lifecycle: restore-on-launch, login, signup (OTP), password reset (OTP),
@@ -33,7 +35,9 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> _restore() async {
     final session = await _storage.load();
-    state = session != null ? AuthState.signedIn(session) : const AuthState.signedOut();
+    state = session != null
+        ? AuthState.signedIn(session)
+        : const AuthState.signedOut();
   }
 
   Future<bool> login(String email, String password) async {
@@ -59,7 +63,8 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> requestSignupOtp(String email) => _api.signupOtp(email.trim());
 
-  Future<void> verifySignupOtp(String email, String code) => _api.signupVerify(email.trim(), code.trim());
+  Future<void> verifySignupOtp(String email, String code) =>
+      _api.signupVerify(email.trim(), code.trim());
 
   Future<bool> completeSignup(String email, String password) async {
     try {
@@ -84,7 +89,8 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> requestResetOtp(String email) => _api.resetOtp(email.trim());
 
-  Future<void> verifyResetOtp(String email, String code) => _api.resetVerify(email.trim(), code.trim());
+  Future<void> verifyResetOtp(String email, String code) =>
+      _api.resetVerify(email.trim(), code.trim());
 
   Future<bool> completeReset(String email, String password) async {
     try {
@@ -113,4 +119,6 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthController, AuthState>((ref) => AuthController());
+final authProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) => AuthController(),
+);

@@ -36,7 +36,8 @@ String clusterStatusToString(ClusterStatus s) => s.name;
 
 enum SortMode { smart, manual }
 
-SortMode sortModeFromString(String? v) => v == 'manual' ? SortMode.manual : SortMode.smart;
+SortMode sortModeFromString(String? v) =>
+    v == 'manual' ? SortMode.manual : SortMode.smart;
 
 /// Mirrors NoteKind in api.ts: text/rich/code/link/image/video/voice/table/file.
 enum NoteKind { text, rich, code, link, image, video, voice, table, file }
@@ -50,17 +51,30 @@ NoteKind noteKindFromString(String? v) {
 
 String noteKindToString(NoteKind k) => k.name;
 
-const List<NoteKind> attachmentKinds = [NoteKind.image, NoteKind.video, NoteKind.voice, NoteKind.file];
-const List<NoteKind> textNoteKinds = [NoteKind.text, NoteKind.rich, NoteKind.code, NoteKind.link, NoteKind.table];
+const List<NoteKind> attachmentKinds = [
+  NoteKind.image,
+  NoteKind.video,
+  NoteKind.voice,
+  NoteKind.file,
+];
+const List<NoteKind> textNoteKinds = [
+  NoteKind.text,
+  NoteKind.rich,
+  NoteKind.code,
+  NoteKind.link,
+  NoteKind.table,
+];
 
 bool isAttachmentKind(NoteKind k) => attachmentKinds.contains(k);
 bool isTextNoteKind(NoteKind k) => textNoteKinds.contains(k);
 
 enum NoteVisibility { workspace, private_ }
 
-NoteVisibility noteVisibilityFromString(String? v) => v == 'private' ? NoteVisibility.private_ : NoteVisibility.workspace;
+NoteVisibility noteVisibilityFromString(String? v) =>
+    v == 'private' ? NoteVisibility.private_ : NoteVisibility.workspace;
 
-String noteVisibilityToString(NoteVisibility v) => v == NoteVisibility.private_ ? 'private' : 'workspace';
+String noteVisibilityToString(NoteVisibility v) =>
+    v == NoteVisibility.private_ ? 'private' : 'workspace';
 
 int _asInt(dynamic v, [int fallback = 0]) {
   if (v == null) return fallback;
@@ -90,23 +104,29 @@ class Milestone {
   final bool done;
   final double pos;
 
-  Milestone({required this.id, required this.taskId, required this.title, required this.done, required this.pos});
+  Milestone({
+    required this.id,
+    required this.taskId,
+    required this.title,
+    required this.done,
+    required this.pos,
+  });
 
   factory Milestone.fromJson(Map<String, dynamic> j) => Milestone(
-        id: _asInt(j['id']),
-        taskId: _asInt(j['task_id']),
-        title: (j['title'] ?? '') as String,
-        done: (j['done'] ?? false) as bool,
-        pos: _asDouble(j['pos']),
-      );
+    id: _asInt(j['id']),
+    taskId: _asInt(j['task_id']),
+    title: (j['title'] ?? '') as String,
+    done: (j['done'] ?? false) as bool,
+    pos: _asDouble(j['pos']),
+  );
 
   Milestone copyWith({String? title, bool? done, double? pos}) => Milestone(
-        id: id,
-        taskId: taskId,
-        title: title ?? this.title,
-        done: done ?? this.done,
-        pos: pos ?? this.pos,
-      );
+    id: id,
+    taskId: taskId,
+    title: title ?? this.title,
+    done: done ?? this.done,
+    pos: pos ?? this.pos,
+  );
 }
 
 class Task {
@@ -143,23 +163,23 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> j) => Task(
-        id: _asInt(j['id']),
-        clusterId: _asNullableInt(j['cluster_id']),
-        title: (j['title'] ?? '') as String,
-        priority: priorityFromString(j['priority'] as String?),
-        starred: (j['starred'] ?? false) as bool,
-        deadline: j['deadline'] as String?,
-        deadlineTime: j['deadline_time'] as String?,
-        notes: (j['notes'] ?? '') as String,
-        done: (j['done'] ?? false) as bool,
-        cold: (j['cold'] ?? false) as bool,
-        binned: (j['binned'] ?? false) as bool,
-        binnedAt: j['binned_at'] as String?,
-        pos: _asDouble(j['pos']),
-        milestones: ((j['milestones'] as List?) ?? [])
-            .map((m) => Milestone.fromJson(m as Map<String, dynamic>))
-            .toList(),
-      );
+    id: _asInt(j['id']),
+    clusterId: _asNullableInt(j['cluster_id']),
+    title: (j['title'] ?? '') as String,
+    priority: priorityFromString(j['priority'] as String?),
+    starred: (j['starred'] ?? false) as bool,
+    deadline: j['deadline'] as String?,
+    deadlineTime: j['deadline_time'] as String?,
+    notes: (j['notes'] ?? '') as String,
+    done: (j['done'] ?? false) as bool,
+    cold: (j['cold'] ?? false) as bool,
+    binned: (j['binned'] ?? false) as bool,
+    binnedAt: j['binned_at'] as String?,
+    pos: _asDouble(j['pos']),
+    milestones: ((j['milestones'] as List?) ?? [])
+        .map((m) => Milestone.fromJson(m as Map<String, dynamic>))
+        .toList(),
+  );
 
   Task copyWith({
     int? clusterId,
@@ -179,23 +199,24 @@ class Task {
     bool binnedAtSet = false,
     double? pos,
     List<Milestone>? milestones,
-  }) =>
-      Task(
-        id: id,
-        clusterId: clusterIdSet ? clusterId : (clusterId ?? this.clusterId),
-        title: title ?? this.title,
-        priority: priority ?? this.priority,
-        starred: starred ?? this.starred,
-        deadline: deadlineSet ? deadline : (deadline ?? this.deadline),
-        deadlineTime: deadlineTimeSet ? deadlineTime : (deadlineTime ?? this.deadlineTime),
-        notes: notes ?? this.notes,
-        done: done ?? this.done,
-        cold: cold ?? this.cold,
-        binned: binned ?? this.binned,
-        binnedAt: binnedAtSet ? binnedAt : (binnedAt ?? this.binnedAt),
-        pos: pos ?? this.pos,
-        milestones: milestones ?? this.milestones,
-      );
+  }) => Task(
+    id: id,
+    clusterId: clusterIdSet ? clusterId : (clusterId ?? this.clusterId),
+    title: title ?? this.title,
+    priority: priority ?? this.priority,
+    starred: starred ?? this.starred,
+    deadline: deadlineSet ? deadline : (deadline ?? this.deadline),
+    deadlineTime: deadlineTimeSet
+        ? deadlineTime
+        : (deadlineTime ?? this.deadlineTime),
+    notes: notes ?? this.notes,
+    done: done ?? this.done,
+    cold: cold ?? this.cold,
+    binned: binned ?? this.binned,
+    binnedAt: binnedAtSet ? binnedAt : (binnedAt ?? this.binnedAt),
+    pos: pos ?? this.pos,
+    milestones: milestones ?? this.milestones,
+  );
 }
 
 class Cluster {
@@ -218,14 +239,14 @@ class Cluster {
   });
 
   factory Cluster.fromJson(Map<String, dynamic> j) => Cluster(
-        id: _asInt(j['id']),
-        name: (j['name'] ?? '') as String,
-        color: (j['color'] ?? '#888888') as String,
-        categoryId: _asNullableInt(j['category_id']),
-        status: clusterStatusFromString(j['status'] as String?),
-        binnedAt: j['binned_at'] as String?,
-        pos: _asDouble(j['pos']),
-      );
+    id: _asInt(j['id']),
+    name: (j['name'] ?? '') as String,
+    color: (j['color'] ?? '#888888') as String,
+    categoryId: _asNullableInt(j['category_id']),
+    status: clusterStatusFromString(j['status'] as String?),
+    binnedAt: j['binned_at'] as String?,
+    pos: _asDouble(j['pos']),
+  );
 
   Cluster copyWith({
     String? name,
@@ -236,16 +257,15 @@ class Cluster {
     String? binnedAt,
     bool binnedAtSet = false,
     double? pos,
-  }) =>
-      Cluster(
-        id: id,
-        name: name ?? this.name,
-        color: color ?? this.color,
-        categoryId: categoryIdSet ? categoryId : (categoryId ?? this.categoryId),
-        status: status ?? this.status,
-        binnedAt: binnedAtSet ? binnedAt : (binnedAt ?? this.binnedAt),
-        pos: pos ?? this.pos,
-      );
+  }) => Cluster(
+    id: id,
+    name: name ?? this.name,
+    color: color ?? this.color,
+    categoryId: categoryIdSet ? categoryId : (categoryId ?? this.categoryId),
+    status: status ?? this.status,
+    binnedAt: binnedAtSet ? binnedAt : (binnedAt ?? this.binnedAt),
+    pos: pos ?? this.pos,
+  );
 }
 
 class Category {
@@ -254,14 +274,19 @@ class Category {
   final String color;
   final double pos;
 
-  Category({required this.id, required this.name, required this.color, required this.pos});
+  Category({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.pos,
+  });
 
   factory Category.fromJson(Map<String, dynamic> j) => Category(
-        id: _asInt(j['id']),
-        name: (j['name'] ?? '') as String,
-        color: (j['color'] ?? '#888888') as String,
-        pos: _asDouble(j['pos']),
-      );
+    id: _asInt(j['id']),
+    name: (j['name'] ?? '') as String,
+    color: (j['color'] ?? '#888888') as String,
+    pos: _asDouble(j['pos']),
+  );
 }
 
 class Note {
@@ -296,20 +321,20 @@ class Note {
   });
 
   factory Note.fromJson(Map<String, dynamic> j) => Note(
-        id: _asInt(j['id']),
-        taskId: _asNullableInt(j['task_id']),
-        clusterId: _asNullableInt(j['cluster_id']),
-        createdBy: (j['created_by'] ?? '') as String,
-        kind: noteKindFromString(j['kind'] as String?),
-        visibility: noteVisibilityFromString(j['visibility'] as String?),
-        body: (j['body'] ?? '') as String,
-        url: j['url'] as String?,
-        mime: j['mime'] as String?,
-        sizeBytes: _asInt(j['size_bytes']),
-        durationMs: _asNullableInt(j['duration_ms']),
-        pos: _asDouble(j['pos']),
-        createdAt: (j['created_at'] ?? '') as String,
-      );
+    id: _asInt(j['id']),
+    taskId: _asNullableInt(j['task_id']),
+    clusterId: _asNullableInt(j['cluster_id']),
+    createdBy: (j['created_by'] ?? '') as String,
+    kind: noteKindFromString(j['kind'] as String?),
+    visibility: noteVisibilityFromString(j['visibility'] as String?),
+    body: (j['body'] ?? '') as String,
+    url: j['url'] as String?,
+    mime: j['mime'] as String?,
+    sizeBytes: _asInt(j['size_bytes']),
+    durationMs: _asNullableInt(j['duration_ms']),
+    pos: _asDouble(j['pos']),
+    createdAt: (j['created_at'] ?? '') as String,
+  );
 }
 
 class Workspace {
@@ -319,15 +344,21 @@ class Workspace {
   final String createdAt;
   final String role; // "owner" | "editor"
 
-  Workspace({required this.id, required this.name, required this.ownerId, required this.createdAt, required this.role});
+  Workspace({
+    required this.id,
+    required this.name,
+    required this.ownerId,
+    required this.createdAt,
+    required this.role,
+  });
 
   factory Workspace.fromJson(Map<String, dynamic> j) => Workspace(
-        id: _asInt(j['id']),
-        name: (j['name'] ?? '') as String,
-        ownerId: (j['owner_id'] ?? '') as String,
-        createdAt: (j['created_at'] ?? '') as String,
-        role: (j['role'] ?? 'editor') as String,
-      );
+    id: _asInt(j['id']),
+    name: (j['name'] ?? '') as String,
+    ownerId: (j['owner_id'] ?? '') as String,
+    createdAt: (j['created_at'] ?? '') as String,
+    role: (j['role'] ?? 'editor') as String,
+  );
 }
 
 class MemberRow {
@@ -336,14 +367,19 @@ class MemberRow {
   final String role;
   final String joinedAt;
 
-  MemberRow({required this.userId, required this.email, required this.role, required this.joinedAt});
+  MemberRow({
+    required this.userId,
+    required this.email,
+    required this.role,
+    required this.joinedAt,
+  });
 
   factory MemberRow.fromJson(Map<String, dynamic> j) => MemberRow(
-        userId: (j['userId'] ?? '') as String,
-        email: j['email'] as String?,
-        role: (j['role'] ?? 'editor') as String,
-        joinedAt: (j['joinedAt'] ?? '') as String,
-      );
+    userId: (j['userId'] ?? '') as String,
+    email: j['email'] as String?,
+    role: (j['role'] ?? 'editor') as String,
+    joinedAt: (j['joinedAt'] ?? '') as String,
+  );
 }
 
 class InviteRow {
@@ -364,13 +400,13 @@ class InviteRow {
   });
 
   factory InviteRow.fromJson(Map<String, dynamic> j) => InviteRow(
-        id: _asInt(j['id']),
-        workspaceId: _asInt(j['workspace_id']),
-        email: (j['email'] ?? '') as String,
-        status: (j['status'] ?? '') as String,
-        createdAt: (j['created_at'] ?? '') as String,
-        expiresAt: (j['expires_at'] ?? '') as String,
-      );
+    id: _asInt(j['id']),
+    workspaceId: _asInt(j['workspace_id']),
+    email: (j['email'] ?? '') as String,
+    status: (j['status'] ?? '') as String,
+    createdAt: (j['created_at'] ?? '') as String,
+    expiresAt: (j['expires_at'] ?? '') as String,
+  );
 }
 
 class PendingInviteForUser {
@@ -390,7 +426,8 @@ class PendingInviteForUser {
     required this.createdAt,
   });
 
-  factory PendingInviteForUser.fromJson(Map<String, dynamic> j) => PendingInviteForUser(
+  factory PendingInviteForUser.fromJson(Map<String, dynamic> j) =>
+      PendingInviteForUser(
         id: _asInt(j['id']),
         workspaceId: _asInt(j['workspaceId']),
         workspaceName: (j['workspaceName'] ?? '') as String,
@@ -420,14 +457,22 @@ class BoardPayload {
   });
 
   factory BoardPayload.fromJson(Map<String, dynamic> j) => BoardPayload(
-        categories: ((j['categories'] as List?) ?? []).map((c) => Category.fromJson(c as Map<String, dynamic>)).toList(),
-        clusters: ((j['clusters'] as List?) ?? []).map((c) => Cluster.fromJson(c as Map<String, dynamic>)).toList(),
-        tasks: ((j['tasks'] as List?) ?? []).map((t) => Task.fromJson(t as Map<String, dynamic>)).toList(),
-        notes: ((j['notes'] as List?) ?? []).map((n) => Note.fromJson(n as Map<String, dynamic>)).toList(),
-        storageUsed: _asInt(j['storageUsed']),
-        workspaceId: _asInt(j['workspaceId']),
-        sortMode: sortModeFromString(j['sortMode'] as String?),
-      );
+    categories: ((j['categories'] as List?) ?? [])
+        .map((c) => Category.fromJson(c as Map<String, dynamic>))
+        .toList(),
+    clusters: ((j['clusters'] as List?) ?? [])
+        .map((c) => Cluster.fromJson(c as Map<String, dynamic>))
+        .toList(),
+    tasks: ((j['tasks'] as List?) ?? [])
+        .map((t) => Task.fromJson(t as Map<String, dynamic>))
+        .toList(),
+    notes: ((j['notes'] as List?) ?? [])
+        .map((n) => Note.fromJson(n as Map<String, dynamic>))
+        .toList(),
+    storageUsed: _asInt(j['storageUsed']),
+    workspaceId: _asInt(j['workspaceId']),
+    sortMode: sortModeFromString(j['sortMode'] as String?),
+  );
 
   BoardPayload copyWith({
     List<Category>? categories,
@@ -437,14 +482,13 @@ class BoardPayload {
     int? storageUsed,
     int? workspaceId,
     SortMode? sortMode,
-  }) =>
-      BoardPayload(
-        categories: categories ?? this.categories,
-        clusters: clusters ?? this.clusters,
-        tasks: tasks ?? this.tasks,
-        notes: notes ?? this.notes,
-        storageUsed: storageUsed ?? this.storageUsed,
-        workspaceId: workspaceId ?? this.workspaceId,
-        sortMode: sortMode ?? this.sortMode,
-      );
+  }) => BoardPayload(
+    categories: categories ?? this.categories,
+    clusters: clusters ?? this.clusters,
+    tasks: tasks ?? this.tasks,
+    notes: notes ?? this.notes,
+    storageUsed: storageUsed ?? this.storageUsed,
+    workspaceId: workspaceId ?? this.workspaceId,
+    sortMode: sortMode ?? this.sortMode,
+  );
 }

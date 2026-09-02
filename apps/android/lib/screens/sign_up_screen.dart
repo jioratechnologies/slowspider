@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
+import '../design/typography.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../state/auth_provider.dart';
+import '../design/icons.dart';
 
 enum _Step { email, otp, password }
 
@@ -55,7 +56,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       _error = null;
     });
     try {
-      await ref.read(authProvider.notifier).verifySignupOtp(_email.text.trim(), code);
+      await ref
+          .read(authProvider.notifier)
+          .verifySignupOtp(_email.text.trim(), code);
       setState(() => _step = _Step.password);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -74,7 +77,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       _busy = true;
       _error = null;
     });
-    final ok = await ref.read(authProvider.notifier).completeSignup(_email.text.trim(), pwd);
+    final ok = await ref
+        .read(authProvider.notifier)
+        .completeSignup(_email.text.trim(), pwd);
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
@@ -96,31 +101,34 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    final topBarBg = isDark ? const Color(0xE6181926) : const Color(0xF2FFFFFF);
-    final topBarBorder = isDark ? const Color(0xFF2C3042) : const Color(0xFFE2E4EB);
-    final cardBg = isDark ? const Color(0xFF171923) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3B) : const Color(0xFFE2E4EB);
-    final inputBg = isDark ? const Color(0xFF1F2230) : const Color(0xFFF3F4F6);
-    final inputBorder = isDark ? const Color(0xFF2E3244) : const Color(0xFFE2E4EA);
+    final topBarBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final topBarBorder = isDark ? AppColors.line : AppColors.lightLine;
+    final cardBg = isDark ? AppColors.panel : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
+    final inputBorder = isDark ? AppColors.line : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
     final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0E0F14) : const Color(0xFFF9FAFC),
+      backgroundColor: isDark ? AppColors.bg : AppColors.lightBg,
       appBar: AppBar(
         toolbarHeight: 56,
         backgroundColor: topBarBg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(AppIcons.back, color: textColor, size: 20),
+          icon: AppIcon(SpiderIcons.back, color: textColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Create Account',
-          style: GoogleFonts.inter(color: textColor, fontSize: 16, fontWeight: FontWeight.w700),
+          style: AppType.sans(
+            color: textColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -140,7 +148,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 border: Border.all(color: cardBorder),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark ? Colors.black.withValues(alpha: 0.35) : Colors.black.withValues(alpha: 0.04),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.35)
+                        : Colors.black.withValues(alpha: 0.04),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -150,41 +160,122 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_step == _Step.email) ...[
-                    Text('Get started', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Get started',
+                      style: AppType.sans(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Enter your email to receive a verification code.', style: GoogleFonts.inter(color: mutedColor, fontSize: 13)),
+                    Text(
+                      'Enter your email to receive a verification code.',
+                      style: AppType.sans(color: mutedColor, fontSize: 13),
+                    ),
                     const SizedBox(height: 18),
-                    _buildInput(controller: _email, hint: 'you@example.com', icon: Icons.mail_outline_rounded, inputBg: inputBg, inputBorder: inputBorder, textColor: textColor, ink3Color: ink3Color),
+                    _buildInput(
+                      controller: _email,
+                      hint: 'you@example.com',
+                      icon: SpiderIcons.mail,
+                      inputBg: inputBg,
+                      inputBorder: inputBorder,
+                      textColor: textColor,
+                      ink3Color: ink3Color,
+                    ),
                     const SizedBox(height: 18),
-                    _buildButton(label: 'Send Verification Code', onPressed: _requestOtp, busy: _busy),
+                    _buildButton(context,
+                      label: 'Send Verification Code',
+                      onPressed: _requestOtp,
+                      busy: _busy,
+                    ),
                   ] else if (_step == _Step.otp) ...[
-                    Text('Enter Verification Code', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Enter Verification Code',
+                      style: AppType.sans(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Code sent to ${_email.text}. (Dev code: 123456)', style: GoogleFonts.inter(color: mutedColor, fontSize: 13)),
+                    Text(
+                      'Code sent to ${_email.text}. (Dev code: 123456)',
+                      style: AppType.sans(color: mutedColor, fontSize: 13),
+                    ),
                     const SizedBox(height: 18),
-                    _buildInput(controller: _code, hint: '123456', icon: Icons.pin_outlined, inputBg: inputBg, inputBorder: inputBorder, textColor: textColor, ink3Color: ink3Color, isNumber: true),
+                    _buildInput(
+                      controller: _code,
+                      hint: '123456',
+                      icon: SpiderIcons.pin,
+                      inputBg: inputBg,
+                      inputBorder: inputBorder,
+                      textColor: textColor,
+                      ink3Color: ink3Color,
+                      isNumber: true,
+                    ),
                     const SizedBox(height: 18),
-                    _buildButton(label: 'Verify Code', onPressed: _verifyOtp, busy: _busy),
+                    _buildButton(context,
+                      label: 'Verify Code',
+                      onPressed: _verifyOtp,
+                      busy: _busy,
+                    ),
                   ] else ...[
-                    Text('Set your password', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Set your password',
+                      style: AppType.sans(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Choose a secure password (min 6 chars).', style: GoogleFonts.inter(color: mutedColor, fontSize: 13)),
+                    Text(
+                      'Choose a secure password (min 6 chars).',
+                      style: AppType.sans(color: mutedColor, fontSize: 13),
+                    ),
                     const SizedBox(height: 18),
-                    _buildInput(controller: _password, hint: '••••••••', icon: Icons.lock_outline_rounded, inputBg: inputBg, inputBorder: inputBorder, textColor: textColor, ink3Color: ink3Color, isPassword: true, onSubmitted: _completeSignup),
+                    _buildInput(
+                      controller: _password,
+                      hint: '••••••••',
+                      icon: SpiderIcons.lock,
+                      inputBg: inputBg,
+                      inputBorder: inputBorder,
+                      textColor: textColor,
+                      ink3Color: ink3Color,
+                      isPassword: true,
+                      onSubmitted: _completeSignup,
+                    ),
                     const SizedBox(height: 18),
-                    _buildButton(label: 'Complete Signup', onPressed: _completeSignup, busy: _busy),
+                    _buildButton(context,
+                      label: 'Complete Signup',
+                      onPressed: _completeSignup,
+                      busy: _busy,
+                    ),
                   ],
 
                   if (_error != null) ...[
                     const SizedBox(height: 14),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
                       ),
-                      child: Text(_error!, style: GoogleFonts.inter(color: const Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500)),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.danger.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: AppType.sans(
+                          color: AppColors.danger,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -213,14 +304,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       obscureText: isPassword,
       onSubmitted: onSubmitted != null ? (_) => onSubmitted() : null,
-      style: GoogleFonts.inter(fontSize: 14, color: textColor),
+      style: AppType.sans(fontSize: 14, color: textColor),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(fontSize: 13.5, color: ink3Color),
-        prefixIcon: Icon(icon, size: 19, color: ink3Color),
+        hintStyle: AppType.sans(fontSize: 13.5, color: ink3Color),
+        prefixIcon: AppIcon(icon, size: 19, color: ink3Color),
         filled: true,
         fillColor: inputBg,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: inputBorder),
@@ -237,20 +331,39 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     );
   }
 
-  Widget _buildButton({required String label, required VoidCallback onPressed, required bool busy}) {
+  Widget _buildButton(BuildContext context, {
+    required String label,
+    required VoidCallback onPressed,
+    required bool busy,
+  }) {
+    final p = context.ink;
     return SizedBox(
       height: 46,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: Colors.white,
+          backgroundColor: p.ink,
+          foregroundColor: p.onInk,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         onPressed: busy ? null : onPressed,
         child: busy
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(label, style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w700)),
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: p.onInk,
+                ),
+              )
+            : Text(
+                label,
+                style: AppType.sans(
+                  color: p.onInk,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ),
     );
   }

@@ -11,7 +11,11 @@ import 'session_storage.dart';
 /// apps/web/src/hooks/useRealtimeBoard.ts's `ChangeEvent`. `type` is one of
 /// "INSERT"/"UPDATE"/"DELETE"; `table` is one of "tasks"/"clusters"/"categories"/
 /// "milestones"/"notes".
-typedef RealtimeEventHandler = void Function(String table, String type, Map<String, dynamic> row);
+typedef RealtimeEventHandler = void Function(
+  String table,
+  String type,
+  Map<String, dynamic> row,
+);
 
 /// Android mirror of apps/web/src/hooks/useRealtimeBoard.ts's whole-record broadcast sync
 /// (task/cluster/category/milestone/note create/update/delete over apps/backend's
@@ -61,11 +65,12 @@ class RealtimeClient {
       return;
     }
 
-    final wsBase = ApiClient.base.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://');
-    final uri = Uri.parse('$wsBase/v1/realtime').replace(queryParameters: {
-      'token': token,
-      'workspaceId': workspaceId.toString(),
-    });
+    final wsBase = ApiClient.base
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+    final uri = Uri.parse('$wsBase/v1/realtime').replace(
+      queryParameters: {'token': token, 'workspaceId': workspaceId.toString()},
+    );
 
     try {
       final channel = WebSocketChannel.connect(uri);
@@ -79,11 +84,13 @@ class RealtimeClient {
       // A rejected upgrade (bad/expired token, not a workspace member, etc. — see
       // RealtimeGateway.handleUpgrade) surfaces via `ready` failing rather than the stream
       // ever emitting; route that through the same reconnect path as a mid-session drop.
-      channel.ready.then((_) {
-        _attempt = 0; // successful handshake — reset backoff
-      }).catchError((Object _) {
-        _onDone();
-      });
+      channel.ready
+          .then((_) {
+            _attempt = 0; // successful handshake — reset backoff
+          })
+          .catchError((Object _) {
+            _onDone();
+          });
     } catch (_) {
       _scheduleReconnect();
     }
@@ -113,12 +120,18 @@ class RealtimeClient {
   void _scheduleReconnect() {
     if (_disposed) return;
     _reconnectTimer?.cancel();
-    final backoffMs = min(1000 * pow(2, _attempt).toInt(), _maxBackoff.inMilliseconds);
+    final backoffMs = min(
+      1000 * pow(2, _attempt).toInt(),
+      _maxBackoff.inMilliseconds,
+    );
     // Small jitter so many devices reconnecting after a shared outage (e.g. the backend
     // container restarting) don't all retry in exact lockstep.
     final jitterMs = Random().nextInt(400);
     _attempt++;
-    _reconnectTimer = Timer(Duration(milliseconds: backoffMs + jitterMs), connect);
+    _reconnectTimer = Timer(
+      Duration(milliseconds: backoffMs + jitterMs),
+      connect,
+    );
   }
 
   void _teardownSocket() {

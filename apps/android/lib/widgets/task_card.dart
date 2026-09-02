@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../core/app_icons.dart';
-import '../core/app_theme.dart';
 import '../core/helpers.dart';
+import '../design/components.dart';
+import '../design/icons.dart';
+import '../design/tokens.dart';
+import '../design/typography.dart';
 import '../models/models.dart';
 
-class TaskCard extends StatelessWidget {
+/// ═══════════════════════════════════════════════════════════════════════════
+/// A task row.
+///
+/// At rest it shows only what you need in order to read the task: a checkbox,
+/// the title, the star if it is set, and any metadata that actually exists.
+/// The four action glyphs that used to sit on every row are behind one
+/// affordance — with a dozen tasks on screen that was forty-eight icons
+/// competing with twelve pieces of content.
+///
+/// The row draws no border of its own. Containment is the cluster spine's job
+/// (see ClusterSpine); a bordered card inside a bordered group was the reason
+/// it was hard to tell where one cluster ended and the next began.
+/// ═══════════════════════════════════════════════════════════════════════════
+class TaskCard extends StatefulWidget {
   final Task task;
   final int noteCount;
   final List<Note> attachments;
@@ -31,324 +45,210 @@ class TaskCard extends StatelessWidget {
   });
 
   @override
+  State<TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends State<TaskCard> {
+  bool _actionsOpen = false;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
+    final t = widget.task;
 
-    final cardBg = isDark ? AppColors.panel : AppColors.lightPanel;
-    final cardBorder = isDark ? AppColors.line : AppColors.lightLine;
-    final textColor = isDark ? AppColors.ink : AppColors.lightInk;
-    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
-    final subtextColor = isDark ? AppColors.ink3 : AppColors.lightInk3;
+    final progress = t.milestones.isNotEmpty ? taskProgress(t) : null;
+    final overdue =
+        t.deadline != null && dateClass(t.deadline) == DateClass.overdue;
+    final title = displayTitle(t.title);
 
-    final progress = task.milestones.isNotEmpty ? taskProgress(task) : null;
-    final dcls = task.deadline != null ? dateClass(task.deadline) : DateClass.none;
-    final deadlineColor = dcls == DateClass.overdue
-        ? AppColors.danger
-        : (dcls == DateClass.soon ? AppColors.med : subtextColor);
-    final prioColor = AppColors.forPriority(task.priority);
-    final hasPrio = task.priority != Priority.none;
-    final title = displayTitle(task.title);
+    final voice = widget.attachments
+        .where((a) => a.kind == NoteKind.voice)
+        .length;
+    final images = widget.attachments
+        .where((a) => a.kind == NoteKind.image)
+        .length;
+    final others = widget.attachments
+        .where((a) => a.kind != NoteKind.voice && a.kind != NoteKind.image)
+        .length;
 
-    final voiceNotes = attachments.where((a) => a.kind == NoteKind.voice).toList();
-    final imageNotes = attachments.where((a) => a.kind == NoteKind.image).toList();
-    final otherNotes = attachments.where((a) => a.kind != NoteKind.voice && a.kind != NoteKind.image).toList();
-
-    final hasMeta = task.deadline != null || noteCount > 0 || attachments.isNotEmpty || (progress != null && progress.total > 0);
+    final hasMeta =
+        t.deadline != null ||
+        widget.noteCount > 0 ||
+        widget.attachments.isNotEmpty ||
+        (progress != null && progress.total > 0);
 
     return AnimatedOpacity(
-      duration: const Duration(milliseconds: 160),
-      opacity: task.done ? 0.55 : 1.0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: task.done ? (isDark ? AppColors.line : AppColors.lightLine) : cardBorder,
-            width: 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            onTap: onOpen,
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Row 1: Checkbox + Priority Dot + Title + Star
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Monochrome Checkbox (Comfortable Touch Target)
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onToggle,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: task.done ? (isDark ? AppColors.ink : AppColors.lightInk) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: task.done
-                                  ? (isDark ? AppColors.ink : AppColors.lightInk)
-                                  : (isDark ? AppColors.lineStrong : AppColors.lightLineStrong),
-                              width: 1.5,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: task.done
-                              ? Icon(Icons.check_rounded, size: 16, color: isDark ? AppColors.accentInk : AppColors.lightAccentInk)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 9),
-
-                      // Priority Dot
-                      if (hasPrio) ...[
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(color: prioColor, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 7),
-                      ],
-
-                      // Task Title
-                      Expanded(
-                        child: Text(
-                          title.isNotEmpty ? title : 'Untitled task',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: task.done ? mutedColor : textColor,
-                            decoration: task.done ? TextDecoration.lineThrough : null,
-                            decorationColor: mutedColor,
-                            height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-
-                      // Star toggle (Larger touch target)
-                      _pillAction(
-                        icon: task.starred ? Icons.star_rounded : Icons.star_outline_rounded,
-                        iconSize: 19,
-                        tooltip: task.starred ? 'Starred' : 'Star',
-                        color: task.starred
-                            ? (isDark ? AppColors.ink : AppColors.lightInk)
-                            : (isDark ? AppColors.ink3 : AppColors.lightInk3),
-                        onTap: onStar,
-                      ),
-                    ],
-                  ),
-
-                  // Row 2: Quick Action Pill (right-aligned, below title)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 33, top: 6),
-                    child: Row(
-                      children: [
-                        const Spacer(),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {},
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isDark ? AppColors.line : AppColors.lightLine,
-                                width: 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _pillAction(
-                                  icon: AppIcons.notes,
-                                  iconSize: 15,
-                                  tooltip: 'Notes',
-                                  color: isDark ? AppColors.muted : AppColors.lightMuted,
-                                  onTap: onNotes,
-                                ),
-                                _pillAction(
-                                  icon: AppIcons.edit,
-                                  iconSize: 15,
-                                  tooltip: 'Edit task',
-                                  color: isDark ? AppColors.muted : AppColors.lightMuted,
-                                  onTap: onOpen,
-                                ),
-                                if (onCold != null)
-                                  _pillAction(
-                                    icon: AppIcons.coldStore,
-                                    iconSize: 15,
-                                    tooltip: 'Move to Cold store',
-                                    color: isDark ? AppColors.muted : AppColors.lightMuted,
-                                    onTap: onCold!,
-                                  ),
-                                if (onDelete != null)
-                                  _pillAction(
-                                    icon: AppIcons.delete,
-                                    iconSize: 15,
-                                    tooltip: 'Move to bin',
-                                    color: isDark ? AppColors.muted : AppColors.lightMuted,
-                                    hoverDanger: true,
-                                    onTap: onDelete!,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Metadata Row: Deadlines, Attachments, Notes chips, Milestones
-                  if (hasMeta) ...[
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 33),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 5,
-                        children: [
-                          // Deadline badge
-                          if (task.deadline != null)
-                            _badge(
-                              color: deadlineColor,
-                              bgColor: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              icon: Icons.access_time_rounded,
-                              label: fmtDate(task.deadline),
-                              onTap: onOpen,
-                            ),
-
-                          // Voice Notes badge
-                          if (voiceNotes.isNotEmpty)
-                            _badge(
-                              color: isDark ? AppColors.muted : AppColors.lightMuted,
-                              bgColor: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              icon: AppIcons.voiceNote,
-                              label: voiceNotes.length == 1 ? 'Voice' : '${voiceNotes.length}',
-                              onTap: onOpen,
-                            ),
-
-                          // Images badge
-                          if (imageNotes.isNotEmpty)
-                            _badge(
-                              color: isDark ? AppColors.muted : AppColors.lightMuted,
-                              bgColor: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              icon: AppIcons.imageAttachment,
-                              label: imageNotes.length == 1 ? 'Image' : '${imageNotes.length}',
-                              onTap: onOpen,
-                            ),
-
-                          // Other Attachments badge
-                          if (otherNotes.isNotEmpty)
-                            _badge(
-                              color: isDark ? AppColors.muted : AppColors.lightMuted,
-                              bgColor: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              icon: AppIcons.fileAttachment,
-                              label: '${otherNotes.length}',
-                              onTap: onOpen,
-                            ),
-
-                          // Milestones count
-                          if (progress != null && progress.total > 0)
-                            _badge(
-                              color: isDark ? AppColors.muted : AppColors.lightMuted,
-                              bgColor: isDark ? AppColors.panel2 : AppColors.lightPanel2,
-                              icon: Icons.checklist_rounded,
-                              label: '${progress.done}/${progress.total}',
-                              onTap: onOpen,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _pillAction({
-    required IconData icon,
-    double iconSize = 15,
-    required String tooltip,
-    required Color color,
-    Color? bgColor,
-    Color? borderColor,
-    bool hoverDanger = false,
-    required VoidCallback onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      waitDuration: const Duration(milliseconds: 200),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: 28,
-          height: 28,
-          margin: const EdgeInsets.symmetric(horizontal: 1.5),
-          decoration: BoxDecoration(
-            color: bgColor ?? Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            border: borderColor != null ? Border.all(color: borderColor, width: 0.8) : null,
-          ),
-          child: Center(
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: color,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _badge({
-    required Color color,
-    required Color bgColor,
-    required IconData icon,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
+      duration: Motion.base,
+      curve: Motion.curve,
+      opacity: t.done ? 0.5 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onOpen,
+          onLongPress: () => setState(() => _actionsOpen = !_actionsOpen),
+          borderRadius: Radii.brSm,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 12, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SpiderCheckbox(
+                    value: t.done,
+                    onChanged: (_) => widget.onToggle(),
+                  ),
+
+                  // Priority reads as a weight of ink, never as a hue.
+                  if (t.priority != Priority.none)
+                    Container(
+                      width: 5,
+                      height: 5,
+                      margin: const EdgeInsets.only(right: Space.md),
+                      decoration: BoxDecoration(
+                        color: switch (t.priority) {
+                          Priority.high => p.ink,
+                          Priority.med => p.inkMuted,
+                          _ => p.inkFaint,
+                        },
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: Space.lg),
+                      child: Text(
+                        title.isNotEmpty ? title : 'Untitled task',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.body(t.done ? p.inkMuted : p.ink)
+                            .copyWith(
+                              decoration: t.done
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              decorationColor: p.inkFaint,
+                            ),
+                      ),
+                    ),
+                  ),
+
+                  // Drawn only when set, or while the row is open: an empty
+                  // star on every row is noise the content must compete with.
+                  if (t.starred || _actionsOpen)
+                    SpiderStar(starred: t.starred, onTap: widget.onStar),
+
+                  SpiderTapIcon(
+                    SpiderIcons.moreHoriz,
+                    size: 16,
+                    color: _actionsOpen ? p.ink : p.inkFaint,
+                    hitSize: 38,
+                    tooltip: 'Actions',
+                    onTap: () => setState(() => _actionsOpen = !_actionsOpen),
+                  ),
+                ],
+              ),
+
+              if (hasMeta)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 40,
+                    bottom: Space.lg,
+                    right: Space.md,
+                  ),
+                  child: Wrap(
+                    spacing: Space.lg,
+                    runSpacing: Space.sm,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (t.deadline != null)
+                        _Meta(
+                          icon: SpiderIcons.clock,
+                          label: fmtDate(t.deadline),
+                          tone: overdue ? p.danger : p.inkFaint,
+                        ),
+                      if (progress != null && progress.total > 0)
+                        _Meta(
+                          icon: SpiderIcons.checklist,
+                          label: '${progress.done}/${progress.total}',
+                          tone: p.inkFaint,
+                        ),
+                      if (widget.noteCount > 0)
+                        _Meta(
+                          icon: SpiderIcons.note,
+                          label: '${widget.noteCount}',
+                          tone: p.inkFaint,
+                        ),
+                      if (voice > 0)
+                        _Meta(
+                          icon: SpiderIcons.mic,
+                          label: '$voice',
+                          tone: p.inkFaint,
+                        ),
+                      if (images > 0)
+                        _Meta(
+                          icon: SpiderIcons.image,
+                          label: '$images',
+                          tone: p.inkFaint,
+                        ),
+                      if (others > 0)
+                        _Meta(
+                          icon: SpiderIcons.attach,
+                          label: '$others',
+                          tone: p.inkFaint,
+                        ),
+                    ],
+                  ),
                 ),
+
+              // Revealed on demand — by the overflow glyph or a long press.
+              AnimatedSize(
+                duration: Motion.base,
+                curve: Motion.curve,
+                alignment: Alignment.topCenter,
+                child: !_actionsOpen
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                        padding: const EdgeInsets.only(
+                          left: 34,
+                          bottom: Space.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            SpiderTapIcon(
+                              SpiderIcons.note,
+                              size: 16,
+                              hitSize: 40,
+                              tooltip: 'Notes',
+                              onTap: widget.onNotes,
+                            ),
+                            SpiderTapIcon(
+                              SpiderIcons.pencil,
+                              size: 16,
+                              hitSize: 40,
+                              tooltip: 'Edit',
+                              onTap: widget.onOpen,
+                            ),
+                            if (widget.onCold != null)
+                              SpiderTapIcon(
+                                SpiderIcons.snowflake,
+                                size: 16,
+                                hitSize: 40,
+                                tooltip: 'Move to cold store',
+                                onTap: widget.onCold,
+                              ),
+                            if (widget.onDelete != null)
+                              SpiderTapIcon(
+                                SpiderIcons.trash,
+                                size: 16,
+                                hitSize: 40,
+                                danger: true,
+                                tooltip: 'Move to bin',
+                                onTap: widget.onDelete,
+                              ),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
@@ -356,4 +256,23 @@ class TaskCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One metadata pair. No pill, no fill — an icon and a figure, set quietly.
+class _Meta extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color tone;
+
+  const _Meta({required this.icon, required this.label, required this.tone});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      AppIcon(icon, size: 12, color: tone),
+      const SizedBox(width: Space.sm),
+      Text(label, style: AppType.numeric(tone)),
+    ],
+  );
 }

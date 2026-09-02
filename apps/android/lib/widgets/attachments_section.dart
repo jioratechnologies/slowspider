@@ -1,33 +1,37 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
 
 import '../core/api_client.dart';
-import '../core/app_icons.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/upload_helper.dart';
 import '../models/models.dart';
 import 'note_media.dart';
 import 'voice_recorder.dart';
+import '../design/icons.dart';
 
 const int _quotaBytes = 10 * 1024 * 1024 * 1024;
 
 IconData _iconFor(NoteKind kind) {
   switch (kind) {
     case NoteKind.voice:
-      return Icons.mic_rounded;
+      return SpiderIcons.mic;
     case NoteKind.image:
-      return Icons.image_rounded;
+      return SpiderIcons.image;
     case NoteKind.video:
-      return Icons.videocam_rounded;
+      return SpiderIcons.video;
     default:
-      return Icons.insert_drive_file_rounded;
+      return SpiderIcons.file;
   }
 }
 
 String _displayName(Note note) {
-  if (note.kind == NoteKind.voice && (note.body.startsWith('voice-') || note.body.startsWith('Audio_Record_'))) {
+  if (note.kind == NoteKind.voice &&
+      (note.body.startsWith('voice-') ||
+          note.body.startsWith('Audio_Record_'))) {
     return 'Voice Recording';
   }
   return note.body.isNotEmpty ? note.body : 'Untitled File';
@@ -102,7 +106,12 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
     try {
       final bytes = await File(path).readAsBytes();
       final name = 'voice-${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final uploadedPath = await ApiClient.instance.uploadMedia(bytes, name, 'audio/m4a', bytes.length);
+      final uploadedPath = await ApiClient.instance.uploadMedia(
+        bytes,
+        name,
+        'audio/m4a',
+        bytes.length,
+      );
       await widget.onAdd({
         'task_id': widget.taskId,
         'cluster_id': null,
@@ -127,14 +136,16 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final cardBg = isDark ? const Color(0xFF191B26) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
-    final inputBg = isDark ? const Color(0xFF1F2230) : const Color(0xFFF3F4F6);
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
     final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
 
-    final quotaPct = ((widget.storageUsed / _quotaBytes) * 100).clamp(0, 100).round();
+    final quotaPct = ((widget.storageUsed / _quotaBytes) * 100)
+        .clamp(0, 100)
+        .round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -145,8 +156,26 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
           runSpacing: 8,
           children: [
             VoiceRecorder(onRecorded: _addVoice, disabled: _busy),
-            _toolBtn(Icons.image_outlined, 'Photo / video', const Color(0xFF0EA5E9), () => _attach(pickMedia), isDark, inputBg, cardBorder, textColor),
-            _toolBtn(Icons.attach_file_rounded, 'Attach file', const Color(0xFFA855F7), () => _attach(pickDocument), isDark, inputBg, cardBorder, textColor),
+            _toolBtn(
+              SpiderIcons.image,
+              'Photo / video',
+              AppColors.muted,
+              () => _attach(pickMedia),
+              isDark,
+              inputBg,
+              cardBorder,
+              textColor,
+            ),
+            _toolBtn(
+              SpiderIcons.attach,
+              'Attach file',
+              AppColors.ink,
+              () => _attach(pickDocument),
+              isDark,
+              inputBg,
+              cardBorder,
+              textColor,
+            ),
           ],
         ),
 
@@ -155,11 +184,16 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+              color: AppColors.danger.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.3),
+              ),
             ),
-            child: Text(_error!, style: GoogleFonts.inter(color: const Color(0xFFEF4444), fontSize: 12)),
+            child: Text(
+              _error!,
+              style: AppType.sans(color: AppColors.danger, fontSize: 12),
+            ),
           ),
         ],
 
@@ -172,11 +206,11 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.folder_open_rounded, size: 36, color: ink3Color),
+                  AppIcon(SpiderIcons.folder, size: 36, color: ink3Color),
                   const SizedBox(height: 8),
                   Text(
                     'No files attached yet.',
-                    style: GoogleFonts.inter(color: mutedColor, fontSize: 13),
+                    style: AppType.sans(color: mutedColor, fontSize: 13),
                   ),
                 ],
               ),
@@ -194,7 +228,9 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                   border: Border.all(color: cardBorder),
                   boxShadow: [
                     BoxShadow(
-                      color: isDark ? Colors.black.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.02),
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.02),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -203,22 +239,31 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       child: Row(
                         children: [
                           Container(
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                              color: AppColors.ink.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(_iconFor(a.kind), size: 16, color: AppColors.accent),
+                            child: AppIcon(
+                              _iconFor(a.kind),
+                              size: 16,
+                              color: AppColors.accent,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: InkWell(
-                              onTap: () => setState(() => _expanded = expanded ? null : a.id),
+                              onTap: () => setState(
+                                () => _expanded = expanded ? null : a.id,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -226,12 +271,19 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                                     _displayName(a),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(color: textColor, fontSize: 13, fontWeight: FontWeight.w600),
+                                    style: AppType.sans(
+                                      color: textColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                   if (a.sizeBytes > 0)
                                     Text(
                                       formatBytes(a.sizeBytes),
-                                      style: GoogleFonts.inter(color: mutedColor, fontSize: 11),
+                                      style: AppType.sans(
+                                        color: mutedColor,
+                                        fontSize: 11,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -239,7 +291,11 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                           ),
                           if (a.createdBy == widget.currentUserId) ...[
                             IconButton(
-                              icon: const Icon(AppIcons.delete, size: 16, color: AppColors.danger),
+                              icon: const AppIcon(
+                                SpiderIcons.delete,
+                                size: 16,
+                                color: AppColors.danger,
+                              ),
                               tooltip: 'Delete file',
                               onPressed: () => widget.onDelete(a.id),
                               constraints: const BoxConstraints(),
@@ -253,7 +309,9 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          border: Border(top: BorderSide(color: cardBorder, width: 0.8)),
+                          border: Border(
+                            top: BorderSide(color: cardBorder, width: 0.8),
+                          ),
                         ),
                         width: double.infinity,
                         child: NoteMedia(note: a),
@@ -280,10 +338,21 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Storage Usage', style: GoogleFonts.inter(color: mutedColor, fontSize: 11, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Storage Usage',
+                    style: AppType.sans(
+                      color: mutedColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   Text(
                     '${formatBytes(widget.storageUsed)} of ${formatBytes(_quotaBytes)} ($quotaPct%)',
-                    style: GoogleFonts.inter(color: textColor, fontSize: 11, fontWeight: FontWeight.w700),
+                    style: AppType.sans(
+                      color: textColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -294,7 +363,7 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
                   value: (quotaPct / 100).clamp(0.0, 1.0),
                   minHeight: 5,
                   backgroundColor: inputBg,
-                  color: quotaPct > 90 ? const Color(0xFFEF4444) : AppColors.accent,
+                  color: quotaPct > 90 ? AppColors.danger : AppColors.accent,
                 ),
               ),
             ],
@@ -322,18 +391,22 @@ class _AttachmentsSectionState extends State<AttachmentsSection> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: cardBorder),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: iconColor),
+              AppIcon(icon, size: 16, color: iconColor),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.inter(color: textColor, fontSize: 12.5, fontWeight: FontWeight.w600),
+                style: AppType.sans(
+                  color: textColor,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

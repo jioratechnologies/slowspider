@@ -93,16 +93,16 @@ export default function CalendarPanel({
             </button>
           </div>
 
-          <button className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white transition-colors" title="Close calendar" onClick={onClose}>
+          <button className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors" title="Close calendar" onClick={onClose}>
             <X className="size-4" />
           </button>
         </div>
 
         <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.3fr)_1fr]">
           {/* Left: Calendar Grid */}
-          <div className="bg-zinc-200 dark:bg-white/[0.08] grid grid-cols-7 gap-px rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/[0.08]">
+          <div className="bg-[var(--line)] grid grid-cols-7 gap-px rounded-2xl overflow-hidden border border-[var(--line)]">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="bg-zinc-50 dark:bg-[#16161a] py-2.5 text-center text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+              <div key={w} className="bg-[var(--sunken)] py-2.5 text-center text-[11px] font-medium text-[var(--muted)]">
                 {w}
               </div>
             ))}
@@ -118,7 +118,7 @@ export default function CalendarPanel({
                   key={key}
                   onClick={() => setSelected(key)}
                   className={cn(
-                    "group relative flex h-[50px] sm:h-[56px] w-full flex-col items-center justify-center bg-white dark:bg-[#1a1a20] transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.06]",
+                    "group relative flex h-[50px] sm:h-[56px] w-full flex-col items-center justify-center bg-[var(--panel)] transition-colors hover:bg-[var(--panel-2)]",
                     !inMonth && "opacity-35"
                   )}
                 >
@@ -126,16 +126,16 @@ export default function CalendarPanel({
                     className={cn(
                       "flex size-8 sm:size-8.5 items-center justify-center rounded-xl text-[13px] transition-all",
                       isSelected 
-                        ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold shadow-sm" 
+                        ? "bg-[var(--ink)] text-[var(--bg)] font-bold shadow-sm" 
                         : isToday 
-                          ? "border border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white font-semibold"
-                          : "text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-950 dark:group-hover:text-white"
+                          ? "border border-[var(--line-strong)] text-[var(--ink)] font-semibold"
+                          : "text-[var(--ink)] group-hover:text-[var(--ink)]"
                     )}
                   >
                     {d.getDate()}
                   </span>
                   {count > 0 && !isSelected && (
-                    <span className="absolute bottom-1.5 size-1 rounded-full bg-indigo-500 dark:bg-indigo-400" />
+                    <span className="absolute bottom-1.5 size-1 rounded-full bg-[var(--star)]" />
                   )}
                 </button>
               );
@@ -144,29 +144,29 @@ export default function CalendarPanel({
 
           {/* Right: Selected Day Tasks */}
           <div className="flex flex-col min-w-0">
-            <h3 className="mb-3 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <h3 className="mb-3 text-[15px] font-semibold text-[var(--ink)] tracking-tight">
               {new Date(selected + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
             </h3>
             
             {!dayTasks.length && (
-              <div className="rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.06] p-4 text-center text-[12.5px] text-zinc-400 dark:text-zinc-500 italic mt-1">
+              <div className="rounded-xl border border-dashed border-[var(--line)] p-4 text-center text-[12.5px] text-[var(--muted)] italic mt-1">
                 No tasks scheduled for this day.
               </div>
             )}
             
             <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-0.5">
               {dayTasks.map((t) => (
-                <div key={t.id} className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/70 dark:bg-white/[0.02] px-3.5 py-3 transition-colors hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:border-zinc-300 dark:hover:border-white/15">
+                <div key={t.id} className="group flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--panel-2)]/60 px-3.5 py-3 transition-colors hover:bg-[var(--panel-2)] hover:border-[var(--line-strong)]">
                   <button className="flex min-w-0 flex-1 items-start gap-2.5 text-left" onClick={() => { onClose(); onOpenTask(t.id); }}>
-                    <div className="mt-0.5 shrink-0 text-zinc-400 dark:text-zinc-500">
+                    <div className="mt-0.5 shrink-0 text-[var(--muted)]">
                       {t.deadline_time ? <Clock className="size-3.5" /> : <AlignLeft className="size-3.5" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13px] text-zinc-900 dark:text-zinc-100 leading-tight">
+                      <div className="text-[13px] text-[var(--ink)] leading-tight">
                         {t.deadline_time ? (
-                          <span className="font-medium mr-1.5 font-mono text-zinc-500">{t.deadline_time} ·</span>
+                          <span className="font-medium mr-1.5 font-mono text-[var(--muted)]">{t.deadline_time} ·</span>
                         ) : null}
-                        <span className={cn(t.done && "line-through text-zinc-400 dark:text-zinc-500")}>
+                        <span className={cn(t.done && "line-through text-[var(--muted)]")}>
                           {t.title || "Untitled"}
                         </span>
                       </div>

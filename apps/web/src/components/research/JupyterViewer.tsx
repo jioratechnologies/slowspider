@@ -91,10 +91,10 @@ export default function JupyterViewer({
             return (
               <div
                 key={idx}
-                className="rounded-xl overflow-hidden border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[#111114]"
+                className="rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--panel)]"
               >
                 {/* Input Prompt */}
-                <div className="flex items-start gap-2 bg-zinc-100/60 dark:bg-white/[0.02] p-2 font-mono text-[11px] border-b border-zinc-200/60 dark:border-white/[0.04]">
+                <div className="flex items-start gap-2 bg-[var(--sunken)]/60 p-2 font-mono text-[11px] border-b border-[var(--line)]">
                   <span className="text-sky-600 dark:text-sky-400 font-bold shrink-0">
                     In [{cell.execution_count ?? " "}]:
                   </span>

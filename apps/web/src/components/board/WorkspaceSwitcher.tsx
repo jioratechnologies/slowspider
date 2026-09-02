@@ -130,21 +130,21 @@ export default function WorkspaceSwitcher({
           <ChevronsUpDown className="size-3 shrink-0 text-zinc-400 dark:text-zinc-500 transition-colors group-hover:text-zinc-600 dark:group-hover:text-zinc-300 ml-0.5" />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className="min-w-72 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#16161a] p-1.5 shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl text-zinc-900 dark:text-zinc-200">
+        <DropdownMenuContent align="start" className="min-w-72 rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-1.5 shadow-xl backdrop-blur-2xl text-[var(--ink)]">
           {/* Active Workspace summary & Collaborators button */}
-          <div className="px-3 py-2 border-b border-zinc-100 dark:border-white/[0.08] mb-1">
+          <div className="px-3 py-2 border-b border-[var(--line)] mb-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-mono uppercase text-zinc-400 dark:text-zinc-500">Current Workspace</span>
+              <span className="text-[11px] font-mono uppercase text-[var(--muted)]">Current Workspace</span>
               <span className={cn(
                 "rounded-md px-1.5 py-0.5 text-[10px] font-mono font-medium",
-                current?.role === "owner" 
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" 
-                  : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                current?.role === "owner"
+                  ? "bg-[var(--star)]/10 text-[var(--star)] border border-[var(--star)]/25"
+                  : "bg-[var(--accent-soft)] text-[var(--ink)] border border-[var(--line-strong)]"
               )}>
                 {current?.role === "owner" ? "Owner" : "Editor"}
               </span>
             </div>
-            
+
             {onOpenCollaborators && (
               <button
                 type="button"
@@ -152,9 +152,9 @@ export default function WorkspaceSwitcher({
                   setOpen(false);
                   onOpenCollaborators();
                 }}
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] py-1.5 text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] py-1.5 text-[12px] font-medium text-[var(--ink)] hover:bg-[var(--sunken)] transition-colors cursor-pointer"
               >
-                <Users className="size-3.5 text-indigo-500" />
+                <Users className="size-3.5 text-[var(--muted)]" />
                 <span>Manage Collaborators</span>
               </button>
             )}
@@ -162,12 +162,12 @@ export default function WorkspaceSwitcher({
 
           {/* Individual vs Shared Tabs if user is part of shared workspaces */}
           {hasShared && (
-            <div className="mb-1 flex gap-1 rounded-xl bg-zinc-100 dark:bg-white/[0.04] p-0.5">
+            <div className="mb-1 flex gap-1 rounded-xl bg-[var(--sunken)] p-0.5">
               <button
                 type="button"
                 className={cn(
                   "flex-1 rounded-lg px-2 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
-                  tab === "individual" ? "bg-white dark:bg-[#202026] text-zinc-900 dark:text-zinc-100 shadow-2xs" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  tab === "individual" ? "bg-[var(--panel)] text-[var(--ink)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
                 )}
                 onClick={() => {
                   resetPanels();
@@ -180,7 +180,7 @@ export default function WorkspaceSwitcher({
                 type="button"
                 className={cn(
                   "flex-1 rounded-lg px-2 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
-                  tab === "shared" ? "bg-white dark:bg-[#202026] text-zinc-900 dark:text-zinc-100 shadow-2xs" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  tab === "shared" ? "bg-[var(--panel)] text-[var(--ink)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
                 )}
                 onClick={() => {
                   resetPanels();

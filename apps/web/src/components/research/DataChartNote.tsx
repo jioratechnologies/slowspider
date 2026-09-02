@@ -161,7 +161,7 @@ export default function DataChartNote({
               </div>
             </div>
 
-            <div className="relative w-full overflow-hidden rounded-xl border border-zinc-200/80 dark:border-white/[0.06] bg-white dark:bg-[#121215] p-2">
+            <div className="relative w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] p-2">
               <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
                 {/* Gridlines */}
                 <line x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} stroke="currentColor" className="text-zinc-300 dark:text-zinc-700" strokeWidth="1" />

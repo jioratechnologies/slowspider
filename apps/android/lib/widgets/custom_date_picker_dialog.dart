@@ -1,8 +1,12 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
 
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
+import '../design/icons.dart';
 
 Future<DateTime?> showCustomDatePicker(
   BuildContext context, {
@@ -33,7 +37,8 @@ class _CustomDatePickerDialog extends StatefulWidget {
   });
 
   @override
-  State<_CustomDatePickerDialog> createState() => _CustomDatePickerDialogState();
+  State<_CustomDatePickerDialog> createState() =>
+      _CustomDatePickerDialogState();
 }
 
 class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
@@ -42,14 +47,28 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
 
   static const _weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
   void initState() {
     super.initState();
-    _selected = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day);
+    _selected = DateTime(
+      widget.initialDate.year,
+      widget.initialDate.month,
+      widget.initialDate.day,
+    );
     _cursor = DateTime(_selected.year, _selected.month, 1);
   }
 
@@ -61,7 +80,9 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
 
   List<DateTime> _monthDays(DateTime cursor) {
     final first = DateTime(cursor.year, cursor.month, 1);
-    final start = first.subtract(Duration(days: first.weekday % 7)); // Sunday is 0
+    final start = first.subtract(
+      Duration(days: first.weekday % 7),
+    ); // Sunday is 0
     return List.generate(42, (i) => start.add(Duration(days: i)));
   }
 
@@ -81,12 +102,13 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final dialogBg = isDark ? const Color(0xF2161824) : const Color(0xF7FFFFFF);
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
+    final dialogBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
-    final chipBg = isDark ? const Color(0xFF1F2232) : const Color(0xFFF3F4F6);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
+    final chipBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -128,8 +150,8 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                         children: [
                           Text(
                             'SELECT DEADLINE',
-                            style: GoogleFonts.inter(
-                              color: AppColors.accent,
+                            style: AppType.sans(
+                              color: p.gold,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -138,7 +160,7 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                           const SizedBox(height: 2),
                           Text(
                             '${_months[_selected.month - 1].substring(0, 3)} ${_selected.day}, ${_selected.year}',
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: textColor,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -147,7 +169,11 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                         ],
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: mutedColor, size: 20),
+                        icon: AppIcon(
+                          SpiderIcons.close,
+                          color: mutedColor,
+                          size: 20,
+                        ),
                         onPressed: () => Navigator.pop(context),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
@@ -161,11 +187,29 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildPresetChip('Today', () => _selectPreset(0), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Today',
+                          () => _selectPreset(0),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                         const SizedBox(width: 6),
-                        _buildPresetChip('Tomorrow', () => _selectPreset(1), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Tomorrow',
+                          () => _selectPreset(1),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                         const SizedBox(width: 6),
-                        _buildPresetChip('Next Week', () => _selectPreset(7), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Next Week',
+                          () => _selectPreset(7),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                       ],
                     ),
                   ),
@@ -176,21 +220,29 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.chevron_left_rounded, color: textColor, size: 22),
+                        icon: AppIcon(
+                          SpiderIcons.chevronLeft,
+                          color: textColor,
+                          size: 22,
+                        ),
                         onPressed: () => _shiftMonth(-1),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
                       ),
                       Text(
                         '${_months[_cursor.month - 1]} ${_cursor.year}',
-                        style: GoogleFonts.inter(
+                        style: AppType.sans(
                           color: textColor,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.chevron_right_rounded, color: textColor, size: 22),
+                        icon: AppIcon(
+                          SpiderIcons.chevronRight,
+                          color: textColor,
+                          size: 22,
+                        ),
                         onPressed: () => _shiftMonth(1),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
@@ -202,18 +254,20 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                   // 4. Weekday Headers
                   Row(
                     children: _weekdays
-                        .map((d) => Expanded(
-                              child: Center(
-                                child: Text(
-                                  d,
-                                  style: GoogleFonts.inter(
-                                    color: mutedColor,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                        .map(
+                          (d) => Expanded(
+                            child: Center(
+                              child: Text(
+                                d,
+                                style: AppType.sans(
+                                  color: mutedColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                   const SizedBox(height: 6),
@@ -222,12 +276,13 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 3,
-                      crossAxisSpacing: 3,
-                      childAspectRatio: 1.05,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 3,
+                          crossAxisSpacing: 3,
+                          childAspectRatio: 1.05,
+                        ),
                     itemCount: 42,
                     itemBuilder: (ctx, i) {
                       final day = days[i];
@@ -237,11 +292,11 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
 
                       final Color dayTextColor;
                       if (isSel) {
-                        dayTextColor = Colors.white;
+                        dayTextColor = p.onInk;
                       } else if (!isCurrentMonth) {
                         dayTextColor = mutedColor.withValues(alpha: 0.35);
                       } else if (isToday) {
-                        dayTextColor = AppColors.accent;
+                        dayTextColor = p.gold;
                       } else {
                         dayTextColor = textColor;
                       }
@@ -259,20 +314,27 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                           duration: const Duration(milliseconds: 130),
                           decoration: BoxDecoration(
                             gradient: isSel
-                                ? const LinearGradient(
-                                    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                                ? LinearGradient(
+                                    colors: [p.ink, p.ink],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   )
                                 : null,
                             borderRadius: BorderRadius.circular(10),
                             border: isToday && !isSel
-                                ? Border.all(color: AppColors.accent.withValues(alpha: 0.6), width: 1.2)
+                                ? Border.all(
+                                    color: p.ink.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                    width: 1.2,
+                                  )
                                 : null,
                             boxShadow: isSel
                                 ? [
                                     BoxShadow(
-                                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                                      color: p.ink.withValues(
+                                        alpha: 0.4,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -282,10 +344,12 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                           alignment: Alignment.center,
                           child: Text(
                             '${day.day}',
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: dayTextColor,
                               fontSize: 13,
-                              fontWeight: isSel || isToday ? FontWeight.w700 : FontWeight.w500,
+                              fontWeight: isSel || isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
                             ),
                           ),
                         ),
@@ -301,23 +365,38 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
                           foregroundColor: mutedColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                         ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ),
                       const Spacer(),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
+                          backgroundColor: p.ink,
+                          foregroundColor: p.onInk,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 11,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () => Navigator.pop(context, _selected),
                         child: Text(
                           'Set Date',
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                          style: AppType.sans(
+                            color: p.onInk,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -331,7 +410,13 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
     );
   }
 
-  Widget _buildPresetChip(String label, VoidCallback onTap, Color bg, Color textColor, Color border) {
+  Widget _buildPresetChip(
+    String label,
+    VoidCallback onTap,
+    Color bg,
+    Color textColor,
+    Color border,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -343,7 +428,11 @@ class _CustomDatePickerDialogState extends State<_CustomDatePickerDialog> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(color: textColor, fontSize: 12, fontWeight: FontWeight.w600),
+          style: AppType.sans(
+            color: textColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

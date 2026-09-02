@@ -29,14 +29,13 @@ class WorkspaceMembersState {
     bool? loading,
     String? error,
     bool clearError = false,
-  }) =>
-      WorkspaceMembersState(
-        members: members ?? this.members,
-        invites: invites ?? this.invites,
-        myPendingInvites: myPendingInvites ?? this.myPendingInvites,
-        loading: loading ?? this.loading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => WorkspaceMembersState(
+    members: members ?? this.members,
+    invites: invites ?? this.invites,
+    myPendingInvites: myPendingInvites ?? this.myPendingInvites,
+    loading: loading ?? this.loading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }
 
 class WorkspaceMembersController extends StateNotifier<WorkspaceMembersState> {
@@ -50,8 +49,12 @@ class WorkspaceMembersController extends StateNotifier<WorkspaceMembersState> {
     }
     try {
       final res = await _api.listMembers();
-      final members = ((res['members'] as List?) ?? []).map((m) => MemberRow.fromJson(m as Map<String, dynamic>)).toList();
-      final invites = ((res['invites'] as List?) ?? []).map((i) => InviteRow.fromJson(i as Map<String, dynamic>)).toList();
+      final members = ((res['members'] as List?) ?? [])
+          .map((m) => MemberRow.fromJson(m as Map<String, dynamic>))
+          .toList();
+      final invites = ((res['invites'] as List?) ?? [])
+          .map((i) => InviteRow.fromJson(i as Map<String, dynamic>))
+          .toList();
       state = state.copyWith(members: members, invites: invites);
     } catch (e) {
       state = state.copyWith(error: e.toString());
@@ -118,6 +121,7 @@ class WorkspaceMembersController extends StateNotifier<WorkspaceMembersState> {
   }
 }
 
-final workspaceMembersProvider = StateNotifierProvider<WorkspaceMembersController, WorkspaceMembersState>(
-  (ref) => WorkspaceMembersController(),
-);
+final workspaceMembersProvider =
+    StateNotifierProvider<WorkspaceMembersController, WorkspaceMembersState>(
+      (ref) => WorkspaceMembersController(),
+    );

@@ -1,6 +1,11 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
+import '../design/icons.dart';
+import '../core/app_theme.dart';
+import '../design/tokens.dart';
 
 Future<TimeOfDay?> showCustomTimePicker(
   BuildContext context, {
@@ -18,7 +23,8 @@ class _CustomTimePickerDialog extends StatefulWidget {
   const _CustomTimePickerDialog({required this.initialTime});
 
   @override
-  State<_CustomTimePickerDialog> createState() => _CustomTimePickerDialogState();
+  State<_CustomTimePickerDialog> createState() =>
+      _CustomTimePickerDialogState();
 }
 
 class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
@@ -47,12 +53,13 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final dialogBg = isDark ? const Color(0xF2161824) : const Color(0xF7FFFFFF);
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
+    final dialogBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
-    final chipBg = isDark ? const Color(0xFF1F2232) : const Color(0xFFF3F4F6);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
+    final chipBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -90,8 +97,8 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                         children: [
                           Text(
                             'SELECT TIME',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF38BDF8),
+                            style: AppType.sans(
+                              color: AppColors.muted,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -100,7 +107,7 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                           const SizedBox(height: 2),
                           Text(
                             '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')} ${_isPm ? 'PM' : 'AM'}',
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: textColor,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -109,7 +116,11 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                         ],
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: mutedColor, size: 20),
+                        icon: AppIcon(
+                          SpiderIcons.close,
+                          color: mutedColor,
+                          size: 20,
+                        ),
                         onPressed: () => Navigator.pop(context),
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
@@ -123,11 +134,29 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildPresetChip('Morning (9 AM)', () => _setPreset(9, 0), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Morning (9 AM)',
+                          () => _setPreset(9, 0),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                         const SizedBox(width: 6),
-                        _buildPresetChip('Afternoon (2 PM)', () => _setPreset(14, 0), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Afternoon (2 PM)',
+                          () => _setPreset(14, 0),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                         const SizedBox(width: 6),
-                        _buildPresetChip('Evening (6 PM)', () => _setPreset(18, 0), chipBg, textColor, cardBorder),
+                        _buildPresetChip(
+                          'Evening (6 PM)',
+                          () => _setPreset(18, 0),
+                          chipBg,
+                          textColor,
+                          cardBorder,
+                        ),
                       ],
                     ),
                   ),
@@ -135,7 +164,10 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
 
                   // 3. Time Spinner / Selector Card
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: chipBg,
                       borderRadius: BorderRadius.circular(16),
@@ -155,7 +187,14 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(':', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: textColor)),
+                          child: Text(
+                            ':',
+                            style: AppType.sans(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              color: textColor,
+                            ),
+                          ),
                         ),
                         // Minutes
                         _buildNumberColumn(
@@ -171,14 +210,22 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                         // AM / PM Switcher
                         Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF14151E) : Colors.white,
+                            color: isDark ? AppColors.panel : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: cardBorder),
                           ),
                           child: Column(
                             children: [
-                              _buildPeriodBtn('AM', !_isPm, () => setState(() => _isPm = false)),
-                              _buildPeriodBtn('PM', _isPm, () => setState(() => _isPm = true)),
+                              _buildPeriodBtn(
+                                'AM',
+                                !_isPm,
+                                () => setState(() => _isPm = false),
+                              ),
+                              _buildPeriodBtn(
+                                'PM',
+                                _isPm,
+                                () => setState(() => _isPm = true),
+                              ),
                             ],
                           ),
                         ),
@@ -194,26 +241,46 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
                           foregroundColor: mutedColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                         ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ),
                       const Spacer(),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF38BDF8),
-                          foregroundColor: Colors.black,
+                          backgroundColor: p.ink,
+                          foregroundColor: p.onInk,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 11,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () {
-                          final h24 = _isPm ? (_hour == 12 ? 12 : _hour + 12) : (_hour == 12 ? 0 : _hour);
-                          Navigator.pop(context, TimeOfDay(hour: h24, minute: _minute));
+                          final h24 = _isPm
+                              ? (_hour == 12 ? 12 : _hour + 12)
+                              : (_hour == 12 ? 0 : _hour);
+                          Navigator.pop(
+                            context,
+                            TimeOfDay(hour: h24, minute: _minute),
+                          );
                         },
                         child: Text(
                           'Set Time',
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                          style: AppType.sans(
+                            color: p.onInk,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -227,7 +294,13 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
     );
   }
 
-  Widget _buildPresetChip(String label, VoidCallback onTap, Color bg, Color textColor, Color border) {
+  Widget _buildPresetChip(
+    String label,
+    VoidCallback onTap,
+    Color bg,
+    Color textColor,
+    Color border,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -239,7 +312,11 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(color: textColor, fontSize: 12, fontWeight: FontWeight.w600),
+          style: AppType.sans(
+            color: textColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -257,7 +334,7 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
     return Column(
       children: [
         IconButton(
-          icon: Icon(Icons.keyboard_arrow_up_rounded, color: mutedColor, size: 24),
+          icon: AppIcon(SpiderIcons.chevronUp, color: mutedColor, size: 24),
           onPressed: () {
             int next = value + step;
             if (next > max) next = min;
@@ -268,10 +345,14 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
         ),
         Text(
           value.toString().padLeft(2, '0'),
-          style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w700, color: textColor),
+          style: AppType.sans(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
         ),
         IconButton(
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: mutedColor, size: 24),
+          icon: AppIcon(SpiderIcons.chevronDown, color: mutedColor, size: 24),
           onPressed: () {
             int prev = value - step;
             if (prev < min) prev = max;
@@ -291,13 +372,13 @@ class _CustomTimePickerDialogState extends State<_CustomTimePickerDialog> {
         duration: const Duration(milliseconds: 130),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF38BDF8) : Colors.transparent,
+          color: isSelected ? AppColors.muted : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           text,
-          style: GoogleFonts.inter(
-            color: isSelected ? Colors.black : const Color(0xFF949BAE),
+          style: AppType.sans(
+            color: isSelected ? Colors.black : AppColors.muted,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),

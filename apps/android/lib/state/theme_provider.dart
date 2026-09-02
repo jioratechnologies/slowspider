@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../design/icons.dart';
+
 enum AppThemeMode {
-  auto('Auto (System)', Icons.brightness_auto_rounded),
-  dark('Dark', Icons.dark_mode_rounded),
-  light('Light', Icons.light_mode_rounded);
+  auto('Auto (System)', SpiderIcons.themeAuto),
+  dark('Dark', SpiderIcons.moon),
+  light('Light', SpiderIcons.sun);
 
   final String label;
   final IconData icon;

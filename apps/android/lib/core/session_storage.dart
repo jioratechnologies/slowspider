@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Mirrors apps/mobile/src/api.ts's Session + loadSession/saveSession/clearSession/
@@ -28,15 +29,14 @@ class Session {
     String? userId,
     String? email,
     String? name,
-  }) =>
-      Session(
-        accessToken: accessToken ?? this.accessToken,
-        refreshToken: refreshToken ?? this.refreshToken,
-        workspaceId: workspaceId ?? this.workspaceId,
-        userId: userId ?? this.userId,
-        email: email ?? this.email,
-        name: name ?? this.name,
-      );
+  }) => Session(
+    accessToken: accessToken ?? this.accessToken,
+    refreshToken: refreshToken ?? this.refreshToken,
+    workspaceId: workspaceId ?? this.workspaceId,
+    userId: userId ?? this.userId,
+    email: email ?? this.email,
+    name: name ?? this.name,
+  );
 }
 
 class SessionStorage {
@@ -105,11 +105,24 @@ class SessionStorage {
   Future<void> save(Session session) async {
     _cached = session;
     await _storage.write(key: _tokenKey, value: session.accessToken);
-    if (session.refreshToken != null) await _storage.write(key: _refreshKey, value: session.refreshToken);
-    if (session.workspaceId != null) await _storage.write(key: _workspaceKey, value: session.workspaceId.toString());
-    if (session.userId != null) await _storage.write(key: _userKey, value: session.userId);
-    if (session.email != null) await _storage.write(key: _emailKey, value: session.email);
-    if (session.name != null) await _storage.write(key: _nameKey, value: session.name);
+    if (session.refreshToken != null) {
+      await _storage.write(key: _refreshKey, value: session.refreshToken);
+    }
+    if (session.workspaceId != null) {
+      await _storage.write(
+        key: _workspaceKey,
+        value: session.workspaceId.toString(),
+      );
+    }
+    if (session.userId != null) {
+      await _storage.write(key: _userKey, value: session.userId);
+    }
+    if (session.email != null) {
+      await _storage.write(key: _emailKey, value: session.email);
+    }
+    if (session.name != null) {
+      await _storage.write(key: _nameKey, value: session.name);
+    }
   }
 
   Future<void> setActiveWorkspace(int workspaceId) async {

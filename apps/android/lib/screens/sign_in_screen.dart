@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../design/typography.dart';
 
 import '../core/api_client.dart';
 import '../core/app_theme.dart';
+import '../design/tokens.dart';
 import '../core/session_storage.dart';
 import '../state/auth_provider.dart';
 import '../widgets/slow_spider_logo.dart';
+import '../design/icons.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -52,7 +55,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     setState(() {
       _testingConnection = false;
       _connectionOk = ok;
-      _pingMessage = ok ? 'Server is reachable & online!' : 'Connection failed. Check URL.';
+      _pingMessage = ok
+          ? 'Server is reachable & online!'
+          : 'Connection failed. Check URL.';
     });
   }
 
@@ -64,7 +69,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('API Base URL updated to: ${ApiClient.base}'),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.muted,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -87,7 +92,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (!ok) {
-      setState(() => _error = ref.read(authProvider).error ?? 'Sign in failed. Check credentials.');
+      setState(
+        () => _error =
+            ref.read(authProvider).error ??
+            'Sign in failed. Check credentials.',
+      );
     }
   }
 
@@ -103,14 +112,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final bg = isDark ? const Color(0xFF0E0F14) : const Color(0xFFF9FAFC);
-    final cardBg = isDark ? const Color(0xFF171923) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3B) : const Color(0xFFE2E4EB);
-    final inputBg = isDark ? const Color(0xFF1F2230) : const Color(0xFFF3F4F6);
-    final inputBorder = isDark ? const Color(0xFF2E3244) : const Color(0xFFE2E4EA);
+    final bg = isDark ? AppColors.bg : AppColors.lightBg;
+    final cardBg = isDark ? AppColors.panel : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
+    final inputBorder = isDark ? AppColors.line : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
     final ink3Color = isDark ? AppColors.ink3 : AppColors.lightInk3;
 
     return Scaffold(
@@ -130,11 +140,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E202D) : const Color(0xFFEDE9FE),
+                        color: isDark
+                            ? AppColors.panel2
+                            : AppColors.lightPanel2,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.25 : 0.15),
+                            color: AppColors.ink.withValues(
+                              alpha: isDark ? 0.25 : 0.15,
+                            ),
                             blurRadius: 20,
                             spreadRadius: 2,
                           ),
@@ -147,7 +161,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Text(
                     'Slow Spider',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: AppType.sans(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: textColor,
@@ -158,7 +172,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Text(
                     'Focus on what matters. Minimalist workflow.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: AppType.sans(
                       color: mutedColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -175,7 +189,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       border: Border.all(color: cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: isDark ? Colors.black.withValues(alpha: 0.35) : Colors.black.withValues(alpha: 0.04),
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.35)
+                              : Colors.black.withValues(alpha: 0.04),
                           blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
@@ -187,21 +203,35 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         // Email Field
                         Text(
                           'Email Address',
-                          style: GoogleFonts.inter(color: textColor, fontSize: 12.5, fontWeight: FontWeight.w600),
+                          style: AppType.sans(
+                            color: textColor,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           autocorrect: false,
-                          style: GoogleFonts.inter(fontSize: 14, color: textColor),
+                          style: AppType.sans(fontSize: 14, color: textColor),
                           decoration: InputDecoration(
                             hintText: 'you@example.com',
-                            hintStyle: GoogleFonts.inter(fontSize: 13.5, color: ink3Color),
-                            prefixIcon: Icon(Icons.mail_outline_rounded, size: 19, color: ink3Color),
+                            hintStyle: AppType.sans(
+                              fontSize: 13.5,
+                              color: ink3Color,
+                            ),
+                            prefixIcon: AppIcon(
+                              SpiderIcons.mail,
+                              size: 19,
+                              color: ink3Color,
+                            ),
                             filled: true,
                             fillColor: inputBg,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: inputBorder),
@@ -212,7 +242,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: AppColors.accent,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                         ),
@@ -221,29 +254,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         // Password Field
                         Text(
                           'Password',
-                          style: GoogleFonts.inter(color: textColor, fontSize: 12.5, fontWeight: FontWeight.w600),
+                          style: AppType.sans(
+                            color: textColor,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _password,
                           obscureText: !_showPassword,
                           onSubmitted: (_) => _submit(),
-                          style: GoogleFonts.inter(fontSize: 14, color: textColor),
+                          style: AppType.sans(fontSize: 14, color: textColor),
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            hintStyle: GoogleFonts.inter(fontSize: 13.5, color: ink3Color),
-                            prefixIcon: Icon(Icons.lock_outline_rounded, size: 19, color: ink3Color),
+                            hintStyle: AppType.sans(
+                              fontSize: 13.5,
+                              color: ink3Color,
+                            ),
+                            prefixIcon: AppIcon(
+                              SpiderIcons.lock,
+                              size: 19,
+                              color: ink3Color,
+                            ),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _showPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              icon: AppIcon(
+                                _showPassword
+                                    ? SpiderIcons.eyeOff
+                                    : SpiderIcons.eye,
                                 size: 19,
                                 color: ink3Color,
                               ),
-                              onPressed: () => setState(() => _showPassword = !_showPassword),
+                              onPressed: () => setState(
+                                () => _showPassword = !_showPassword,
+                              ),
                             ),
                             filled: true,
                             fillColor: inputBg,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(color: inputBorder),
@@ -254,7 +305,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: AppColors.accent,
+                                width: 1.5,
+                              ),
                             ),
                           ),
                         ),
@@ -263,20 +317,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         if (_error != null) ...[
                           const SizedBox(height: 14),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                              color: AppColors.danger.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                                const AppIcon(
+                                  SpiderIcons.error,
+                                  size: 16,
+                                  color: AppColors.danger,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _error!,
-                                    style: GoogleFonts.inter(color: const Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500),
+                                    style: AppType.sans(
+                                      color: AppColors.danger,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -291,27 +358,38 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           height: 46,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: Colors.white,
+                              backgroundColor: p.ink,
+                              foregroundColor: p.onInk,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onPressed: _busy ? null : _submit,
                             child: _busy
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: p.onInk,
+                                    ),
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
                                         'Sign in',
-                                        style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w700),
+                                        style: AppType.sans(
+                                          color: p.onInk,
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Icon(Icons.arrow_forward_rounded, size: 16),
+                                      AppIcon(
+                                        SpiderIcons.arrowRight,
+                                        size: 16,
+                                        color: p.onInk,
+                                      ),
                                     ],
                                   ),
                           ),
@@ -330,7 +408,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         onPressed: () => context.push('/sign-up'),
                         child: Text(
                           'Create account',
-                          style: GoogleFonts.inter(
+                          style: AppType.sans(
                             color: AppColors.accent,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -342,7 +420,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         onPressed: () => context.push('/reset-password'),
                         child: Text(
                           'Forgot password?',
-                          style: GoogleFonts.inter(
+                          style: AppType.sans(
                             color: mutedColor,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -364,10 +442,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     child: Column(
                       children: [
                         InkWell(
-                          onTap: () => setState(() => _showDevOptions = !_showDevOptions),
+                          onTap: () => setState(
+                            () => _showDevOptions = !_showDevOptions,
+                          ),
                           borderRadius: BorderRadius.circular(16),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -376,15 +459,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(5),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF59E0B).withValues(alpha: 0.14),
+                                        color: AppColors.gold.withValues(
+                                          alpha: 0.14,
+                                        ),
                                         borderRadius: BorderRadius.circular(7),
                                       ),
-                                      child: const Icon(Icons.code_rounded, size: 15, color: Color(0xFFF59E0B)),
+                                      child: const AppIcon(
+                                        SpiderIcons.code,
+                                        size: 15,
+                                        color: AppColors.gold,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Developer Options',
-                                      style: GoogleFonts.inter(
+                                      style: AppType.sans(
                                         color: textColor,
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w600,
@@ -392,8 +481,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                     ),
                                   ],
                                 ),
-                                Icon(
-                                  _showDevOptions ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                AppIcon(
+                                  _showDevOptions
+                                      ? SpiderIcons.chevronUp
+                                      : SpiderIcons.chevronDown,
                                   size: 18,
                                   color: mutedColor,
                                 ),
@@ -410,22 +501,54 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               children: [
                                 Text(
                                   'API Base URL',
-                                  style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5, fontWeight: FontWeight.w600),
+                                  style: AppType.sans(
+                                    color: mutedColor,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 TextField(
                                   controller: _apiUrlCtrl,
-                                  style: GoogleFonts.inter(fontSize: 13, color: textColor),
+                                  style: AppType.sans(
+                                    fontSize: 13,
+                                    color: textColor,
+                                  ),
                                   decoration: InputDecoration(
                                     hintText: 'http://localhost:8000',
-                                    hintStyle: GoogleFonts.inter(fontSize: 12.5, color: ink3Color),
-                                    prefixIcon: Icon(Icons.dns_outlined, size: 17, color: ink3Color),
+                                    hintStyle: AppType.sans(
+                                      fontSize: 12.5,
+                                      color: ink3Color,
+                                    ),
+                                    prefixIcon: AppIcon(
+                                      SpiderIcons.server,
+                                      size: 17,
+                                      color: ink3Color,
+                                    ),
                                     filled: true,
                                     fillColor: inputBg,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: inputBorder)),
-                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: inputBorder)),
-                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFF59E0B))),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: inputBorder,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: inputBorder,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.gold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -434,34 +557,71 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                   spacing: 6,
                                   runSpacing: 6,
                                   children: [
-                                    _presetChip('Kong :8000', 'http://localhost:8000', inputBg, inputBorder, isDark),
-                                    _presetChip('Backend :3000', 'http://localhost:3000', inputBg, inputBorder, isDark),
-                                    _presetChip('Production', 'https://api.slowspider.com', inputBg, inputBorder, isDark),
+                                    _presetChip(
+                                      'Kong :8000',
+                                      'http://localhost:8000',
+                                      inputBg,
+                                      inputBorder,
+                                      isDark,
+                                    ),
+                                    _presetChip(
+                                      'Backend :3000',
+                                      'http://localhost:3000',
+                                      inputBg,
+                                      inputBorder,
+                                      isDark,
+                                    ),
+                                    _presetChip(
+                                      'Production',
+                                      'https://api.slowspider.com',
+                                      inputBg,
+                                      inputBorder,
+                                      isDark,
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
                                 // Test Connection status banner
                                 if (_pingMessage != null) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: (_connectionOk == true ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.12),
+                                      color:
+                                          (_connectionOk == true
+                                                  ? AppColors.muted
+                                                  : AppColors.danger)
+                                              .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: (_connectionOk == true ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.3)),
+                                      border: Border.all(
+                                        color:
+                                            (_connectionOk == true
+                                                    ? AppColors.muted
+                                                    : AppColors.danger)
+                                                .withValues(alpha: 0.3),
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(
-                                          _connectionOk == true ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                        AppIcon(
+                                          _connectionOk == true
+                                              ? SpiderIcons.checkCircleFilled
+                                              : SpiderIcons.closeCircle,
                                           size: 15,
-                                          color: _connectionOk == true ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                          color: _connectionOk == true
+                                              ? AppColors.muted
+                                              : AppColors.danger,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             _pingMessage!,
-                                            style: GoogleFonts.inter(
-                                              color: _connectionOk == true ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                            style: AppType.sans(
+                                              color: _connectionOk == true
+                                                  ? AppColors.muted
+                                                  : AppColors.danger,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -477,34 +637,66 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 9),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 9,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
                                           side: BorderSide(color: inputBorder),
                                         ),
                                         icon: _testingConnection
-                                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                            : const Icon(Icons.bolt_rounded, size: 16),
+                                            ? SizedBox(
+                                                width: 14,
+                                                height: 14,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              )
+                                            : const AppIcon(
+                                                SpiderIcons.bolt,
+                                                size: 16,
+                                              ),
                                         label: Text(
-                                          _testingConnection ? 'Testing...' : 'Test Connection',
-                                          style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600),
+                                          _testingConnection
+                                              ? 'Testing...'
+                                              : 'Test Connection',
+                                          style: AppType.sans(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                        onPressed: _testingConnection ? null : _testApiUrl,
+                                        onPressed: _testingConnection
+                                            ? null
+                                            : _testApiUrl,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFF59E0B),
+                                          backgroundColor: AppColors.gold,
                                           foregroundColor: Colors.black,
                                           elevation: 0,
-                                          padding: const EdgeInsets.symmetric(vertical: 9),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 9,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
                                         ),
                                         onPressed: _saveApiUrl,
                                         child: Text(
                                           'Save & Apply',
-                                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                                          style: AppType.sans(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -526,7 +718,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 
-  Widget _presetChip(String label, String url, Color bg, Color border, bool isDark) {
+  Widget _presetChip(
+    String label,
+    String url,
+    Color bg,
+    Color border,
+    bool isDark,
+  ) {
     final isSelected = _apiUrlCtrl.text.trim() == url;
     return InkWell(
       onTap: () {
@@ -539,18 +737,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.25 : 0.15) : bg,
+          color: isSelected
+              ? AppColors.gold.withValues(alpha: isDark ? 0.25 : 0.15)
+              : bg,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isSelected ? const Color(0xFFF59E0B) : border,
+            color: isSelected ? AppColors.gold : border,
             width: isSelected ? 1.2 : 0.8,
           ),
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppType.sans(
             fontSize: 11,
-            color: isSelected ? const Color(0xFFF59E0B) : (isDark ? Colors.white70 : Colors.black87),
+            color: isSelected
+                ? AppColors.gold
+                : (isDark ? Colors.white70 : Colors.black87),
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),

@@ -1,12 +1,16 @@
 import 'dart:math' as math;
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../../design/typography.dart';
 
 import '../../core/app_theme.dart';
+import '../../design/tokens.dart';
 import '../atom_icon.dart';
 import '../rendered_math_text.dart';
+import '../../design/icons.dart';
 
 class PhysicalConstant {
   final String symbol;
@@ -171,21 +175,24 @@ const List<EquationItem> physicsEquations = [
     name: 'Time-Dependent Schrödinger Equation',
     formulaLatex: r'i\hbar \frac{\partial}{\partial t}\Psi = \hat{H}\Psi',
     renderedPretty: r'i\hbar \frac{\partial}{\partial t}\Psi = \hat{H}\Psi',
-    description: 'Quantum state evolution in non-relativistic quantum mechanics.',
+    description:
+        'Quantum state evolution in non-relativistic quantum mechanics.',
     graphType: 'wavepacket',
   ),
   EquationItem(
     name: 'Einstein Mass-Energy-Momentum',
     formulaLatex: r'E = \sqrt{(pc)^2 + (m_0 c^2)^2}',
     renderedPretty: r'E = \sqrt{(pc)^2 + (m_0 c^2)^2}',
-    description: 'Relativistic total energy combining rest mass and linear momentum.',
+    description:
+        'Relativistic total energy combining rest mass and linear momentum.',
     graphType: 'hyperbola',
   ),
   EquationItem(
     name: 'Gauss Law for Electric Fields',
     formulaLatex: r'\nabla \cdot \mathbf{E} = \frac{\rho}{\varepsilon_0}',
     renderedPretty: r'\nabla \cdot \mathbf{E} = \frac{\rho}{\varepsilon_0}',
-    description: 'Relates the electric flux divergence to the enclosed charge density.',
+    description:
+        'Relates the electric flux divergence to the enclosed charge density.',
     graphType: 'field',
   ),
   EquationItem(
@@ -199,21 +206,24 @@ const List<EquationItem> physicsEquations = [
     name: 'Heisenberg Uncertainty Principle',
     formulaLatex: r'\Delta x \Delta p \geq \frac{\hbar}{2}',
     renderedPretty: r'\Delta x \Delta p \geq \frac{\hbar}{2}',
-    description: 'Fundamental limit to precision between position and momentum.',
+    description:
+        'Fundamental limit to precision between position and momentum.',
     graphType: 'uncertainty',
   ),
   EquationItem(
     name: 'Ideal Gas State Equation',
     formulaLatex: r'PV = nRT = N k_B T',
     renderedPretty: r'PV = nRT = N k_B T',
-    description: 'Thermodynamic relationship between pressure, volume, and temperature.',
+    description:
+        'Thermodynamic relationship between pressure, volume, and temperature.',
     graphType: 'isotherm',
   ),
   EquationItem(
     name: 'de Broglie Matter Wavelength',
     formulaLatex: r'\lambda = \frac{h}{p}',
     renderedPretty: r'\lambda = \frac{h}{p}',
-    description: 'Wave-particle duality wavelength associated with massive particles.',
+    description:
+        'Wave-particle duality wavelength associated with massive particles.',
     graphType: 'inverse',
   ),
 ];
@@ -234,7 +244,8 @@ class _ResearchSuiteContent extends StatefulWidget {
   State<_ResearchSuiteContent> createState() => _ResearchSuiteContentState();
 }
 
-class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with SingleTickerProviderStateMixin {
+class _ResearchSuiteContentState extends State<_ResearchSuiteContent>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedCat = 'All';
   String _search = '';
@@ -263,7 +274,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Copied $label: $text'),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.muted,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -273,11 +284,12 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final p = context.ink;
 
-    final dialogBg = isDark ? const Color(0xF513151F) : const Color(0xFAFFFFFF);
-    final topBarBorder = isDark ? const Color(0xFF26293C) : const Color(0xFFE2E4EB);
+    final dialogBg = isDark ? AppColors.bg : AppColors.lightBg;
+    final topBarBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
     final textColor = theme.colorScheme.onSurface;
-    final mutedColor = isDark ? const Color(0xFF949BAE) : const Color(0xFF6B7280);
+    final mutedColor = isDark ? AppColors.muted : AppColors.lightMuted;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.88,
@@ -291,7 +303,9 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
             child: Container(
               decoration: BoxDecoration(
                 color: dialogBg,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(26),
+                ),
                 border: Border.all(color: topBarBorder),
                 boxShadow: [
                   BoxShadow(
@@ -318,7 +332,10 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
 
                   // 2. Header
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 4,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -326,11 +343,19 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           height: 38,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.2 : 0.12),
+                            color: p.ink.withValues(
+                              alpha: isDark ? 0.12 : 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(11),
-                            border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
+                            border: Border.all(
+                              color: p.ink.withValues(alpha: 0.25),
+                            ),
                           ),
-                          child: const AtomIcon(size: 22, color: Color(0xFFA855F7), strokeWidth: 2.0),
+                          child: AtomIcon(
+                            size: 22,
+                            color: p.ink,
+                            strokeWidth: 2.0,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -339,7 +364,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                             children: [
                               Text(
                                 'Scientific Research Suite',
-                                style: GoogleFonts.inter(
+                                style: AppType.sans(
                                   color: textColor,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -347,7 +372,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                               ),
                               Text(
                                 'Constants, optics converter & math equations',
-                                style: GoogleFonts.inter(
+                                style: AppType.sans(
                                   color: mutedColor,
                                   fontSize: 11.5,
                                 ),
@@ -356,7 +381,11 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close_rounded, color: mutedColor, size: 20),
+                          icon: AppIcon(
+                            SpiderIcons.close,
+                            color: mutedColor,
+                            size: 20,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -370,18 +399,20 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1B1D2B) : const Color(0xFFECEEF4),
+                      color: isDark ? AppColors.panel2 : AppColors.lightPanel2,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: topBarBorder),
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        color: isDark ? const Color(0xFF2B2E42) : Colors.white,
+                        color: isDark ? p.ink : Colors.white,
                         borderRadius: BorderRadius.circular(11),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.3 : 0.06,
+                            ),
                             blurRadius: 4,
                             offset: const Offset(0, 1),
                           ),
@@ -389,17 +420,27 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
-                      labelColor: isDark ? Colors.white : AppColors.lightInk,
+                      labelColor: isDark ? p.onInk : AppColors.lightInk,
                       unselectedLabelColor: mutedColor,
-                      labelStyle: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700),
-                      unselectedLabelStyle: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w500),
-                      tabs: const [
+                      labelStyle: AppType.sans(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: AppType.sans(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      tabs: [
                         Tab(
                           height: 36,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                              AppIcon(
+                                SpiderIcons.star,
+                                size: 14,
+                                color: AppColors.gold,
+                              ),
                               SizedBox(width: 4),
                               Text('Constants'),
                             ],
@@ -410,7 +451,11 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.bolt_rounded, size: 14, color: Color(0xFF38BDF8)),
+                              AppIcon(
+                                SpiderIcons.bolt,
+                                size: 14,
+                                color: AppColors.muted,
+                              ),
                               SizedBox(width: 4),
                               Text('Optics'),
                             ],
@@ -421,7 +466,11 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.show_chart_rounded, size: 14, color: Color(0xFFA855F7)),
+                              AppIcon(
+                                SpiderIcons.chart,
+                                size: 14,
+                                color: p.ink,
+                              ),
                               SizedBox(width: 4),
                               Text('Equations'),
                             ],
@@ -432,7 +481,11 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.calculate_rounded, size: 14, color: Color(0xFF10B981)),
+                              AppIcon(
+                                SpiderIcons.calculator,
+                                size: 14,
+                                color: AppColors.muted,
+                              ),
                               SizedBox(width: 4),
                               Text('Calculator'),
                             ],
@@ -469,15 +522,24 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
   // TAB 1: CONSTANTS
   // ==========================================
   Widget _buildConstantsTab(bool isDark, Color textColor, Color mutedColor) {
-    final cats = ['All', 'quantum', 'electromagnetism', 'astrophysics', 'thermodynamics', 'atomic'];
-    final cardBg = isDark ? const Color(0xFF1A1C28) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
-    final inputBg = isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F6);
+    final p = isDark ? SpiderPalette.dark : SpiderPalette.light;
+    final cats = [
+      'All',
+      'quantum',
+      'electromagnetism',
+      'astrophysics',
+      'thermodynamics',
+      'atomic',
+    ];
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
 
     final filtered = physicalConstants.where((c) {
       final matchesCat = _selectedCat == 'All' || c.category == _selectedCat;
       final q = _search.toLowerCase().trim();
-      final matchesQ = q.isEmpty ||
+      final matchesQ =
+          q.isEmpty ||
           c.name.toLowerCase().contains(q) ||
           c.symbol.toLowerCase().contains(q) ||
           c.valueStr.contains(q);
@@ -491,15 +553,22 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
             onChanged: (v) => setState(() => _search = v),
-            style: GoogleFonts.inter(color: textColor, fontSize: 13),
+            style: AppType.sans(color: textColor, fontSize: 13),
             decoration: InputDecoration(
               hintText: 'Search constants (e.g. Planck, c, kB)...',
-              hintStyle: GoogleFonts.inter(color: mutedColor, fontSize: 12.5),
-              prefixIcon: Icon(Icons.search_rounded, size: 18, color: mutedColor),
+              hintStyle: AppType.sans(color: mutedColor, fontSize: 12.5),
+              prefixIcon: AppIcon(
+                SpiderIcons.search,
+                size: 18,
+                color: mutedColor,
+              ),
               filled: true,
               fillColor: inputBg,
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: cardBorder),
@@ -510,7 +579,10 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.accent, width: 1.4),
+                borderSide: const BorderSide(
+                  color: AppColors.accent,
+                  width: 1.4,
+                ),
               ),
             ),
           ),
@@ -530,18 +602,23 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                   onTap: () => setState(() => _selectedCat = cat),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 130),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: active ? AppColors.accent : inputBg,
+                      color: active ? p.ink : inputBg,
                       borderRadius: BorderRadius.circular(9),
                       border: Border.all(
-                        color: active ? AppColors.accent : cardBorder,
+                        color: active ? p.ink : cardBorder,
                       ),
                     ),
                     child: Text(
-                      cat == 'All' ? 'All' : cat[0].toUpperCase() + cat.substring(1),
-                      style: GoogleFonts.inter(
-                        color: active ? Colors.white : mutedColor,
+                      cat == 'All'
+                          ? 'All'
+                          : cat[0].toUpperCase() + cat.substring(1),
+                      style: AppType.sans(
+                        color: active ? p.onInk : mutedColor,
                         fontSize: 11.5,
                         fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                       ),
@@ -571,7 +648,9 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                   border: Border.all(color: cardBorder),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.15 : 0.02,
+                      ),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -585,14 +664,18 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.2 : 0.12),
+                        color: p.ink.withValues(
+                          alpha: isDark ? 0.12 : 0.08,
+                        ),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.35)),
+                        border: Border.all(
+                          color: p.ink.withValues(alpha: 0.25),
+                        ),
                       ),
                       child: Text(
                         c.symbol,
-                        style: GoogleFonts.merriweather(
-                          color: const Color(0xFFA78BFA),
+                        style: AppType.serif(
+                          color: p.ink,
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                           fontStyle: FontStyle.italic,
@@ -606,7 +689,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                         children: [
                           Text(
                             c.name,
-                            style: GoogleFonts.inter(
+                            style: AppType.sans(
                               color: textColor,
                               fontWeight: FontWeight.w700,
                               fontSize: 13.5,
@@ -615,8 +698,8 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                           const SizedBox(height: 3),
                           Text(
                             '${c.valueStr} ${c.unit}',
-                            style: GoogleFonts.jetBrainsMono(
-                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                            style: AppType.mono(
+                              color: isDark ? AppColors.muted : AppColors.muted,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -625,14 +708,21 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                             const SizedBox(height: 2),
                             Text(
                               c.altValue!,
-                              style: GoogleFonts.inter(color: mutedColor, fontSize: 11),
+                              style: AppType.sans(
+                                color: mutedColor,
+                                fontSize: 11,
+                              ),
                             ),
                           ],
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy_rounded, size: 17, color: mutedColor),
+                      icon: AppIcon(
+                        SpiderIcons.copy,
+                        size: 17,
+                        color: mutedColor,
+                      ),
                       tooltip: 'Copy value',
                       onPressed: () => _copy(c.valueStr, c.name),
                     ),
@@ -660,30 +750,30 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
     final thz = (_evVal > 0) ? (joules / h) / 1e12 : 0.0;
     final kelvin = (_evVal > 0) ? (joules / kb) : 0.0;
 
-    final cardBg = isDark ? const Color(0xFF1A1C28) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
-    final inputBg = isDark ? const Color(0xFF1E212E) : const Color(0xFFF3F4F6);
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final inputBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
 
     // Visible Spectrum Wavelength Color
     Color spectrumColor;
     if (nm >= 380 && nm <= 750) {
       if (nm < 440) {
-        spectrumColor = const Color(0xFF8B5CF6); // Violet
+        spectrumColor = AppColors.ink; // Violet
       } else if (nm < 490) {
-        spectrumColor = const Color(0xFF38BDF8); // Blue
+        spectrumColor = AppColors.muted; // Blue
       } else if (nm < 560) {
-        spectrumColor = const Color(0xFF10B981); // Green
+        spectrumColor = AppColors.muted; // Green
       } else if (nm < 590) {
         spectrumColor = const Color(0xFFFBBF24); // Yellow
       } else if (nm < 640) {
-        spectrumColor = const Color(0xFFF97316); // Orange
+        spectrumColor = AppColors.gold; // Orange
       } else {
-        spectrumColor = const Color(0xFFEF4444); // Red
+        spectrumColor = AppColors.danger; // Red
       }
     } else if (nm < 380) {
-      spectrumColor = const Color(0xFFA855F7); // Ultraviolet
+      spectrumColor = AppColors.ink; // Ultraviolet
     } else {
-      spectrumColor = const Color(0xFFDC2626); // Infrared
+      spectrumColor = AppColors.danger; // Infrared
     }
 
     return ListView(
@@ -702,8 +792,8 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
             children: [
               Text(
                 'INPUT ENERGY (eV)',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF38BDF8),
+                style: AppType.sans(
+                  color: AppColors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
@@ -712,17 +802,38 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
               const SizedBox(height: 8),
               TextField(
                 controller: _evCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: GoogleFonts.jetBrainsMono(color: textColor, fontSize: 16, fontWeight: FontWeight.w700),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: AppType.mono(
+                  color: textColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Enter energy in electron-volts...',
-                  hintStyle: GoogleFonts.inter(color: mutedColor, fontSize: 13),
+                  hintStyle: AppType.sans(color: mutedColor, fontSize: 13),
                   filled: true,
                   fillColor: inputBg,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cardBorder)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: cardBorder)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.4)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 11,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: cardBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: AppColors.muted,
+                      width: 1.4,
+                    ),
+                  ),
                 ),
                 onChanged: (v) {
                   final parsed = double.tryParse(v);
@@ -737,10 +848,34 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  _opticsPreset('Visible Blue (2.8 eV)', 2.8, inputBg, textColor, cardBorder),
-                  _opticsPreset('Green (2.3 eV)', 2.3, inputBg, textColor, cardBorder),
-                  _opticsPreset('Red (1.8 eV)', 1.8, inputBg, textColor, cardBorder),
-                  _opticsPreset('Telecom IR (0.8 eV)', 0.8, inputBg, textColor, cardBorder),
+                  _opticsPreset(
+                    'Visible Blue (2.8 eV)',
+                    2.8,
+                    inputBg,
+                    textColor,
+                    cardBorder,
+                  ),
+                  _opticsPreset(
+                    'Green (2.3 eV)',
+                    2.3,
+                    inputBg,
+                    textColor,
+                    cardBorder,
+                  ),
+                  _opticsPreset(
+                    'Red (1.8 eV)',
+                    1.8,
+                    inputBg,
+                    textColor,
+                    cardBorder,
+                  ),
+                  _opticsPreset(
+                    'Telecom IR (0.8 eV)',
+                    0.8,
+                    inputBg,
+                    textColor,
+                    cardBorder,
+                  ),
                 ],
               ),
             ],
@@ -766,7 +901,11 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                   color: spectrumColor,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: spectrumColor.withValues(alpha: 0.6), blurRadius: 10, spreadRadius: 1),
+                    BoxShadow(
+                      color: spectrumColor.withValues(alpha: 0.6),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
                   ],
                 ),
               ),
@@ -775,8 +914,14 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                 child: Text(
                   nm >= 380 && nm <= 750
                       ? 'Visible Spectrum Photon (${nm.toStringAsFixed(1)} nm)'
-                      : (nm < 380 ? 'Ultraviolet / High Energy (${nm.toStringAsFixed(2)} nm)' : 'Infrared / Thermal (${nm.toStringAsFixed(1)} nm)'),
-                  style: GoogleFonts.inter(color: textColor, fontSize: 12.5, fontWeight: FontWeight.w600),
+                      : (nm < 380
+                            ? 'Ultraviolet / High Energy (${nm.toStringAsFixed(2)} nm)'
+                            : 'Infrared / Thermal (${nm.toStringAsFixed(1)} nm)'),
+                  style: AppType.sans(
+                    color: textColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -786,15 +931,57 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
         const SizedBox(height: 14),
 
         // Converted Results
-        _conversionCard('Wavelength (λ)', '${nm.toStringAsFixed(2)} nm', 'Wavelength', cardBg, cardBorder, textColor, mutedColor, isDark),
-        _conversionCard('Frequency (f)', '${thz.toStringAsFixed(2)} THz', 'Frequency', cardBg, cardBorder, textColor, mutedColor, isDark),
-        _conversionCard('Energy in Joules (J)', '${joules.toStringAsExponential(4)} J', 'Joules', cardBg, cardBorder, textColor, mutedColor, isDark),
-        _conversionCard('Thermal Equivalent (K)', '${kelvin.toStringAsFixed(1)} K', 'Temperature', cardBg, cardBorder, textColor, mutedColor, isDark),
+        _conversionCard(
+          'Wavelength (λ)',
+          '${nm.toStringAsFixed(2)} nm',
+          'Wavelength',
+          cardBg,
+          cardBorder,
+          textColor,
+          mutedColor,
+          isDark,
+        ),
+        _conversionCard(
+          'Frequency (f)',
+          '${thz.toStringAsFixed(2)} THz',
+          'Frequency',
+          cardBg,
+          cardBorder,
+          textColor,
+          mutedColor,
+          isDark,
+        ),
+        _conversionCard(
+          'Energy in Joules (J)',
+          '${joules.toStringAsExponential(4)} J',
+          'Joules',
+          cardBg,
+          cardBorder,
+          textColor,
+          mutedColor,
+          isDark,
+        ),
+        _conversionCard(
+          'Thermal Equivalent (K)',
+          '${kelvin.toStringAsFixed(1)} K',
+          'Temperature',
+          cardBg,
+          cardBorder,
+          textColor,
+          mutedColor,
+          isDark,
+        ),
       ],
     );
   }
 
-  Widget _opticsPreset(String label, double val, Color bg, Color textColor, Color border) {
+  Widget _opticsPreset(
+    String label,
+    double val,
+    Color bg,
+    Color textColor,
+    Color border,
+  ) {
     return GestureDetector(
       onTap: () {
         _evCtrl.text = val.toString();
@@ -802,13 +989,33 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7), border: Border.all(color: border)),
-        child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: textColor)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(color: border),
+        ),
+        child: Text(
+          label,
+          style: AppType.sans(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _conversionCard(String title, String val, String copyLabel, Color cardBg, Color cardBorder, Color textColor, Color mutedColor, bool isDark) {
+  Widget _conversionCard(
+    String title,
+    String val,
+    String copyLabel,
+    Color cardBg,
+    Color cardBorder,
+    Color textColor,
+    Color mutedColor,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -823,13 +1030,27 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5, fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: AppType.sans(
+                  color: mutedColor,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(val, style: GoogleFonts.jetBrainsMono(color: textColor, fontSize: 14.5, fontWeight: FontWeight.w700)),
+              Text(
+                val,
+                style: AppType.mono(
+                  color: textColor,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
           IconButton(
-            icon: Icon(Icons.copy_rounded, size: 16, color: mutedColor),
+            icon: AppIcon(SpiderIcons.copy, size: 16, color: mutedColor),
             tooltip: 'Copy $copyLabel',
             onPressed: () => _copy(val, copyLabel),
           ),
@@ -842,8 +1063,9 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
   // TAB 3: EQUATIONS (WITH RENDERED MATH & GRAPHS)
   // ==========================================
   Widget _buildEquationsTab(bool isDark, Color textColor, Color mutedColor) {
-    final cardBg = isDark ? const Color(0xFF1A1C28) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
+    final p = isDark ? SpiderPalette.dark : SpiderPalette.light;
+    final cardBg = isDark ? AppColors.panel2 : Colors.white;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
@@ -876,7 +1098,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                     Expanded(
                       child: Text(
                         eq.name,
-                        style: GoogleFonts.inter(
+                        style: AppType.sans(
                           color: textColor,
                           fontWeight: FontWeight.w700,
                           fontSize: 13.5,
@@ -884,15 +1106,18 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFA855F7).withValues(alpha: 0.15),
+                        color: p.ink.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'PHYSICS',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFA855F7),
+                        style: AppType.sans(
+                          color: p.ink,
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -905,21 +1130,24 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
               // RENDERED MATHEMATICAL FORMULA CARD (No Raw Purple Code!)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF13141E) : const Color(0xFFF9FAFC),
+                  color: isDark ? AppColors.panel : AppColors.lightBg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: cardBorder),
                 ),
                 alignment: Alignment.center,
                 child: RenderedMathText(
                   text: '\$${eq.renderedPretty}\$',
-                  style: GoogleFonts.merriweather(
+                  style: AppType.serif(
                     fontSize: 16.5,
                     fontWeight: FontWeight.w700,
                     fontStyle: FontStyle.italic,
                   ),
-                  mathColor: isDark ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+                  mathColor: p.ink,
                 ),
               ),
 
@@ -928,7 +1156,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                 margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                 height: 52,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF11121B) : const Color(0xFFF4F5F8),
+                  color: isDark ? AppColors.bg : AppColors.lightPanel2,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: CustomPaint(
@@ -947,20 +1175,31 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
                     Expanded(
                       child: Text(
                         eq.description,
-                        style: GoogleFonts.inter(color: mutedColor, fontSize: 11.5),
+                        style: AppType.sans(color: mutedColor, fontSize: 11.5),
                       ),
                     ),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
-                        foregroundColor: const Color(0xFFA855F7),
+                        backgroundColor: p.ink.withValues(alpha: 0.08),
+                        foregroundColor: p.ink,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: () => _copy(eq.formulaLatex, eq.name),
-                      icon: const Icon(Icons.copy_rounded, size: 13),
-                      label: Text('LaTeX', style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      icon: const AppIcon(SpiderIcons.copy, size: 13),
+                      label: Text(
+                        'LaTeX',
+                        style: AppType.sans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -976,8 +1215,9 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
   // TAB 4: SCIENTIFIC CALCULATOR
   // ==========================================
   Widget _buildCalculatorTab(bool isDark, Color textColor, Color mutedColor) {
-    final cardBorder = isDark ? const Color(0xFF282B3C) : const Color(0xFFE2E4EA);
-    final keyBg = isDark ? const Color(0xFF222534) : const Color(0xFFF3F4F6);
+    final p = isDark ? SpiderPalette.dark : SpiderPalette.light;
+    final cardBorder = isDark ? AppColors.panel3 : AppColors.lightLine;
+    final keyBg = isDark ? AppColors.panel2 : AppColors.lightPanel2;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -988,7 +1228,7 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF11121C) : const Color(0xFFF8F9FA),
+              color: isDark ? AppColors.bg : AppColors.lightPanel2,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: cardBorder),
             ),
@@ -997,12 +1237,12 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
               children: [
                 Text(
                   _calcExpr.isEmpty ? ' ' : _calcExpr,
-                  style: GoogleFonts.jetBrainsMono(color: mutedColor, fontSize: 13),
+                  style: AppType.mono(color: mutedColor, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _calcDisplay,
-                  style: GoogleFonts.jetBrainsMono(
+                  style: AppType.mono(
                     color: textColor,
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -1024,33 +1264,45 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
               crossAxisSpacing: 8,
               childAspectRatio: 1.6,
               children: [
-                _calcBtn('C', AppColors.danger, () => setState(() {
-                  _calcDisplay = '0';
-                  _calcExpr = '';
-                })),
-                _calcBtn('π', AppColors.accent, () => _inputNumber(math.pi.toStringAsFixed(6))),
-                _calcBtn('e', AppColors.accent, () => _inputNumber(math.e.toStringAsFixed(6))),
-                _calcBtn('÷', const Color(0xFF38BDF8), () => _inputOp('/')),
+                _calcBtn(
+                  'C',
+                  AppColors.danger,
+                  () => setState(() {
+                    _calcDisplay = '0';
+                    _calcExpr = '';
+                  }),
+                ),
+                _calcBtn(
+                  'π',
+                  AppColors.accent,
+                  () => _inputNumber(math.pi.toStringAsFixed(6)),
+                ),
+                _calcBtn(
+                  'e',
+                  AppColors.accent,
+                  () => _inputNumber(math.e.toStringAsFixed(6)),
+                ),
+                _calcBtn('÷', AppColors.muted, () => _inputOp('/')),
 
                 _calcBtn('sin', textColor, () => _calcScientific('sin')),
                 _calcBtn('cos', textColor, () => _calcScientific('cos')),
                 _calcBtn('√', textColor, () => _calcScientific('sqrt')),
-                _calcBtn('×', const Color(0xFF38BDF8), () => _inputOp('*')),
+                _calcBtn('×', AppColors.muted, () => _inputOp('*')),
 
                 _calcBtn('7', textColor, () => _inputNumber('7'), bg: keyBg),
                 _calcBtn('8', textColor, () => _inputNumber('8'), bg: keyBg),
                 _calcBtn('9', textColor, () => _inputNumber('9'), bg: keyBg),
-                _calcBtn('−', const Color(0xFF38BDF8), () => _inputOp('-')),
+                _calcBtn('−', AppColors.muted, () => _inputOp('-')),
 
                 _calcBtn('4', textColor, () => _inputNumber('4'), bg: keyBg),
                 _calcBtn('5', textColor, () => _inputNumber('5'), bg: keyBg),
                 _calcBtn('6', textColor, () => _inputNumber('6'), bg: keyBg),
-                _calcBtn('+', const Color(0xFF38BDF8), () => _inputOp('+')),
+                _calcBtn('+', AppColors.muted, () => _inputOp('+')),
 
                 _calcBtn('1', textColor, () => _inputNumber('1'), bg: keyBg),
                 _calcBtn('2', textColor, () => _inputNumber('2'), bg: keyBg),
                 _calcBtn('3', textColor, () => _inputNumber('3'), bg: keyBg),
-                _calcBtn('=', Colors.white, _evalCalc, bg: AppColors.accent),
+                _calcBtn('=', p.onInk, _evalCalc, bg: p.ink),
 
                 _calcBtn('0', textColor, () => _inputNumber('0'), bg: keyBg),
                 _calcBtn('.', textColor, () => _inputNumber('.'), bg: keyBg),
@@ -1123,12 +1375,12 @@ class _ResearchSuiteContentState extends State<_ResearchSuiteContent> with Singl
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: bg ?? const Color(0xFF2B2E3E).withValues(alpha: 0.3),
+            color: bg ?? AppColors.line.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             label,
-            style: GoogleFonts.jetBrainsMono(
+            style: AppType.mono(
               color: color,
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -1161,13 +1413,13 @@ class _EquationGraphPainter extends CustomPainter {
     canvas.drawLine(Offset(10, midY), Offset(w - 10, midY), axisPaint);
 
     final linePaint = Paint()
-      ..color = const Color(0xFF8B5CF6)
+      ..color = AppColors.ink
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
-        colors: [const Color(0xFF8B5CF6).withValues(alpha: 0.3), Colors.transparent],
+        colors: [AppColors.ink.withValues(alpha: 0.3), Colors.transparent],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, w, h));

@@ -174,7 +174,7 @@ export default function CustomAudioPlayer({
   const currentBars = isPlaying && liveAmplitudes.length ? liveAmplitudes : baseWaveform;
 
   return (
-    <div className="relative rounded-2xl border border-zinc-200/90 dark:border-white/10 bg-gradient-to-r from-zinc-50 via-white to-zinc-50 dark:from-[#15151c] dark:via-[#191922] dark:to-[#15151c] p-3.5 shadow-sm transition-all hover:border-zinc-300 dark:hover:border-white/20 select-none">
+    <div className="relative rounded-2xl border border-[var(--line)] bg-[var(--panel-2)] p-3.5 shadow-sm transition-all hover:border-[var(--line-strong)] select-none">
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <div className="flex items-center gap-3.5">

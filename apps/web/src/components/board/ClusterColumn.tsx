@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, MoreHorizontal, Pencil, ArrowLeft, ArrowRight, Snowflake, Trash2, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { GripVertical, MoreHorizontal, Pencil, ArrowLeft, ArrowRight, Snowflake, Trash2, ChevronDown, ChevronUp, FileText, Maximize2 } from "lucide-react";
 import TaskCard from "./TaskCard";
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
 import { exportClusterToLatex, downloadLatexFile } from "../research/LatexExporter";
 import type { Category, Cluster, Task, Note } from "@/lib/types";
 
-const VISIBLE_LIMIT = 5;
+const VISIBLE_LIMIT = 6;
 
 export default function ClusterColumn({
   cluster,
@@ -22,6 +22,7 @@ export default function ClusterColumn({
   category,
   openCount,
   progress,
+  onExpand,
   onEdit,
   onMoveLeft,
   onMoveRight,
@@ -41,6 +42,7 @@ export default function ClusterColumn({
   category: Category | null;
   openCount: number;
   progress: { done: number; total: number; pct: number };
+  onExpand?: () => void;
   onEdit: () => void;
   onMoveLeft: () => void;
   onMoveRight: () => void;
@@ -61,30 +63,31 @@ export default function ClusterColumn({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className="cluster group relative flex w-full flex-col rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3.5 shadow-xs transition-all"
-      data-cluster={cluster.id}
+      layout
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      className="cluster group relative flex w-full flex-col rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-[#121215] p-3.5 shadow-xs transition-all min-w-[290px]"
+      data-cluster-id={cluster.id}
     >
       {/* Cluster Header */}
-      <div className="mb-3 flex flex-col gap-2">
+      <div className="mb-3.5 flex flex-col gap-2.5">
         <div className="flex items-center gap-2">
           <span
-            className="cluster-grip -ml-1 flex shrink-0 cursor-grab items-center p-1 text-[var(--ink3)] hover:text-[var(--ink)] transition-colors active:cursor-grabbing"
+            className="cluster-grip -ml-1 flex shrink-0 cursor-grab items-center p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors active:cursor-grabbing"
             title="Drag to reorder clusters"
           >
-            <GripVertical className="size-3.5" />
+            <GripVertical className="size-4" />
           </span>
 
           {/* Color Indicator */}
           <span
-            className="shrink-0 size-2 rounded-full ring-1 ring-black/10 dark:ring-white/20"
+            className="shrink-0 size-3 rounded-full ring-2 ring-black/10 dark:ring-white/20 shadow-xs"
             style={{ backgroundColor: cluster.color }}
           />
 
           <input
-            className="cluster-name min-w-0 flex-1 border-0 bg-transparent text-[14.5px] font-medium tracking-tight text-[var(--ink)] outline-none placeholder:text-[var(--ink3)] transition-colors"
+            className="cluster-name min-w-0 flex-1 border-0 bg-transparent text-[15px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 outline-none placeholder:text-neutral-400 transition-colors"
             defaultValue={cluster.name}
             placeholder="Cluster Name"
             spellCheck={false}
@@ -100,29 +103,40 @@ export default function ClusterColumn({
 
           {category && (
             <span
-              className="hidden shrink-0 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-md border border-[var(--line)] text-[var(--muted)] bg-[var(--panel-2)] sm:inline-block"
+              className="hidden shrink-0 px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 sm:inline-block"
             >
               {category.name}
             </span>
           )}
 
-          <span className="shrink-0 rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.5 text-[11px] font-mono text-[var(--muted)]">
+          <span className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-mono font-bold text-neutral-700 dark:text-neutral-300">
             {openCount}
           </span>
 
+          {onExpand && (
+            <button
+              type="button"
+              onClick={onExpand}
+              className="rounded-lg p-1.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 outline-none transition-colors cursor-pointer"
+              title="Expand cluster in dialog"
+            >
+              <Maximize2 className="size-4" />
+            </button>
+          )}
+
           <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-md p-1 text-[var(--ink3)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] outline-none transition-colors">
-              <MoreHorizontal className="size-3.5" />
+            <DropdownMenuTrigger className="rounded-lg p-1.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 outline-none transition-colors cursor-pointer">
+              <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[200px] border border-[var(--line)] bg-[var(--panel)] p-1 text-[var(--ink)] shadow-md">
-              <DropdownMenuItem onClick={onEdit} className="px-2.5 py-2 text-[13px] cursor-pointer">
-                <Pencil className="size-3.5 mr-2 text-[var(--muted)]" /> Edit details
+            <DropdownMenuContent align="end" className="min-w-52 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] p-1.5 text-neutral-900 dark:text-neutral-100 shadow-2xl">
+              <DropdownMenuItem onClick={onEdit} className="px-3 py-2 text-xs font-medium cursor-pointer rounded-lg">
+                <Pencil className="size-4 mr-2.5 text-neutral-500" /> Edit details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMoveLeft} className="px-2.5 py-2 text-[13px] cursor-pointer">
-                <ArrowLeft className="size-3.5 mr-2 text-[var(--muted)]" /> Move left
+              <DropdownMenuItem onClick={onMoveLeft} className="px-3 py-2 text-xs font-medium cursor-pointer rounded-lg">
+                <ArrowLeft className="size-4 mr-2.5 text-neutral-500" /> Move left
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onMoveRight} className="px-2.5 py-2 text-[13px] cursor-pointer">
-                <ArrowRight className="size-3.5 mr-2 text-[var(--muted)]" /> Move right
+              <DropdownMenuItem onClick={onMoveRight} className="px-3 py-2 text-xs font-medium cursor-pointer rounded-lg">
+                <ArrowRight className="size-4 mr-2.5 text-neutral-500" /> Move right
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -137,39 +151,39 @@ export default function ClusterColumn({
                   });
                   downloadLatexFile(tex, `Report_${cluster.name.replace(/\s+/g, "_")}`);
                 }}
-                className="px-2.5 py-2 text-[13px] cursor-pointer"
+                className="px-3 py-2 text-xs font-medium cursor-pointer rounded-lg"
               >
-                <FileText className="size-3.5 mr-2 text-[var(--muted)]" /> Export as LaTeX
+                <FileText className="size-4 mr-2.5 text-neutral-500" /> Export as LaTeX
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[var(--line)] my-1" />
-              <DropdownMenuItem onClick={onCold} className="px-2.5 py-2 text-[13px] cursor-pointer">
-                <Snowflake className="size-3.5 mr-2 text-[var(--muted)]" /> Pause → Cold store
+              <DropdownMenuSeparator className="bg-neutral-200 dark:bg-neutral-700 my-1" />
+              <DropdownMenuItem onClick={onCold} className="px-3 py-2 text-xs font-medium cursor-pointer rounded-lg">
+                <Snowflake className="size-4 mr-2.5 text-blue-500" /> Pause → Cold store
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBin} className="px-2.5 py-2 text-[13px] text-rose-500 hover:bg-rose-500/10 cursor-pointer">
-                <Trash2 className="size-3.5 mr-2" /> Move to bin
+              <DropdownMenuItem onClick={onBin} className="px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer rounded-lg">
+                <Trash2 className="size-4 mr-2.5" /> Move to bin
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {/* Minimal Progress Bar */}
-        <div className="flex items-center gap-2 px-0.5">
-          <div className="h-[2px] flex-1 rounded-full bg-[var(--sunken)] overflow-hidden">
+        <div className="flex items-center gap-2.5 px-0.5">
+          <div className="h-1.5 flex-1 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
             <motion.div
-              className="h-full bg-[var(--ink)] rounded-full"
+              className="h-full bg-emerald-500 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress.pct}%` }}
               transition={{ duration: 0.3 }}
             />
           </div>
-          <span className="text-[10px] text-[var(--muted)] font-mono shrink-0">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono font-bold shrink-0">
             {progress.pct}%
           </span>
         </div>
       </div>
 
       {/* Task List */}
-      <div className="flex min-h-[36px] flex-col gap-1.5 transition-all">
+      <div className="flex min-h-[50px] flex-col gap-2 transition-all">
         {tasks.length ? (
           <>
             <AnimatePresence initial={false} mode="popLayout">
@@ -193,16 +207,16 @@ export default function ClusterColumn({
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--line)] py-1.5 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] transition-colors"
+                className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors cursor-pointer"
               >
                 {expanded ? (
                   <>
-                    <ChevronUp className="size-3" />
+                    <ChevronUp className="size-3.5" />
                     <span>Show less</span>
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="size-3" />
+                    <ChevronDown className="size-3.5" />
                     <span>Show {tasks.length - VISIBLE_LIMIT} more</span>
                   </>
                 )}
@@ -210,7 +224,7 @@ export default function ClusterColumn({
             )}
           </>
         ) : (
-          <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-[var(--line)] bg-[var(--bg)]/50 text-[12px] text-[var(--ink3)] italic">
+          <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40 text-xs font-medium text-neutral-400 dark:text-neutral-500 italic">
             Drop tasks here
           </div>
         )}

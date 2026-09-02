@@ -52,31 +52,31 @@ export default function ClusterModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent showCloseButton={false} className="max-h-[88vh] max-w-120 gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl text-[var(--ink)]">
+      <DialogContent showCloseButton={false} className="max-h-[88vh] max-w-lg gap-0 p-0 overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] shadow-2xl text-neutral-900 dark:text-neutral-100">
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-[var(--line)] flex-row items-center justify-between space-y-0">
-          <DialogTitle className="text-[15px] font-medium tracking-tight text-[var(--ink)]">
+        <DialogHeader className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700/80 flex-row items-center justify-between space-y-0 bg-neutral-50/50 dark:bg-neutral-900/30">
+          <DialogTitle className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             {cluster ? "Edit cluster" : "New cluster"}
           </DialogTitle>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors cursor-pointer"
             onClick={onClose}
           >
-            <X className="size-4" />
+            <X className="size-4.5" />
           </button>
         </DialogHeader>
 
-        <div className="space-y-4 p-6 overflow-y-auto max-h-[calc(88vh-130px)]">
+        <div className="space-y-4.5 p-6 overflow-y-auto max-h-[calc(88vh-130px)]">
           {/* Name Field */}
           <div className="space-y-1.5">
-            <Label className="text-[11.5px] font-medium text-[var(--muted)]">Name</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-500 dark:text-neutral-400">Name</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Publications, Projects, Notes"
               autoFocus
-              className="h-9 rounded-lg border-[var(--line)] bg-[var(--bg)] px-3 text-[13.5px] text-[var(--ink)]"
+              className="h-10 rounded-xl border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/80 px-3.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100 outline-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -88,21 +88,21 @@ export default function ClusterModal({
 
           {/* Color Palette */}
           <div className="space-y-1.5">
-            <Label className="text-[11.5px] font-medium text-[var(--muted)]">Colour</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-500 dark:text-neutral-400">Colour</Label>
             <ColorPickerWidget color={color} onChange={setColor} />
           </div>
 
           {/* Category Selector */}
           <div className="space-y-1.5">
-            <Label className="text-[11.5px] font-medium text-[var(--muted)]">Category</Label>
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg border border-[var(--line)] bg-[var(--panel-2)]">
+            <Label className="text-xs font-bold uppercase tracking-wider font-mono text-neutral-500 dark:text-neutral-400">Category</Label>
+            <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/60">
               <button
                 type="button"
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-mono border transition-all cursor-pointer",
+                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border transition-all cursor-pointer",
                   categoryId === null
-                    ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-medium"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-xs"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800"
                 )}
                 onClick={() => setCategoryId(null)}
               >
@@ -115,15 +115,15 @@ export default function ClusterModal({
                     key={cat.id}
                     type="button"
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11.5px] font-mono border transition-all cursor-pointer",
+                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border transition-all cursor-pointer",
                       on
-                        ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-medium"
-                        : "border-[var(--line)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--ink)]"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                        : "border-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800"
                     )}
                     onClick={() => setCategoryId(cat.id)}
                   >
                     <span
-                      className="size-1.5 rounded-full"
+                      className="size-2 rounded-full shrink-0"
                       style={{ backgroundColor: cat.color }}
                     />
                     <span>{cat.name}</span>
@@ -133,29 +133,21 @@ export default function ClusterModal({
             </div>
             <button
               type="button"
-              className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors pt-0.5 cursor-pointer font-mono"
+              className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors cursor-pointer"
               onClick={onManageCategories}
             >
-              <Settings className="size-3" /> Manage categories
+              <Settings className="size-3.5" />
+              <span>Manage categories</span>
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-3 border-t border-[var(--line)] bg-[var(--panel-2)] flex items-center justify-end gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-8.5 rounded-lg px-3 text-[12px] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
-            onClick={onClose}
-          >
+        <DialogFooter className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700/80 bg-neutral-50/50 dark:bg-neutral-900/30 gap-2">
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-semibold h-9 px-4">
             Cancel
           </Button>
-          <Button
-            type="button"
-            className="h-8.5 rounded-lg bg-[var(--ink)] text-[var(--bg)] font-medium hover:opacity-90 px-4 text-[12px] cursor-pointer"
-            onClick={save}
-          >
+          <Button onClick={save} disabled={!name.trim()} className="rounded-xl text-xs font-semibold h-9 px-5 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 hover:opacity-90">
             Save
           </Button>
         </DialogFooter>

@@ -90,9 +90,9 @@ export default function DataChartNote({
   const polylinePoints = sortedPoints.map((p) => `${toSvgX(p.x)},${toSvgY(p.y)}`).join(" ");
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/60 dark:bg-white/[0.02] overflow-hidden">
+    <div className="rounded-2xl border border-zinc-200 dark:border-white/8 bg-zinc-50/60 dark:bg-white/2 overflow-hidden">
       {/* Header bar */}
-      <div className="flex items-center justify-between gap-2 px-3.5 py-2 border-b border-zinc-100 dark:border-white/[0.04] bg-white/70 dark:bg-white/[0.02]">
+      <div className="flex items-center justify-between gap-2 px-3.5 py-2 border-b border-zinc-100 dark:border-white/4 bg-white/70 dark:bg-white/2">
         <span className="text-[12.5px] font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 font-mono">
           <LineChart className="size-3.5 text-teal-500" />
           <span>{title}</span>
@@ -161,7 +161,7 @@ export default function DataChartNote({
               </div>
             </div>
 
-            <div className="relative w-full overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] p-2">
+            <div className="relative w-full overflow-hidden rounded-xl border border-(line) bg-(panel) p-2">
               <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
                 {/* Gridlines */}
                 <line x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} stroke="currentColor" className="text-zinc-300 dark:text-zinc-700" strokeWidth="1" />
@@ -249,17 +249,17 @@ export default function DataChartNote({
         )}
 
         {view === "table" && (
-          <div className="max-h-48 overflow-y-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+          <div className="max-h-48 overflow-y-auto rounded-xl border border-zinc-200 dark:border-white/6">
             <table className="w-full text-left text-[12px] font-mono">
-              <thead className="bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300">
+              <thead className="bg-zinc-100 dark:bg-white/4 text-zinc-600 dark:text-zinc-300">
                 <tr>
-                  <th className="p-2 border-b border-zinc-200 dark:border-white/[0.06]">{xLabel}</th>
-                  <th className="p-2 border-b border-zinc-200 dark:border-white/[0.06]">{yLabel}</th>
+                  <th className="p-2 border-b border-zinc-200 dark:border-white/6">{xLabel}</th>
+                  <th className="p-2 border-b border-zinc-200 dark:border-white/6">{yLabel}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-white/[0.04]">
+              <tbody className="divide-y divide-zinc-100 dark:divide-white/4">
                 {points.map((p, idx) => (
-                  <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-white/[0.02]">
+                  <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-white/2">
                     <td className="p-2">{p.x}</td>
                     <td className="p-2 font-semibold text-teal-600 dark:text-teal-400">{p.y}</td>
                   </tr>
@@ -279,7 +279,7 @@ export default function DataChartNote({
               }}
               rows={5}
               placeholder="x, y"
-              className="w-full rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-black/30 p-2.5 text-[12px] font-mono text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400"
+              className="w-full rounded-xl border border-zinc-200 dark:border-white/8 bg-white dark:bg-black/30 p-2.5 text-[12px] font-mono text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400"
             />
           </div>
         )}

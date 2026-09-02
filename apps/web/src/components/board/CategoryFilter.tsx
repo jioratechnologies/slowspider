@@ -21,27 +21,27 @@ export default function CategoryFilter({
   return (
     <div className="mb-4 max-w-full overflow-x-auto no-scrollbar py-0.5">
       {/* Segmented Filter Bar */}
-      <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--panel)] p-1 shadow-xs shrink-0">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 text-[var(--muted)] border-r border-[var(--line)] mr-0.5 shrink-0">
-          <SlidersHorizontal className="size-3.5" />
-          <span className="text-[11.5px] font-medium tracking-tight">Filter</span>
+      <div className="inline-flex items-center gap-1.5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#18181c] p-1.5 shadow-xs shrink-0">
+        <div className="flex items-center gap-1.5 px-3 py-1 text-neutral-500 dark:text-neutral-400 border-r border-neutral-200 dark:border-neutral-800 mr-1 shrink-0">
+          <SlidersHorizontal className="size-4" />
+          <span className="text-xs font-bold uppercase tracking-wider font-mono">Filter</span>
         </div>
 
         {/* All Pill */}
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all duration-150 cursor-pointer",
+            "flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer",
             activeCategory === null
-              ? "bg-[var(--ink)] text-[var(--bg)] shadow-xs"
-              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs"
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
           )}
           onClick={() => onSelect(null)}
         >
           <span>All</span>
           <span className={cn(
-            "rounded-md px-1.5 py-0.2 text-[10px] font-mono",
-            activeCategory === null ? "bg-white/20 text-white" : "bg-[var(--sunken)] text-[var(--muted)]"
+            "rounded-md px-1.5 py-0.5 text-xs font-mono font-bold",
+            activeCategory === null ? "bg-white/20 text-white dark:bg-neutral-900/20 dark:text-neutral-900" : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
           )}>
             {clusters.length}
           </span>
@@ -57,15 +57,15 @@ export default function CategoryFilter({
               key={cat.id}
               type="button"
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all duration-150 border cursor-pointer",
+                "flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150 border cursor-pointer",
                 on
-                  ? "border-[var(--ink)] bg-[var(--accent-soft)] text-[var(--ink)] font-semibold"
-                  : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                  ? "border-blue-500 bg-blue-500/15 text-blue-700 dark:text-blue-300 font-bold shadow-xs"
+                  : "border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               )}
               onClick={() => onSelect(cat.id)}
             >
               <span
-                className="size-2 rounded-full shrink-0 ring-1 ring-black/10 dark:ring-white/20"
+                className="size-2.5 rounded-full shrink-0 ring-2 ring-black/10 dark:ring-white/20"
                 style={{
                   backgroundColor: cat.color,
                 }}
@@ -73,8 +73,8 @@ export default function CategoryFilter({
               <span>{cat.name}</span>
               <span
                 className={cn(
-                  "rounded-md px-1.5 py-0.2 text-[10px] font-mono",
-                  on ? "bg-[var(--ink)] text-[var(--bg)]" : "bg-[var(--sunken)] text-[var(--muted)]"
+                  "rounded-md px-1.5 py-0.5 text-xs font-mono font-bold",
+                  on ? "bg-blue-600 text-white dark:bg-blue-500 dark:text-white" : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
                 )}
               >
                 {count}

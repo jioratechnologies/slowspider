@@ -41,7 +41,10 @@ function DropdownMenuContent({
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
-          className={cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-none border border-border bg-background p-1 text-foreground duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0", className )}
+          className={cn(
+            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] p-1.5 text-neutral-900 dark:text-neutral-100 shadow-2xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0",
+            className
+          )}
           {...props}
         />
       </MenuPrimitive.Positioner>

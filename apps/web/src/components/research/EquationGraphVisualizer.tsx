@@ -334,11 +334,11 @@ export default function EquationGraphVisualizer() {
   );
 
   return (
-    <div className="space-y-3.5 text-[var(--ink)]">
+    <div className="space-y-3.5 text-(ink)">
       {/* Discipline Category Filter & Preset Selector */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-[11px] font-mono no-scrollbar">
-          <span className="text-[10px] uppercase font-mono text-[var(--muted)] mr-1 shrink-0">
+          <span className="text-[10px] uppercase font-mono text-(muted) mr-1 shrink-0">
             Discipline:
           </span>
           {["All", "Physics", "Chemistry", "Mathematics", "Astrophysics"].map((d) => (
@@ -349,8 +349,8 @@ export default function EquationGraphVisualizer() {
               className={cn(
                 "rounded-md px-2 py-0.5 transition-all cursor-pointer shrink-0 font-medium border",
                 selectedDiscipline === d
-                  ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
-                  : "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+                  ? "bg-(ink) text-(bg) border-(ink)"
+                  : "bg-(panel-2) text-(muted) border-(line) hover:text-(ink)"
               )}
             >
               {d}
@@ -368,8 +368,8 @@ export default function EquationGraphVisualizer() {
               className={cn(
                 "rounded-md px-2 py-0.5 text-[11px] font-mono transition-all cursor-pointer border",
                 selectedPreset.name === preset.name
-                  ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
-                  : "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+                  ? "bg-(ink) text-(bg) border-(ink)"
+                  : "bg-(panel-2) text-(muted) border-(line) hover:text-(ink)"
               )}
             >
               {preset.name}
@@ -379,13 +379,13 @@ export default function EquationGraphVisualizer() {
       </div>
 
       {/* Editable Custom Formula Input Bar */}
-      <div className="rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-3 space-y-2">
+      <div className="rounded-xl border border-(line) bg-(panel-2) p-3 space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-[10.5px] font-mono uppercase text-[var(--muted)] font-bold flex items-center gap-1.5">
+          <span className="text-[10.5px] font-mono uppercase text-(muted) font-bold flex items-center gap-1.5">
             <Sparkles className="size-3" />
             <span>Formula f(x, a, b)</span>
           </span>
-          <span className="text-[10px] font-mono text-[var(--ink3)]">
+          <span className="text-[10px] font-mono text-(ink3)">
             sin, cos, tan, exp, ln, sqrt, ^, abs, pi, e
           </span>
         </div>
@@ -394,20 +394,20 @@ export default function EquationGraphVisualizer() {
           value={customEquationInput}
           onChange={(e) => setCustomEquationInput(e.target.value)}
           placeholder="Type formula, e.g. sin(a * x) * exp(-b * x^2)"
-          className="h-8.5 text-[13px] font-mono rounded-lg bg-[var(--bg)] border-[var(--line)]"
+          className="h-8.5 text-[13px] font-mono rounded-lg bg-(bg) border-(line)"
         />
 
         {/* Live LaTeX preview */}
-        <div className="pt-1 border-t border-[var(--line)] text-[12.5px]">
+        <div className="pt-1 border-t border-(line) text-[12.5px]">
           <MathRenderer text={`$$y = ${latexFormulaInput || customEquationInput}$$`} displayMode={true} />
         </div>
       </div>
 
       {/* Parameter Sliders */}
-      <div className="flex flex-wrap items-center gap-4 bg-[var(--panel-2)] rounded-xl border border-[var(--line)] p-2.5">
+      <div className="flex flex-wrap items-center gap-4 bg-(panel-2) rounded-xl border border-(line) p-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[var(--muted)] whitespace-nowrap">
-            A: <b className="text-[var(--ink)]">{paramA}</b>
+          <span className="text-[11px] font-mono text-(muted) whitespace-nowrap">
+            A: <b className="text-(ink)">{paramA}</b>
           </span>
           <input
             type="range"
@@ -416,13 +416,13 @@ export default function EquationGraphVisualizer() {
             step={0.05}
             value={paramA}
             onChange={(e) => setParamA(parseFloat(e.target.value))}
-            className="w-24 accent-[var(--ink)] cursor-pointer"
+            className="w-24 accent-(ink) cursor-pointer"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[var(--muted)] whitespace-nowrap">
-            B: <b className="text-[var(--ink)]">{paramB}</b>
+          <span className="text-[11px] font-mono text-(muted) whitespace-nowrap">
+            B: <b className="text-(ink)">{paramB}</b>
           </span>
           <input
             type="range"
@@ -431,13 +431,13 @@ export default function EquationGraphVisualizer() {
             step={0.1}
             value={paramB}
             onChange={(e) => setParamB(parseFloat(e.target.value))}
-            className="w-24 accent-[var(--ink)] cursor-pointer"
+            className="w-24 accent-(ink) cursor-pointer"
           />
         </div>
       </div>
 
       {/* SVG Interactive Wave Visualizer */}
-      <div className="relative rounded-xl border border-[var(--line)] bg-[#000000] p-2 overflow-hidden">
+      <div className="relative rounded-xl border border-(line) bg-[#000000] p-2 overflow-hidden">
         {/* Action overlay */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-black/80 backdrop-blur-md rounded-lg p-1 border border-white/10">
           <button
@@ -613,7 +613,7 @@ export default function EquationGraphVisualizer() {
         </svg>
 
         {/* Domain Zoom controls */}
-        <div className="flex items-center justify-between pt-1.5 px-1 text-[10.5px] font-mono text-[var(--muted)]">
+        <div className="flex items-center justify-between pt-1.5 px-1 text-[10.5px] font-mono text-(muted)">
           <span>Domain: [{xMin}, {xMax}]</span>
           <div className="flex items-center gap-1">
             <button
@@ -646,19 +646,19 @@ export default function EquationGraphVisualizer() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           showCloseButton={false}
-          className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl text-[var(--ink)] flex flex-col"
+          className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] gap-0 p-0 overflow-hidden rounded-2xl border border-(line) bg-(panel) shadow-2xl text-(ink) flex flex-col"
         >
           {/* Dialog Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-(line)">
             <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)]">
+              <div className="flex size-8 items-center justify-center rounded-lg border border-(line) bg-(panel-2) text-(ink)">
                 <Activity className="size-4" />
               </div>
               <div>
-                <DialogTitle className="text-[15px] font-medium tracking-tight text-[var(--ink)]">
+                <DialogTitle className="text-[15px] font-medium tracking-tight text-(ink)">
                   Equation Studio &amp; Wave Visualizer
                 </DialogTitle>
-                <DialogDescription className="text-[11.5px] text-[var(--muted)]">
+                <DialogDescription className="text-[11.5px] text-(muted)">
                   Interactive multi-disciplinary function modeler with LaTeX rendering
                 </DialogDescription>
               </div>
@@ -666,7 +666,7 @@ export default function EquationGraphVisualizer() {
             <button
               type="button"
               onClick={() => setDialogOpen(false)}
-              className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+              className="rounded-lg p-1.5 text-(muted) hover:bg-(accent-soft) hover:text-(ink) transition-colors cursor-pointer"
             >
               <X className="size-4" />
             </button>
@@ -675,15 +675,15 @@ export default function EquationGraphVisualizer() {
           {/* Dialog Body */}
           <div className="p-6 overflow-y-auto space-y-4 flex-1 max-h-[calc(90vh-80px)]">
             {/* Equation & Formula Card */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-xl border border-(line) bg-(panel-2) p-4">
               <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10.5px] font-mono uppercase bg-[var(--bg)] text-[var(--muted)] border border-[var(--line)] px-2 py-0.5 rounded">
+                  <span className="text-[10.5px] font-mono uppercase bg-(bg) text-(muted) border border-(line) px-2 py-0.5 rounded">
                     {selectedPreset.discipline} · {selectedPreset.category}
                   </span>
-                  <span className="text-[13px] font-medium text-[var(--ink)]">{selectedPreset.name}</span>
+                  <span className="text-[13px] font-medium text-(ink)">{selectedPreset.name}</span>
                 </div>
-                <div className="text-[14px] text-[var(--ink)] pt-1 overflow-x-auto no-scrollbar">
+                <div className="text-[14px] text-(ink) pt-1 overflow-x-auto no-scrollbar">
                   <MathRenderer text={`$$${latexFormulaInput || selectedPreset.latex}$$`} displayMode={true} />
                 </div>
               </div>
@@ -694,7 +694,7 @@ export default function EquationGraphVisualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => copyLatexFormula(latexFormulaInput || selectedPreset.latex)}
-                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+                  className="rounded-lg border-(line) text-xs text-(muted) hover:text-(ink)"
                 >
                   {copiedLatex ? <Check className="size-3 mr-1.5 text-emerald-500" /> : <Copy className="size-3 mr-1.5" />}
                   {copiedLatex ? "Copied" : "Copy LaTeX"}
@@ -704,7 +704,7 @@ export default function EquationGraphVisualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => exportImage("png")}
-                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+                  className="rounded-lg border-(line) text-xs text-(muted) hover:text-(ink)"
                 >
                   <Download className="size-3 mr-1.5" /> PNG
                 </Button>
@@ -713,7 +713,7 @@ export default function EquationGraphVisualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => exportImage("svg")}
-                  className="rounded-lg border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+                  className="rounded-lg border-(line) text-xs text-(muted) hover:text-(ink)"
                 >
                   <Download className="size-3 mr-1.5" /> SVG
                 </Button>
@@ -722,7 +722,7 @@ export default function EquationGraphVisualizer() {
 
             {/* Presets Catalog */}
             <div className="space-y-2 pt-1">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] block">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-(muted) block">
                 Preset Equation Catalog
               </span>
 
@@ -737,19 +737,19 @@ export default function EquationGraphVisualizer() {
                       className={cn(
                         "flex flex-col text-left justify-between rounded-lg border p-2.5 transition-all cursor-pointer",
                         isSelected
-                          ? "border-[var(--ink)] bg-[var(--accent-soft)]"
-                          : "border-[var(--line)] bg-[var(--bg)] hover:border-[var(--line-strong)] hover:bg-[var(--panel)]"
+                          ? "border-(ink) bg-(accent-soft)"
+                          : "border-(line) bg-(bg) hover:border-(line-strong) hover:bg-(panel)"
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[12px] font-medium text-[var(--ink)] truncate">
+                        <span className="text-[12px] font-medium text-(ink) truncate">
                           {p.name}
                         </span>
-                        <span className="text-[9.5px] font-mono text-[var(--muted)] uppercase">
+                        <span className="text-[9.5px] font-mono text-(muted) uppercase">
                           {p.discipline}
                         </span>
                       </div>
-                      <div className="mt-1 text-[11.5px] text-[var(--muted)] font-mono">
+                      <div className="mt-1 text-[11.5px] text-(muted) font-mono">
                         <MathRenderer text={`$$${p.latex}$$`} displayMode={false} />
                       </div>
                     </button>

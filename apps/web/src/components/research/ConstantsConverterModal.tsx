@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, Atom, Calculator, Check, Copy, Layers, LineChart, Pin, Search, Sparkles, X, Zap } from "lucide-react";
+import { Activity, Atom, Calculator, Check, Copy, Layers, LineChart, PenTool, Pin, Search, Sparkles, X, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import MathRenderer from "./MathRenderer";
 import EquationGraphVisualizer from "./EquationGraphVisualizer";
 import ScientificCalculator from "./ScientificCalculator";
+import WhiteboardCanvas from "./WhiteboardCanvas";
 import { cn } from "@/lib/utils";
 
 interface PhysicalConstant {
@@ -252,12 +253,14 @@ export default function ConstantsConverterModal({
   open,
   onClose,
   onPinCalculator,
+  onPinCanvas,
 }: {
   open: boolean;
   onClose: () => void;
   onPinCalculator?: () => void;
+  onPinCanvas?: () => void;
 }) {
-  const [tab, setTab] = useState<"constants" | "converter" | "graph" | "calculator">("constants");
+  const [tab, setTab] = useState<"constants" | "converter" | "graph" | "calculator" | "canvas">("constants");
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -288,45 +291,45 @@ export default function ConstantsConverterModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent 
         showCloseButton={false} 
-        className="max-w-[94vw] sm:max-w-180 gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl text-[var(--ink)]"
+        className="max-w-[94vw] sm:max-w-2xl gap-0 p-0 overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] shadow-2xl text-neutral-900 dark:text-neutral-100"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700/80 bg-neutral-50/50 dark:bg-neutral-900/30">
           <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)]">
-              <Atom className="size-4" />
+            <div className="flex size-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+              <Atom className="size-5" />
             </div>
             <div>
-              <DialogTitle className="text-[15px] font-medium tracking-tight text-[var(--ink)]">
+              <DialogTitle className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
                 Scientific Research Suite
               </DialogTitle>
-              <DialogDescription className="text-[11.5px] text-[var(--muted)]">
-                Constants, multi-unit optics converter, equation visualizer &amp; calculator
+              <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+                Constants, multi-unit optics converter, equation visualizer, calculator &amp; canvas
               </DialogDescription>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="rounded-xl p-2 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors cursor-pointer"
           >
-            <X className="size-4" />
+            <X className="size-4.5" />
           </button>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex overflow-x-auto border-b border-[var(--line)] bg-[var(--panel-2)] px-4 sm:px-6 pt-2 gap-2 sm:gap-4 no-scrollbar">
+        <div className="flex overflow-x-auto border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50 px-4 sm:px-6 pt-2 gap-2 sm:gap-4 no-scrollbar">
           <button
             type="button"
             onClick={() => setTab("constants")}
             className={cn(
-              "pb-2 text-[12.5px] font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0",
+              "pb-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0",
               tab === "constants"
-                ? "border-[var(--ink)] text-[var(--ink)] font-semibold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                ? "border-cyan-500 text-cyan-600 dark:text-cyan-400 font-bold"
+                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
             )}
           >
-            <Sparkles className="size-3.5" />
+            <Sparkles className="size-4" />
             <span>Constants</span>
           </button>
 
@@ -334,27 +337,41 @@ export default function ConstantsConverterModal({
             type="button"
             onClick={() => setTab("converter")}
             className={cn(
-              "pb-2 text-[12.5px] font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0",
+              "pb-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0",
               tab === "converter"
-                ? "border-[var(--ink)] text-[var(--ink)] font-semibold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                ? "border-cyan-500 text-cyan-600 dark:text-cyan-400 font-bold"
+                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
             )}
           >
-            <Zap className="size-3.5" />
+            <Zap className="size-4" />
             <span>Energy &amp; Optics</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTab("canvas")}
+            className={cn(
+              "pb-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0",
+              tab === "canvas"
+                ? "border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold"
+                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+            )}
+          >
+            <PenTool className="size-4" />
+            <span>Canvas Pad</span>
           </button>
 
           <button
             type="button"
             onClick={() => setTab("graph")}
             className={cn(
-              "pb-2 text-[12.5px] font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0",
+              "pb-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0",
               tab === "graph"
-                ? "border-[var(--ink)] text-[var(--ink)] font-semibold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                ? "border-cyan-500 text-cyan-600 dark:text-cyan-400 font-bold"
+                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
             )}
           >
-            <Activity className="size-3.5" />
+            <Activity className="size-4" />
             <span>Equation &amp; Waves</span>
           </button>
 
@@ -362,13 +379,13 @@ export default function ConstantsConverterModal({
             type="button"
             onClick={() => setTab("calculator")}
             className={cn(
-              "pb-2 text-[12.5px] font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0",
+              "pb-2.5 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0",
               tab === "calculator"
-                ? "border-[var(--ink)] text-[var(--ink)] font-semibold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+                ? "border-cyan-500 text-cyan-600 dark:text-cyan-400 font-bold"
+                : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
             )}
           >
-            <Calculator className="size-3.5" />
+            <Calculator className="size-4" />
             <span>Calculator</span>
           </button>
         </div>
@@ -379,12 +396,12 @@ export default function ConstantsConverterModal({
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
-                  <Search className="size-3.5 absolute left-3 top-3 text-[var(--muted)]" />
+                  <Search className="size-3.5 absolute left-3 top-3 text-(muted)" />
                   <Input
                     placeholder="Search constant (e.g. Planck, c, mass, eV, charge)..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8.5 h-9 rounded-lg border-[var(--line)] bg-[var(--bg)] text-[13px]"
+                    className="pl-8.5 h-9 rounded-lg border-(line) bg-(bg) text-[13px]"
                   />
                 </div>
                 <div className="flex gap-1 overflow-x-auto pb-0.5 text-[11px] font-mono no-scrollbar">
@@ -396,8 +413,8 @@ export default function ConstantsConverterModal({
                       className={cn(
                         "rounded-md px-2 py-1 capitalize transition-colors cursor-pointer shrink-0 border",
                         selectedCat === cat
-                          ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-medium"
-                          : "bg-[var(--panel-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+                          ? "bg-(ink) text-(bg) border-(ink) font-medium"
+                          : "bg-(panel-2) border-(line) text-(muted) hover:text-(ink)"
                       )}
                     >
                       {cat}
@@ -410,21 +427,21 @@ export default function ConstantsConverterModal({
                 {filteredConstants.map((c) => (
                   <div
                     key={c.symbol}
-                    className="group flex flex-col justify-between rounded-lg border border-[var(--line)] bg-[var(--bg)] p-3 transition-all hover:border-[var(--line-strong)] hover:bg-[var(--panel)]"
+                    className="group flex flex-col justify-between rounded-lg border border-(line) bg-(bg) p-3 transition-all hover:border-(line-strong) hover:bg-(panel)"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="flex size-6 items-center justify-center rounded border border-[var(--line)] bg-[var(--panel-2)] font-mono font-bold text-[12px] text-[var(--ink)]">
+                        <span className="flex size-6 items-center justify-center rounded border border-(line) bg-(panel-2) font-mono font-bold text-[12px] text-(ink)">
                           {c.symbol}
                         </span>
-                        <span className="text-[12.5px] font-medium text-[var(--ink)]">
+                        <span className="text-[12.5px] font-medium text-(ink)">
                           {c.name}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyText(`${c.valueStr} ${c.unit}`, c.symbol)}
-                        className="rounded p-1 text-[var(--muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-all cursor-pointer"
+                        className="rounded p-1 text-(muted) opacity-0 group-hover:opacity-100 hover:bg-(accent-soft) hover:text-(ink) transition-all cursor-pointer"
                         title="Copy constant value"
                       >
                         {copiedId === c.symbol ? (
@@ -435,13 +452,13 @@ export default function ConstantsConverterModal({
                       </button>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-[var(--line)] flex flex-col gap-0.5 font-mono text-[11.5px]">
-                      <div className="flex items-center justify-between text-[var(--ink)]">
+                    <div className="mt-2 pt-2 border-t border-(line) flex flex-col gap-0.5 font-mono text-[11.5px]">
+                      <div className="flex items-center justify-between text-(ink)">
                         <span>{c.valueStr}</span>
-                        <span className="text-[var(--muted)] text-[10.5px]">{c.unit}</span>
+                        <span className="text-(muted) text-[10.5px]">{c.unit}</span>
                       </div>
                       {c.altValue && (
-                        <span className="text-[10px] text-[var(--ink3)]">
+                        <span className="text-[10px] text-(ink3)">
                           {c.altValue}
                         </span>
                       )}
@@ -454,8 +471,8 @@ export default function ConstantsConverterModal({
 
           {tab === "converter" && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-3.5 space-y-2.5">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] block">
+              <div className="rounded-xl border border-(line) bg-(panel-2) p-3.5 space-y-2.5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-(muted) block">
                   Input Value &amp; Unit
                 </span>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -465,7 +482,7 @@ export default function ConstantsConverterModal({
                     value={energyEv}
                     onChange={(e) => setEnergyEv(e.target.value)}
                     placeholder="Enter value (e.g. 1.5)"
-                    className="h-9 text-[13.5px] font-mono rounded-lg bg-[var(--bg)] border-[var(--line)]"
+                    className="h-9 text-[13.5px] font-mono rounded-lg bg-(bg) border-(line)"
                   />
                   <div className="flex gap-1 overflow-x-auto pb-0.5">
                     {(["eV", "nm", "THz", "K", "cm-1", "J"] as const).map((u) => (
@@ -476,8 +493,8 @@ export default function ConstantsConverterModal({
                         className={cn(
                           "rounded-lg px-2.5 py-1 text-xs font-mono font-medium transition-colors cursor-pointer border",
                           convUnit === u
-                            ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
-                            : "bg-[var(--bg)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+                            ? "bg-(ink) text-(bg) border-(ink)"
+                            : "bg-(bg) border-(line) text-(muted) hover:text-(ink)"
                         )}
                       >
                         {u}
@@ -488,7 +505,7 @@ export default function ConstantsConverterModal({
               </div>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] block px-0.5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-(muted) block px-0.5">
                   Equivalent Scientific Representations
                 </span>
 
@@ -501,6 +518,28 @@ export default function ConstantsConverterModal({
                   <ConvertRow label="SI Energy (Joules)" value={`${values.Joules} J`} onCopy={() => copyText(`${values.Joules} J`, "joules")} copied={copiedId === "joules"} />
                 </div>
               </div>
+            </div>
+          )}
+
+          {tab === "canvas" && (
+            <div className="space-y-3">
+              {onPinCanvas && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onPinCanvas();
+                      onClose();
+                    }}
+                    className="rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer shadow-2xs"
+                  >
+                    <Pin className="size-3.5 mr-1.5 text-indigo-500" /> Pin Canvas to Screen
+                  </Button>
+                </div>
+              )}
+              <WhiteboardCanvas />
             </div>
           )}
 
@@ -518,9 +557,9 @@ export default function ConstantsConverterModal({
                       onPinCalculator();
                       onClose();
                     }}
-                    className="rounded-lg border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] text-xs"
+                    className="rounded-xl border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer shadow-2xs"
                   >
-                    <Pin className="size-3 mr-1.5" /> Pin Calculator to Screen
+                    <Pin className="size-3.5 mr-1.5 text-cyan-500" /> Pin Calculator to Screen
                   </Button>
                 </div>
               )}
@@ -545,17 +584,17 @@ function ConvertRow({
   copied: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] p-2.5 transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--panel)]">
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-(line) bg-(bg) p-2.5 transition-colors hover:border-(line-strong) hover:bg-(panel)">
       <div>
-        <div className="text-[10.5px] text-[var(--muted)] font-mono">{label}</div>
-        <div className="text-[13px] font-mono font-medium text-[var(--ink)] mt-0.5">
+        <div className="text-[10.5px] text-(muted) font-mono">{label}</div>
+        <div className="text-[13px] font-mono font-medium text-(ink) mt-0.5">
           {value}
         </div>
       </div>
       <button
         type="button"
         onClick={onCopy}
-        className="rounded p-1 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+        className="rounded p-1 text-(muted) hover:bg-(accent-soft) hover:text-(ink) transition-colors cursor-pointer"
         title="Copy"
       >
         {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}

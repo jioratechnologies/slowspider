@@ -47,7 +47,7 @@ export default function JupyterViewer({
 
   if (!notebook || !notebook.cells) {
     return (
-      <div className="rounded-xl border border-zinc-200 dark:border-white/[0.08] p-4 text-center text-xs text-zinc-400 font-mono">
+      <div className="rounded-xl border border-zinc-200 dark:border-white/8 p-4 text-center text-xs text-zinc-400 font-mono">
         Invalid or unreadable Jupyter notebook.
       </div>
     );
@@ -59,9 +59,9 @@ export default function JupyterViewer({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-white/[0.01] overflow-hidden">
+    <div className="rounded-2xl border border-zinc-200 dark:border-white/8 bg-zinc-50/50 dark:bg-white/1 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-zinc-100 dark:border-white/[0.04] bg-white/70 dark:bg-white/[0.02]">
+      <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-zinc-100 dark:border-white/4 bg-white/70 dark:bg-white/2">
         <div className="flex items-center gap-2 font-mono text-[12px] text-zinc-700 dark:text-zinc-300">
           <BookMarked className="size-4 text-amber-500" />
           <span className="font-semibold">{filename || "notebook.ipynb"}</span>
@@ -72,7 +72,7 @@ export default function JupyterViewer({
       </div>
 
       {/* Cells List */}
-      <div className="p-3 space-y-3 max-h-[500px] overflow-y-auto">
+      <div className="p-3 space-y-3 max-h-125 overflow-y-auto">
         {notebook.cells.map((cell, idx) => {
           const srcText = joinSource(cell.source);
 
@@ -80,7 +80,7 @@ export default function JupyterViewer({
             return (
               <div
                 key={idx}
-                className="rounded-xl p-3 bg-white/60 dark:bg-white/[0.02] border border-zinc-200/60 dark:border-white/[0.04] text-[13px] leading-relaxed text-zinc-900 dark:text-zinc-200"
+                className="rounded-xl p-3 bg-white/60 dark:bg-white/2 border border-zinc-200/60 dark:border-white/4 text-[13px] leading-relaxed text-zinc-900 dark:text-zinc-200"
               >
                 <MathRenderer text={srcText} />
               </div>
@@ -91,10 +91,10 @@ export default function JupyterViewer({
             return (
               <div
                 key={idx}
-                className="rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--panel)]"
+                className="rounded-xl overflow-hidden border border-(line) bg-(panel)"
               >
                 {/* Input Prompt */}
-                <div className="flex items-start gap-2 bg-[var(--sunken)]/60 p-2 font-mono text-[11px] border-b border-[var(--line)]">
+                <div className="flex items-start gap-2 bg-(sunken)/60 p-2 font-mono text-[11px] border-b border-(line)">
                   <span className="text-sky-600 dark:text-sky-400 font-bold shrink-0">
                     In [{cell.execution_count ?? " "}]:
                   </span>

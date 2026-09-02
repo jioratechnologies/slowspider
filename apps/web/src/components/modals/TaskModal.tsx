@@ -32,17 +32,17 @@ const PRIOS: { v: Priority; label: string; dotClass: string }[] = [
   { 
     v: "high", 
     label: "High", 
-    dotClass: "bg-[var(--ink)]" 
+    dotClass: "bg-(ink)" 
   },
   { 
     v: "med", 
     label: "Medium", 
-    dotClass: "bg-[var(--muted)]" 
+    dotClass: "bg-(muted)" 
   },
   { 
     v: "low", 
     label: "Low", 
-    dotClass: "bg-[var(--ink3)]" 
+    dotClass: "bg-(ink3)" 
   },
   { 
     v: "none", 
@@ -145,19 +145,19 @@ export default function TaskModal({
 
   return (
     <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent showCloseButton={false} className="max-h-[92vh] sm:max-w-160 flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl text-[var(--ink)]">
+      <DialogContent showCloseButton={false} className="max-h-[92vh] sm:max-w-160 flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-(line) bg-(panel) shadow-2xl text-(ink)">
         {/* Top Header */}
-        <DialogHeader className="px-6 py-4 border-b border-[var(--line)] flex-row items-center justify-between space-y-0">
+        <DialogHeader className="px-6 py-4 border-b border-(line) flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2.5">
             {assignedCluster ? (
               <span
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-mono border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-mono border border-(line) bg-(panel-2) text-(muted)"
               >
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: assignedCluster.color }} />
                 <span>{assignedCluster.name}</span>
               </span>
             ) : (
-              <span className="rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2.5 py-1 text-[11px] font-mono text-[var(--muted)]">
+              <span className="rounded-full border border-(line) bg-(panel-2) px-2.5 py-1 text-[11px] font-mono text-(muted)">
                 Floating Task
               </span>
             )}
@@ -167,8 +167,8 @@ export default function TaskModal({
               className={cn(
                 "rounded-lg p-1.5 transition-all cursor-pointer",
                 starred 
-                  ? "text-[var(--ink)] bg-[var(--accent-soft)]" 
-                  : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                  ? "text-(ink) bg-(accent-soft)" 
+                  : "text-(muted) hover:text-(ink) hover:bg-(accent-soft)"
               )}
               title={starred ? "Starred" : "Star task"}
               onClick={() => setStarred((v) => !v)}
@@ -184,9 +184,9 @@ export default function TaskModal({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="h-8 rounded-lg border-[var(--line)] text-[12px] text-[var(--ink)] hover:bg-[var(--accent-soft)] cursor-pointer"
+                className="h-8 rounded-lg border-(line) text-[12px] text-(ink) hover:bg-(accent-soft) cursor-pointer"
               >
-                <Pencil className="size-3 mr-1.5 text-[var(--muted)]" />
+                <Pencil className="size-3 mr-1.5 text-(muted)" />
                 Edit Task
               </Button>
             ) : (
@@ -195,7 +195,7 @@ export default function TaskModal({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsEditing(false)}
-                className="h-8 rounded-lg text-[12px] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+                className="h-8 rounded-lg text-[12px] text-(muted) hover:text-(ink) cursor-pointer"
               >
                 <ArrowLeft className="size-3 mr-1.5" />
                 Back to Details
@@ -204,7 +204,7 @@ export default function TaskModal({
 
             <button
               type="button"
-              className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+              className="rounded-lg p-1.5 text-(muted) hover:bg-(accent-soft) hover:text-(ink) transition-colors cursor-pointer"
               onClick={onClose}
             >
               <X className="size-4" />
@@ -219,7 +219,7 @@ export default function TaskModal({
             <div className="space-y-5 animate-in fade-in">
               {/* Task Title */}
               <div className="space-y-2">
-                <div className="text-[17px] font-medium tracking-tight text-[var(--ink)] leading-snug">
+                <div className="text-[17px] font-medium tracking-tight text-(ink) leading-snug">
                   <MathRenderer text={task.title || "Untitled Task"} />
                 </div>
 
@@ -227,12 +227,12 @@ export default function TaskModal({
                 <div className="flex flex-wrap items-center gap-2 pt-0.5">
                   {/* Priority */}
                   {task.priority && task.priority !== "none" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-mono border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]">
+                    <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-mono border border-(line) bg-(panel-2) text-(muted)">
                       <span className={cn(
                         "size-1.5 rounded-full",
-                        task.priority === "high" && "bg-[var(--ink)]",
-                        task.priority === "med" && "bg-[var(--muted)]",
-                        task.priority === "low" && "bg-[var(--ink3)]"
+                        task.priority === "high" && "bg-(ink)",
+                        task.priority === "med" && "bg-(muted)",
+                        task.priority === "low" && "bg-(ink3)"
                       )} />
                       <span className="capitalize">{task.priority}</span>
                     </span>
@@ -240,8 +240,8 @@ export default function TaskModal({
 
                   {/* Deadline & Time */}
                   {task.deadline && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-mono border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]">
-                      <Calendar className="size-3 text-[var(--muted)]" />
+                    <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-mono border border-(line) bg-(panel-2) text-(muted)">
+                      <Calendar className="size-3 text-(muted)" />
                       <span>{task.deadline}</span>
                       {task.deadline_time && <span>{task.deadline_time}</span>}
                     </span>
@@ -251,8 +251,8 @@ export default function TaskModal({
                   <span className={cn(
                     "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-mono border",
                     task.done
-                      ? "bg-[var(--accent-soft)] text-[var(--ink)] border-[var(--ink)]"
-                      : "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)]"
+                      ? "bg-(accent-soft) text-(ink) border-(ink)"
+                      : "bg-(panel-2) text-(muted) border-(line)"
                   )}>
                     <Check className="size-3" />
                     <span>{task.done ? "Completed" : "In Progress"}</span>
@@ -263,7 +263,7 @@ export default function TaskModal({
               {/* Link Preview Card */}
               {urlInTask && (
                 <div className="space-y-1.5">
-                  <span className="text-[10.5px] font-mono uppercase text-[var(--muted)] font-semibold">
+                  <span className="text-[10.5px] font-mono uppercase text-(muted) font-semibold">
                     Linked Resource
                   </span>
                   <LinkPreviewCard url={urlInTask} fallbackTitle={task.title} allowToggle={false} defaultExpanded={true} />
@@ -271,16 +271,16 @@ export default function TaskModal({
               )}
 
               {/* Milestones Section */}
-              <div className="space-y-2.5 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-3.5">
+              <div className="space-y-2.5 rounded-xl border border-(line) bg-(panel-2) p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="size-3.5 text-[var(--muted)]" />
-                    <span className="text-[12.5px] font-medium text-[var(--ink)]">
+                    <CheckSquare className="size-3.5 text-(muted)" />
+                    <span className="text-[12.5px] font-medium text-(ink)">
                       Milestones ({completedMilestones}/{totalMilestones})
                     </span>
                   </div>
                   {totalMilestones > 0 && (
-                    <span className="text-[10.5px] font-mono text-[var(--muted)]">
+                    <span className="text-[10.5px] font-mono text-(muted)">
                       {milestonePct}% Complete
                     </span>
                   )}
@@ -288,9 +288,9 @@ export default function TaskModal({
 
                 {/* Progress Bar */}
                 {totalMilestones > 0 && (
-                  <div className="h-[2px] w-full overflow-hidden rounded-full bg-[var(--sunken)]">
+                  <div className="h-[2px] w-full overflow-hidden rounded-full bg-(sunken)">
                     <div
-                      className="h-full bg-[var(--ink)] transition-all duration-300 rounded-full"
+                      className="h-full bg-(ink) transition-all duration-300 rounded-full"
                       style={{ width: `${milestonePct}%` }}
                     />
                   </div>
@@ -303,24 +303,24 @@ export default function TaskModal({
                       <div
                         key={m.id}
                         onClick={() => onToggleMilestone(m.id)}
-                        className="flex items-center gap-2.5 rounded-lg border border-[var(--line)] bg-[var(--bg)] p-2 transition-all hover:border-[var(--line-strong)] cursor-pointer"
+                        className="flex items-center gap-2.5 rounded-lg border border-(line) bg-(bg) p-2 transition-all hover:border-(line-strong) cursor-pointer"
                       >
                         <input
                           type="checkbox"
                           checked={m.done}
                           onChange={() => {}}
-                          className="size-3.5 shrink-0 cursor-pointer accent-[var(--ink)]"
+                          className="size-3.5 shrink-0 cursor-pointer accent-(ink)"
                         />
                         <span className={cn(
-                          "text-[12.5px] text-[var(--ink)] flex-1",
-                          m.done && "line-through text-[var(--muted)]"
+                          "text-[12.5px] text-(ink) flex-1",
+                          m.done && "line-through text-(muted)"
                         )}>
                           {m.title}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <div className="text-[11.5px] text-[var(--muted)] italic py-1">
+                    <div className="text-[11.5px] text-(muted) italic py-1">
                       No milestones created yet.
                     </div>
                   )}
@@ -338,13 +338,13 @@ export default function TaskModal({
                         addMilestone();
                       }
                     }}
-                    className="h-8.5 rounded-lg border-[var(--line)] bg-[var(--bg)] text-[12.5px]"
+                    className="h-8.5 rounded-lg border-(line) bg-(bg) text-[12.5px]"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={addMilestone}
-                    className="h-8.5 rounded-lg bg-[var(--ink)] text-[var(--bg)] px-3 cursor-pointer text-xs"
+                    className="h-8.5 rounded-lg bg-(ink) text-(bg) px-3 cursor-pointer text-xs"
                   >
                     <Plus className="size-3 mr-1" /> Add
                   </Button>
@@ -353,12 +353,12 @@ export default function TaskModal({
 
               {/* Research Notes Section */}
               {task.notes && (
-                <div className="space-y-2 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] p-3.5">
-                  <div className="flex items-center gap-2 text-[var(--ink)]">
-                    <BookOpen className="size-3.5 text-[var(--muted)]" />
+                <div className="space-y-2 rounded-xl border border-(line) bg-(panel-2) p-3.5">
+                  <div className="flex items-center gap-2 text-(ink)">
+                    <BookOpen className="size-3.5 text-(muted)" />
                     <span className="text-[12.5px] font-medium">Research Notes</span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--line)] text-[12.5px] text-[var(--ink)]">
+                  <div className="p-2.5 rounded-lg bg-(bg) border border-(line) text-[12.5px] text-(ink)">
                     <MathRenderer text={task.notes} />
                   </div>
                 </div>
@@ -366,7 +366,7 @@ export default function TaskModal({
 
               {/* Attachments Section */}
               <div className="space-y-2 pt-0.5">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted)] block">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-(muted) block">
                   Media &amp; File Attachments
                 </span>
                 <TaskAttachmentsSection
@@ -384,12 +384,12 @@ export default function TaskModal({
             <div className="space-y-4 animate-in fade-in">
               {/* Title Input */}
               <div className="space-y-1.5">
-                <Label className="text-[11.5px] font-medium text-[var(--muted)]">Task Title</Label>
+                <Label className="text-[11.5px] font-medium text-(muted)">Task Title</Label>
                 <Input 
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)} 
                   placeholder="What needs doing?" 
-                  className="h-9 rounded-lg border-[var(--line)] bg-[var(--bg)] px-3 text-[13.5px] text-[var(--ink)]"
+                  className="h-9 rounded-lg border-(line) bg-(bg) px-3 text-[13.5px] text-(ink)"
                 />
                 {/* Live Link Preview */}
                 {(() => {
@@ -405,8 +405,8 @@ export default function TaskModal({
 
               {/* Priority Segmented Control */}
               <div className="space-y-1.5">
-                <Label className="text-[11.5px] font-medium text-[var(--muted)]">Priority</Label>
-                <div className="grid grid-cols-4 gap-1 p-1 rounded-lg border border-[var(--line)] bg-[var(--panel-2)]">
+                <Label className="text-[11.5px] font-medium text-(muted)">Priority</Label>
+                <div className="grid grid-cols-4 gap-1 p-1 rounded-lg border border-(line) bg-(panel-2)">
                   {PRIOS.map((p) => {
                     const on = priority === p.v;
                     return (
@@ -416,13 +416,13 @@ export default function TaskModal({
                         className={cn(
                           "flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] font-mono border transition-all cursor-pointer",
                           on
-                            ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-medium"
-                            : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+                            ? "bg-(ink) text-(bg) border-(ink) font-medium"
+                            : "border-transparent text-(muted) hover:text-(ink) hover:bg-(accent-soft)"
                         )}
                         onClick={() => setPriority(p.v)}
                       >
                         {p.v !== "none" && (
-                          <span className={cn("size-1.5 rounded-full", on ? "bg-[var(--bg)]" : p.dotClass)} />
+                          <span className={cn("size-1.5 rounded-full", on ? "bg-(bg)" : p.dotClass)} />
                         )}
                         <span>{p.label}</span>
                       </button>
@@ -434,8 +434,8 @@ export default function TaskModal({
               {/* Deadline & Time */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1.5">
-                  <Label className="text-[11.5px] font-medium text-[var(--muted)] flex items-center gap-1.5">
-                    <Calendar className="size-3 text-[var(--muted)]" /> Deadline
+                  <Label className="text-[11.5px] font-medium text-(muted) flex items-center gap-1.5">
+                    <Calendar className="size-3 text-(muted)" /> Deadline
                   </Label>
                   <CustomDatePicker
                     value={deadline}
@@ -444,8 +444,8 @@ export default function TaskModal({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11.5px] font-medium text-[var(--muted)] flex items-center gap-1.5">
-                    <Clock className="size-3 text-[var(--muted)]" /> Time
+                  <Label className="text-[11.5px] font-medium text-(muted) flex items-center gap-1.5">
+                    <Clock className="size-3 text-(muted)" /> Time
                   </Label>
                   <CustomTimePicker
                     value={deadlineTime}
@@ -458,14 +458,14 @@ export default function TaskModal({
 
               {/* Cluster Destination */}
               <div className="space-y-1.5">
-                <Label className="text-[11.5px] font-medium text-[var(--muted)] flex items-center gap-1.5">
-                  <Folder className="size-3 text-[var(--muted)]" /> Cluster
+                <Label className="text-[11.5px] font-medium text-(muted) flex items-center gap-1.5">
+                  <Folder className="size-3 text-(muted)" /> Cluster
                 </Label>
                 <Select value={clusterId || "none"} onValueChange={(v) => setClusterId(!v || v === "none" ? "" : v)}>
-                  <SelectTrigger className="w-full h-9 rounded-lg border-[var(--line)] bg-[var(--bg)] px-3 text-[13px] text-[var(--ink)]">
+                  <SelectTrigger className="w-full h-9 rounded-lg border-(line) bg-(bg) px-3 text-[13px] text-(ink)">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-2xl">
+                  <SelectContent className="rounded-xl border border-(line) bg-(panel) text-(ink) shadow-2xl">
                     <SelectItem value="none">🗒 Floating (unsorted)</SelectItem>
                     {clusters.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
@@ -481,23 +481,23 @@ export default function TaskModal({
 
               {/* Milestones Management */}
               <div className="space-y-2">
-                <Label className="text-[11.5px] font-medium text-[var(--muted)] flex items-center gap-1.5">
-                  <CheckSquare className="size-3 text-[var(--muted)]" /> Milestones
+                <Label className="text-[11.5px] font-medium text-(muted) flex items-center gap-1.5">
+                  <CheckSquare className="size-3 text-(muted)" /> Milestones
                 </Label>
                 <div className="space-y-1.5">
                   {task.milestones?.length ? (
                     task.milestones.map((m) => (
-                      <div className="flex items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2.5 py-1.5" key={m.id}>
+                      <div className="flex items-center gap-2 rounded-lg border border-(line) bg-(bg) px-2.5 py-1.5" key={m.id}>
                         <input
-                          className="size-3.5 shrink-0 cursor-pointer accent-[var(--ink)]"
+                          className="size-3.5 shrink-0 cursor-pointer accent-(ink)"
                           type="checkbox"
                           checked={m.done}
                           onChange={() => onToggleMilestone(m.id)}
                         />
                         <input
                           className={cn(
-                            "flex-1 bg-transparent text-[12.5px] text-[var(--ink)] outline-none",
-                            m.done && "text-[var(--muted)] line-through"
+                            "flex-1 bg-transparent text-[12.5px] text-(ink) outline-none",
+                            m.done && "text-(muted) line-through"
                           )}
                           type="text"
                           defaultValue={m.title}
@@ -508,7 +508,7 @@ export default function TaskModal({
                         />
                         <button 
                           type="button" 
-                          className="rounded p-1 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer" 
+                          className="rounded p-1 text-(muted) hover:text-rose-500 transition-colors cursor-pointer" 
                           onClick={() => onDeleteMilestone(m.id)}
                         >
                           <X className="size-3" />
@@ -516,7 +516,7 @@ export default function TaskModal({
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-lg border border-dashed border-[var(--line)] p-2.5 text-center text-[11.5px] text-[var(--muted)] italic">
+                    <div className="rounded-lg border border-dashed border-(line) p-2.5 text-center text-[11.5px] text-(muted) italic">
                       No milestones yet. Add steps to track progress.
                     </div>
                   )}
@@ -534,13 +534,13 @@ export default function TaskModal({
                         addMilestone();
                       }
                     }}
-                    className="h-8.5 rounded-lg border-[var(--line)] bg-[var(--bg)] text-[12.5px]"
+                    className="h-8.5 rounded-lg border-(line) bg-(bg) text-[12.5px]"
                   />
                   <Button 
                     type="button" 
                     size="sm" 
                     onClick={addMilestone}
-                    className="h-8.5 rounded-lg bg-[var(--ink)] text-[var(--bg)] px-3 cursor-pointer text-xs"
+                    className="h-8.5 rounded-lg bg-(ink) text-(bg) px-3 cursor-pointer text-xs"
                   >
                     <Plus className="size-3 mr-1" /> Add
                   </Button>
@@ -549,7 +549,7 @@ export default function TaskModal({
 
               {/* Attachments Section in Edit Mode */}
               <div className="space-y-2 pt-0.5">
-                <Label className="text-[11.5px] font-medium text-[var(--muted)]">Attachments &amp; Media</Label>
+                <Label className="text-[11.5px] font-medium text-(muted)">Attachments &amp; Media</Label>
                 <TaskAttachmentsSection
                   taskId={task.id}
                   attachments={taskNotes.filter((n) => ["image","video","voice","file"].includes(n.kind))}
@@ -564,12 +564,12 @@ export default function TaskModal({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-3.5 border-t border-[var(--line)] bg-[var(--panel-2)] flex-row items-center justify-between sm:justify-between shrink-0">
+        <DialogFooter className="px-6 py-3.5 border-t border-(line) bg-(panel-2) flex-row items-center justify-between sm:justify-between shrink-0">
           <Button 
             type="button" 
             variant="outline" 
             onClick={onDelete}
-            className="rounded-lg border-[var(--line)] bg-[var(--bg)] text-[var(--muted)] hover:text-rose-500 hover:border-rose-500/30 h-8.5 px-3 text-[12px] cursor-pointer"
+            className="rounded-lg border-(line) bg-(bg) text-(muted) hover:text-rose-500 hover:border-rose-500/30 h-8.5 px-3 text-[12px] cursor-pointer"
           >
             <Trash2 className="size-3 mr-1.5" /> Move to bin
           </Button>
@@ -579,7 +579,7 @@ export default function TaskModal({
               <Button 
                 type="button" 
                 onClick={onClose}
-                className="rounded-lg bg-[var(--ink)] text-[var(--bg)] hover:opacity-90 h-8.5 px-4 text-[12px] font-medium cursor-pointer"
+                className="rounded-lg bg-(ink) text-(bg) hover:opacity-90 h-8.5 px-4 text-[12px] font-medium cursor-pointer"
               >
                 Close
               </Button>
@@ -589,14 +589,14 @@ export default function TaskModal({
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsEditing(false)}
-                  className="rounded-lg border-[var(--line)] text-[12px] text-[var(--muted)] hover:text-[var(--ink)] h-8.5 px-3"
+                  className="rounded-lg border-(line) text-[12px] text-(muted) hover:text-(ink) h-8.5 px-3"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="button" 
                   onClick={save}
-                  className="rounded-lg bg-[var(--ink)] text-[var(--bg)] hover:opacity-90 h-8.5 px-4 text-[12px] font-medium"
+                  className="rounded-lg bg-(ink) text-(bg) hover:opacity-90 h-8.5 px-4 text-[12px] font-medium"
                 >
                   Save Changes
                 </Button>

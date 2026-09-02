@@ -29,27 +29,27 @@ export default function TaskNotesModal({
 
   return (
     <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent showCloseButton={false} className="max-h-[88vh] sm:max-w-[560px] flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-2xl backdrop-blur-2xl">
-        <DialogHeader className="px-6 py-4.5 border-b border-[var(--line)] flex-row items-center justify-between space-y-0">
+      <DialogContent showCloseButton={false} className="max-h-[88vh] sm:max-w-[560px] flex flex-col gap-0 p-0 overflow-hidden rounded-2xl border border-(line) bg-(panel) shadow-2xl">
+        <DialogHeader className="px-6 py-4.5 border-b border-(line) flex-row items-center justify-between space-y-0">
           <div>
-            <DialogTitle className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight text-[var(--ink)]">
+            <DialogTitle className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight text-(ink)">
               <NotebookPen className="size-4 text-indigo-500 dark:text-indigo-400" />
               <span>Notes for &quot;{task?.title || "Untitled"}&quot;</span>
             </DialogTitle>
-            <p className="text-[11.5px] text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+            <p className="text-[11.5px] text-(muted) mt-1 leading-normal">
               Private notes are visible only to you. Shared notes are visible to all collaborators.
             </p>
           </div>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/[0.08] dark:hover:text-zinc-100 transition-colors"
+            className="rounded-lg p-1.5 text-(ink3) hover:bg-(panel-2) hover:text-(ink) transition-colors"
             onClick={onClose}
           >
             <X className="size-4" />
           </button>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto min-h-0 bg-zinc-50/50 dark:bg-black/20 p-6">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-(bg) p-6">
           <NotesPanel
             notes={textNotes}
             currentUserId={currentUserId}

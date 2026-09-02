@@ -110,36 +110,36 @@ export default function WorkspaceSwitcher({
           }
         }}
       >
-        <DropdownMenuTrigger className="group flex min-w-0 max-w-56 items-center gap-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/80 dark:bg-white/[0.03] py-1.5 pr-2.5 pl-3 text-left outline-none transition-all hover:border-zinc-300 dark:hover:border-white/20 hover:bg-zinc-100 dark:hover:bg-white/[0.06] shadow-2xs">
+        <DropdownMenuTrigger className="group flex min-w-0 max-w-56 items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] py-2 pr-3 pl-3 text-left outline-none transition-all hover:border-neutral-400 dark:hover:border-neutral-500 shadow-xs cursor-pointer">
           {isCurrentShared ? (
-            <Users className="size-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
+            <Users className="size-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
           ) : (
-            <Building2 className="size-3.5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+            <Building2 className="size-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
           )}
           
-          <span className="truncate text-[12.5px] font-medium text-zinc-800 dark:text-zinc-200">
+          <span className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             {current?.name || "Workspace"}
           </span>
 
           {isCurrentShared ? (
-            <span className="rounded-md bg-indigo-500/10 px-1.5 py-0.2 text-[10px] font-mono font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+            <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
               Shared
             </span>
           ) : null}
 
-          <ChevronsUpDown className="size-3 shrink-0 text-zinc-400 dark:text-zinc-500 transition-colors group-hover:text-zinc-600 dark:group-hover:text-zinc-300 ml-0.5" />
+          <ChevronsUpDown className="size-3.5 shrink-0 text-neutral-400 dark:text-neutral-500 transition-colors group-hover:text-neutral-900 dark:group-hover:text-neutral-100 ml-auto" />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className="min-w-72 rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-1.5 shadow-xl backdrop-blur-2xl text-[var(--ink)]">
+        <DropdownMenuContent align="start" className="min-w-72 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#18181c] p-2 shadow-2xl text-neutral-900 dark:text-neutral-100">
           {/* Active Workspace summary & Collaborators button */}
-          <div className="px-3 py-2 border-b border-[var(--line)] mb-1">
+          <div className="px-3 py-2.5 border-b border-neutral-200 dark:border-neutral-700/80 mb-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-mono uppercase text-[var(--muted)]">Current Workspace</span>
+              <span className="text-xs font-mono uppercase text-neutral-500 dark:text-neutral-400">Current Workspace</span>
               <span className={cn(
-                "rounded-md px-1.5 py-0.5 text-[10px] font-mono font-medium",
+                "rounded-md px-2 py-0.5 text-xs font-mono font-bold",
                 current?.role === "owner"
-                  ? "bg-[var(--star)]/10 text-[var(--star)] border border-[var(--star)]/25"
-                  : "bg-[var(--accent-soft)] text-[var(--ink)] border border-[var(--line-strong)]"
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30"
               )}>
                 {current?.role === "owner" ? "Owner" : "Editor"}
               </span>
@@ -152,9 +152,9 @@ export default function WorkspaceSwitcher({
                   setOpen(false);
                   onOpenCollaborators();
                 }}
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--panel-2)] py-1.5 text-[12px] font-medium text-[var(--ink)] hover:bg-[var(--sunken)] transition-colors cursor-pointer"
+                className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800/80 py-2 text-xs font-semibold text-neutral-900 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
               >
-                <Users className="size-3.5 text-[var(--muted)]" />
+                <Users className="size-4 text-neutral-500 dark:text-neutral-400" />
                 <span>Manage Collaborators</span>
               </button>
             )}
@@ -162,12 +162,12 @@ export default function WorkspaceSwitcher({
 
           {/* Individual vs Shared Tabs if user is part of shared workspaces */}
           {hasShared && (
-            <div className="mb-1 flex gap-1 rounded-xl bg-[var(--sunken)] p-0.5">
+            <div className="mb-1 flex gap-1 rounded-xl bg-(sunken) p-0.5">
               <button
                 type="button"
                 className={cn(
                   "flex-1 rounded-lg px-2 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
-                  tab === "individual" ? "bg-[var(--panel)] text-[var(--ink)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  tab === "individual" ? "bg-(panel) text-(ink) shadow-2xs" : "text-(muted) hover:text-(ink)"
                 )}
                 onClick={() => {
                   resetPanels();
@@ -180,7 +180,7 @@ export default function WorkspaceSwitcher({
                 type="button"
                 className={cn(
                   "flex-1 rounded-lg px-2 py-1 text-[11.5px] font-medium transition-colors cursor-pointer",
-                  tab === "shared" ? "bg-[var(--panel)] text-[var(--ink)] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  tab === "shared" ? "bg-(panel) text-(ink) shadow-2xs" : "text-(muted) hover:text-(ink)"
                 )}
                 onClick={() => {
                   resetPanels();
@@ -213,15 +213,15 @@ export default function WorkspaceSwitcher({
                   key={w.id} 
                   onClick={() => switchTo(w.id)} 
                   disabled={busy} 
-                  className="group/item rounded-xl px-2.5 py-2 text-[12.5px] hover:bg-zinc-100 dark:hover:bg-white/[0.08] cursor-pointer flex items-center gap-2"
+                  className="group/item rounded-xl px-2.5 py-2 text-[12.5px] hover:bg-(panel-2) cursor-pointer flex items-center gap-2"
                 >
                   {w.role === "owner" ? (
-                    <Building2 className="size-3.5 shrink-0 text-zinc-400" />
+                    <Building2 className="size-3.5 shrink-0 text-(ink3)" />
                   ) : (
                     <Users className="size-3.5 shrink-0 text-indigo-400" />
                   )}
                   
-                  <span className="flex-1 truncate font-medium text-zinc-800 dark:text-zinc-200">{w.name}</span>
+                  <span className="flex-1 truncate font-medium text-(ink)">{w.name}</span>
                   
                   {w.role === "editor" && (
                     <span className="rounded bg-indigo-500/10 px-1 py-0.2 text-[9.5px] font-mono text-indigo-500">Shared</span>
@@ -232,7 +232,7 @@ export default function WorkspaceSwitcher({
                   {w.role === "owner" && (
                     <button
                       type="button"
-                      className="rounded-md p-1 text-zinc-400 opacity-0 hover:bg-zinc-200 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-white group-hover/item:opacity-100 transition-opacity"
+                      className="rounded-md p-1 text-(ink3) opacity-0 hover:bg-(panel-2) hover:text-(ink) group-hover/item:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
                         startRename(w);
@@ -249,7 +249,7 @@ export default function WorkspaceSwitcher({
 
           {tab === "individual" && (
             <>
-              <DropdownMenuSeparator className="bg-zinc-100 dark:border-white/[0.08] my-1" />
+              <DropdownMenuSeparator className="bg-(line) my-1" />
               {creating ? (
                 <form onSubmit={createWorkspace} className="flex gap-1.5 p-1.5">
                   <Input
@@ -268,7 +268,7 @@ export default function WorkspaceSwitcher({
               ) : (
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[12.5px] font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[12.5px] font-medium text-(muted) hover:bg-(panel-2) hover:text-(ink) transition-colors cursor-pointer"
                   onClick={() => setCreating(true)}
                 >
                   <Plus className="size-3.5" /> New workspace
@@ -284,7 +284,7 @@ export default function WorkspaceSwitcher({
         <button
           type="button"
           onClick={onOpenCollaborators}
-          className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50/80 dark:bg-white/[0.03] px-2.5 py-1.5 text-[12px] font-medium text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/15 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white transition-all shadow-2xs cursor-pointer"
+          className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-(line) bg-(panel) px-2.5 py-1.5 text-[12px] font-medium text-(muted) hover:border-(line-strong) hover:bg-(panel-2) hover:text-(ink) transition-all shadow-2xs cursor-pointer"
           title="View and manage workspace collaborators"
         >
           <Users className="size-3 text-indigo-500 dark:text-indigo-400" />

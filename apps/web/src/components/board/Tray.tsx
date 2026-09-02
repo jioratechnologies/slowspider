@@ -59,8 +59,8 @@ export default function Tray({
       {/* Sentinel for sticky floating toolbar */}
       <div ref={sentinelRef} className="h-px w-full" aria-hidden />
 
-      {/* Sticky Compact Bar on Scroll */}
-      <div className="sticky top-[60px] z-30 h-0 w-full overflow-visible">
+      {/* Sticky Compact Bar on Scroll — solid, contained, not overlapping grid */}
+      <div className="sticky top-[60px] z-20 h-0 w-full overflow-visible pointer-events-none">
         <AnimatePresence>
           {showSticky && (
             <motion.div
@@ -68,15 +68,15 @@ export default function Tray({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.96 }}
               transition={{ duration: 0.15 }}
-              className="mx-auto w-fit max-w-full pt-1"
+              className="mx-auto w-fit max-w-[min(92vw,560px)] pt-2 pointer-events-auto"
             >
-              <div className="rounded-xl border border-[var(--line)] bg-[var(--panel)] p-1.5 pl-3 pr-2 flex items-center gap-3 shadow-md text-[var(--ink)]">
+              <div className="rounded-xl border border-(line) bg-(panel) p-1.5 pl-3 pr-2 flex items-center gap-3 shadow-lg text-(ink)">
                 <div className="flex shrink-0 items-center gap-1.5 text-xs font-medium">
-                  <Inbox className="size-3.5 text-[var(--muted)]" />
+                  <Inbox className="size-3.5 text-(muted)" />
                   <span className="font-mono">{tasks.length}</span>
                 </div>
-                <div className="h-5 w-px bg-[var(--line)] shrink-0" />
-                <div className="flex gap-2 overflow-x-auto no-scrollbar items-center max-w-[500px]">
+                <div className="h-5 w-px bg-(line) shrink-0" />
+                <div className="flex gap-2 overflow-x-auto no-scrollbar items-center max-w-[360px]">
                   {tasks.map((t) => (
                     <div key={t.id} className="w-[200px] shrink-0">
                       <TaskCard
@@ -100,19 +100,19 @@ export default function Tray({
 
       {/* Main Tray Area */}
       <section
-        className="tray mb-4 rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3 shadow-xs transition-all"
+        className="tray mb-4 rounded-xl border border-(line) bg-(panel) p-3 shadow-xs transition-all"
         id="tray"
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--ink)]">
-              <Inbox className="size-3.5 text-[var(--muted)]" />
+            <span className="flex items-center gap-1.5 text-[13px] font-medium text-(ink)">
+              <Inbox className="size-3.5 text-(muted)" />
               Floating Inbox
             </span>
-            <span className="rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.2 text-[10.5px] font-mono text-[var(--muted)]">
+            <span className="rounded-full border border-(line) bg-(panel-2) px-2 py-0.2 text-[10.5px] font-mono text-(muted)">
               {tasks.length}
             </span>
-            <span className="hidden sm:inline text-[11px] text-[var(--muted)]">
+            <span className="hidden sm:inline text-[11px] text-(muted)">
               — unsorted tasks
             </span>
           </div>
@@ -121,7 +121,7 @@ export default function Tray({
             <button
               type="button"
               onClick={toggleStickyPreference}
-              className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-(muted) hover:text-(ink) transition-colors cursor-pointer"
               title={allowSticky ? "Disable sticky bar on scroll" : "Enable sticky bar on scroll"}
             >
               {allowSticky ? <PinOff className="size-3" /> : <Pin className="size-3" />}
@@ -131,7 +131,7 @@ export default function Tray({
               <button
                 type="button"
                 onClick={() => setCollapsed((v) => !v)}
-                className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-(muted) hover:text-(ink) transition-colors cursor-pointer"
               >
                 {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
               </button>
@@ -161,7 +161,7 @@ export default function Tray({
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-[var(--line)] bg-[var(--bg)]/50 text-[11.5px] text-[var(--muted)] italic">
+              <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-(line) bg-(bg) text-[11.5px] text-(muted) italic">
                 Drop unsorted tasks here
               </div>
             )}

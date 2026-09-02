@@ -75,34 +75,34 @@ export default function CalendarPanel({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent 
         showCloseButton={false} 
-        className="max-w-[90vw] sm:max-w-[800px] gap-0 p-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-xl"
+        className="max-w-[90vw] sm:max-w-200 gap-0 p-0 overflow-hidden rounded-2xl border border-(line) bg-(panel) shadow-xl"
       >
         <DialogTitle className="sr-only">Calendar</DialogTitle>
-        <div className="relative flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/[0.08]">
+        <div className="relative flex items-center justify-between px-6 py-4 border-b border-(line)">
           <div className="flex items-center gap-3">
-            <button className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white transition-colors" title="Previous month" onClick={() => shiftMonth(-1)}>
+            <button className="rounded-lg p-1.5 text-(ink3) hover:bg-(panel-2) hover:text-(ink) transition-colors" title="Previous month" onClick={() => shiftMonth(-1)}>
               <ChevronLeft className="size-4" />
             </button>
             
-            <h2 className="text-[19px] font-semibold text-zinc-900 dark:text-zinc-100 [font-family:var(--serif)] tracking-tight">
+            <h2 className="text-[19px] font-semibold text-(ink) [font-family:var(--serif)] tracking-tight">
               {cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
             </h2>
 
-            <button className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white transition-colors" title="Next month" onClick={() => shiftMonth(1)}>
+            <button className="rounded-lg p-1.5 text-(ink3) hover:bg-(panel-2) hover:text-(ink) transition-colors" title="Next month" onClick={() => shiftMonth(1)}>
               <ChevronRight className="size-4" />
             </button>
           </div>
 
-          <button className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--accent-soft)] hover:text-[var(--ink)] transition-colors" title="Close calendar" onClick={onClose}>
+          <button className="rounded-lg p-1.5 text-(muted) hover:bg-(accent-soft) hover:text-(ink) transition-colors" title="Close calendar" onClick={onClose}>
             <X className="size-4" />
           </button>
         </div>
 
         <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.3fr)_1fr]">
           {/* Left: Calendar Grid */}
-          <div className="bg-[var(--line)] grid grid-cols-7 gap-px rounded-2xl overflow-hidden border border-[var(--line)]">
+          <div className="bg-(line) grid grid-cols-7 gap-px rounded-2xl overflow-hidden border border-(line)">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="bg-[var(--sunken)] py-2.5 text-center text-[11px] font-medium text-[var(--muted)]">
+              <div key={w} className="bg-(sunken) py-2.5 text-center text-[11px] font-medium text-(muted)">
                 {w}
               </div>
             ))}
@@ -118,7 +118,7 @@ export default function CalendarPanel({
                   key={key}
                   onClick={() => setSelected(key)}
                   className={cn(
-                    "group relative flex h-[50px] sm:h-[56px] w-full flex-col items-center justify-center bg-[var(--panel)] transition-colors hover:bg-[var(--panel-2)]",
+                    "group relative flex h-12.5 sm:h-14 w-full flex-col items-center justify-center bg-(panel) transition-colors hover:bg-(panel-2)",
                     !inMonth && "opacity-35"
                   )}
                 >
@@ -126,16 +126,16 @@ export default function CalendarPanel({
                     className={cn(
                       "flex size-8 sm:size-8.5 items-center justify-center rounded-xl text-[13px] transition-all",
                       isSelected 
-                        ? "bg-[var(--ink)] text-[var(--bg)] font-bold shadow-sm" 
+                        ? "bg-(ink) text-(bg) font-bold shadow-sm" 
                         : isToday 
-                          ? "border border-[var(--line-strong)] text-[var(--ink)] font-semibold"
-                          : "text-[var(--ink)] group-hover:text-[var(--ink)]"
+                          ? "border border-(line-strong) text-(ink) font-semibold"
+                          : "text-(ink) group-hover:text-(ink)"
                     )}
                   >
                     {d.getDate()}
                   </span>
                   {count > 0 && !isSelected && (
-                    <span className="absolute bottom-1.5 size-1 rounded-full bg-[var(--star)]" />
+                    <span className="absolute bottom-1.5 size-1 rounded-full bg-(star)" />
                   )}
                 </button>
               );
@@ -144,34 +144,34 @@ export default function CalendarPanel({
 
           {/* Right: Selected Day Tasks */}
           <div className="flex flex-col min-w-0">
-            <h3 className="mb-3 text-[15px] font-semibold text-[var(--ink)] tracking-tight">
+            <h3 className="mb-3 text-[15px] font-semibold text-(ink) tracking-tight">
               {new Date(selected + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
             </h3>
             
             {!dayTasks.length && (
-              <div className="rounded-xl border border-dashed border-[var(--line)] p-4 text-center text-[12.5px] text-[var(--muted)] italic mt-1">
+              <div className="rounded-xl border border-dashed border-(line) p-4 text-center text-[12.5px] text-(muted) italic mt-1">
                 No tasks scheduled for this day.
               </div>
             )}
             
-            <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-0.5">
+            <div className="flex flex-col gap-2 overflow-y-auto max-h-75 pr-0.5">
               {dayTasks.map((t) => (
-                <div key={t.id} className="group flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--panel-2)]/60 px-3.5 py-3 transition-colors hover:bg-[var(--panel-2)] hover:border-[var(--line-strong)]">
+                <div key={t.id} className="group flex items-center justify-between gap-3 rounded-xl border border-(line) bg-(panel-2) px-3.5 py-3 transition-colors hover:bg-(sunken) hover:border-(line-strong)">
                   <button className="flex min-w-0 flex-1 items-start gap-2.5 text-left" onClick={() => { onClose(); onOpenTask(t.id); }}>
-                    <div className="mt-0.5 shrink-0 text-[var(--muted)]">
+                    <div className="mt-0.5 shrink-0 text-(muted)">
                       {t.deadline_time ? <Clock className="size-3.5" /> : <AlignLeft className="size-3.5" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13px] text-[var(--ink)] leading-tight">
+                      <div className="text-[13px] text-(ink) leading-tight">
                         {t.deadline_time ? (
-                          <span className="font-medium mr-1.5 font-mono text-[var(--muted)]">{t.deadline_time} ·</span>
+                          <span className="font-medium mr-1.5 font-mono text-(muted)">{t.deadline_time} ·</span>
                         ) : null}
-                        <span className={cn(t.done && "line-through text-[var(--muted)]")}>
+                        <span className={cn(t.done && "line-through text-(muted)")}>
                           {t.title || "Untitled"}
                         </span>
                       </div>
                       {clusterName(t.cluster_id) && (
-                        <div className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400 truncate font-mono">
+                        <div className="mt-1 text-[11px] text-(muted) truncate font-mono">
                           {clusterName(t.cluster_id)}
                         </div>
                       )}
@@ -180,7 +180,7 @@ export default function CalendarPanel({
                   
                   {isCalendarSyncable(t) && (
                     <a
-                      className="shrink-0 rounded-lg p-1 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-zinc-200 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-white"
+                      className="shrink-0 rounded-lg p-1 text-(ink3) opacity-0 group-hover:opacity-100 transition-all hover:bg-(panel-2) hover:text-(ink)"
                       href={googleCalendarUrl(t, clusterName(t.cluster_id))}
                       target="_blank"
                       rel="noopener noreferrer"

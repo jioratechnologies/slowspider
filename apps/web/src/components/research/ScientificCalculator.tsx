@@ -166,22 +166,22 @@ export default function ScientificCalculator({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[var(--line)] bg-[var(--panel)] shadow-xl text-[var(--ink)] transition-all overflow-hidden",
-        isPinned && "fixed bottom-6 right-6 z-50 w-80 shadow-2xl border-[var(--ink)]"
+        "rounded-2xl border border-(line) bg-(panel) shadow-xl text-(ink) transition-all overflow-hidden",
+        isPinned && "fixed bottom-6 right-6 z-50 w-80 shadow-2xl border-(ink)"
       )}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[var(--panel-2)] border-b border-[var(--line)]">
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-(panel-2) border-b border-(line)">
         <div className="flex items-center gap-2">
-          <Calculator className="size-3.5 text-[var(--muted)]" />
-          <span className="text-[12px] font-medium tracking-tight text-[var(--ink)]">Calculator</span>
+          <Calculator className="size-3.5 text-(muted)" />
+          <span className="text-[12px] font-medium tracking-tight text-(ink)">Calculator</span>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setIsRad((v) => !v)}
-            className="rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-[var(--bg)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+            className="rounded px-1.5 py-0.5 text-[10px] font-mono uppercase bg-(bg) border border-(line) text-(muted) hover:text-(ink) cursor-pointer"
             title="Toggle Radians / Degrees"
           >
             {isRad ? "RAD" : "DEG"}
@@ -192,8 +192,8 @@ export default function ScientificCalculator({
               type="button"
               onClick={onTogglePin}
               className={cn(
-                "rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer",
-                isPinned && "text-[var(--ink)]"
+                "rounded p-1 text-(muted) hover:text-(ink) transition-colors cursor-pointer",
+                isPinned && "text-(ink)"
               )}
               title={isPinned ? "Unpin calculator" : "Pin calculator to screen"}
             >
@@ -205,7 +205,7 @@ export default function ScientificCalculator({
             <button
               type="button"
               onClick={() => setIsMinimized((v) => !v)}
-              className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+              className="rounded p-1 text-(muted) hover:text-(ink) cursor-pointer"
               title={isMinimized ? "Maximize" : "Minimize"}
             >
               {isMinimized ? <Maximize2 className="size-3.5" /> : <Minimize2 className="size-3.5" />}
@@ -216,7 +216,7 @@ export default function ScientificCalculator({
             <button
               type="button"
               onClick={onClose}
-              className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+              className="rounded p-1 text-(muted) hover:text-(ink) cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -227,11 +227,11 @@ export default function ScientificCalculator({
       {!isMinimized && (
         <div className="p-3 space-y-2.5">
           {/* Display screen */}
-          <div className="rounded-lg border border-[var(--line)] bg-[var(--bg)] p-2.5 text-right">
-            <div className="min-h-4 text-[10.5px] font-mono text-[var(--muted)] truncate">
+          <div className="rounded-lg border border-(line) bg-(bg) p-2.5 text-right">
+            <div className="min-h-4 text-[10.5px] font-mono text-(muted) truncate">
               {equation || " "}
             </div>
-            <div className="text-[20px] font-mono font-medium text-[var(--ink)] truncate tracking-tight">
+            <div className="text-[20px] font-mono font-medium text-(ink) truncate tracking-tight">
               {display}
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function ScientificCalculator({
           </div>
 
           {/* Keyboard & History */}
-          <div className="flex items-center justify-between pt-1 border-t border-[var(--line)] text-[10px] font-mono text-[var(--muted)]">
+          <div className="flex items-center justify-between pt-1 border-t border-(line) text-[10px] font-mono text-(muted)">
             <span className="flex items-center gap-1">
               <Keyboard className="size-2.5" /> Keyboard active
             </span>
@@ -290,7 +290,7 @@ export default function ScientificCalculator({
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="flex items-center gap-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+                className="flex items-center gap-1 text-(muted) hover:text-(ink) cursor-pointer"
               >
                 <History className="size-2.5" />
                 <span>{showHistory ? "Hide" : `History (${history.length})`}</span>
@@ -304,10 +304,10 @@ export default function ScientificCalculator({
                 <div
                   key={idx}
                   onClick={() => setDisplay(h.res)}
-                  className="flex items-center justify-between rounded p-1 bg-[var(--panel-2)] hover:bg-[var(--accent-soft)] cursor-pointer"
+                  className="flex items-center justify-between rounded p-1 bg-(panel-2) hover:bg-(accent-soft) cursor-pointer"
                 >
-                  <span className="text-[var(--muted)] truncate">{h.eq} =</span>
-                  <span className="font-medium text-[var(--ink)]">{h.res}</span>
+                  <span className="text-(muted) truncate">{h.eq} =</span>
+                  <span className="font-medium text-(ink)">{h.res}</span>
                 </div>
               ))}
             </div>
@@ -341,11 +341,11 @@ function CalcBtn({
       onClick={onClick}
       className={cn(
         "h-8 rounded-lg font-medium transition-all cursor-pointer flex items-center justify-center select-none active:scale-95 border",
-        num && "bg-[var(--bg)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--panel)]",
-        sci && "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] text-[11px]",
-        op && "bg-[var(--panel-2)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] text-[13px]",
-        danger && "bg-[var(--panel-2)] text-[var(--muted)] border-[var(--line)] hover:text-rose-500 hover:border-rose-500/30",
-        equals && "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] font-bold hover:opacity-90"
+        num && "bg-(bg) text-(ink) border-(line) hover:border-(line-strong) hover:bg-(panel)",
+        sci && "bg-(panel-2) text-(muted) border-(line) hover:text-(ink) hover:border-(line-strong) text-[11px]",
+        op && "bg-(panel-2) text-(ink) border-(line) hover:border-(line-strong) text-[13px]",
+        danger && "bg-(panel-2) text-(muted) border-(line) hover:text-rose-500 hover:border-rose-500/30",
+        equals && "bg-(ink) text-(bg) border-(ink) font-bold hover:opacity-90"
       )}
     >
       {label}

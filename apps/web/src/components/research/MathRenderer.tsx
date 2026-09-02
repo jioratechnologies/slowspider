@@ -175,17 +175,17 @@ export const COMMON_PHYSICS_SYMBOLS = [
 
 export function MathQuickBar({ onInsert }: { onInsert: (latex: string) => void }) {
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] hide-scrollbar">
-      <span className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 shrink-0 mr-1 font-semibold">
-        Quick Math:
-      </span>
+    <div className="flex flex-wrap items-center gap-1.5 py-1">
+      <div className="flex items-center gap-1 shrink-0 rounded-lg bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10.5px] font-mono font-bold uppercase text-purple-600 dark:text-purple-400">
+        <span>∑ Math</span>
+      </div>
       {COMMON_PHYSICS_SYMBOLS.map((sym) => (
         <button
           key={sym.label}
           type="button"
           onClick={() => onInsert(sym.latex)}
           title={`${sym.name}: ${sym.latex}`}
-          className="shrink-0 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] px-2 py-0.5 text-zinc-800 dark:text-zinc-200 hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-600 dark:hover:text-purple-400 font-mono transition-all text-[11.5px] cursor-pointer shadow-2xs"
+          className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-0.5 text-neutral-900 dark:text-neutral-100 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-600 dark:hover:text-purple-300 font-mono font-bold transition-all text-xs cursor-pointer shadow-2xs active:scale-95"
         >
           {sym.label}
         </button>

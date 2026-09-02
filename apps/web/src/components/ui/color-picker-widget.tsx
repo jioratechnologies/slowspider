@@ -135,7 +135,7 @@ export function ColorPickerWidget({
       </div>
 
       {/* HEX / RGB Mode Selector & Value Input */}
-      <div className="flex items-center gap-2 rounded-xl border border-zinc-200/90 dark:border-white/[0.08] bg-zinc-50/80 dark:bg-white/[0.02] p-2">
+      <div className="flex items-center gap-2 rounded-xl border border-zinc-200/90 dark:border-white/8 bg-zinc-50/80 dark:bg-white/2 p-2">
         {/* Live Color Swatch */}
         <div
           className="size-8 rounded-lg border border-black/10 dark:border-white/10 shrink-0 shadow-inner"
@@ -175,7 +175,7 @@ export function ColorPickerWidget({
               onChange={(e) => handleHexChange(e.target.value)}
               placeholder="#4C9A8A"
               maxLength={7}
-              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] px-2 text-[12px] font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none uppercase"
+              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-2 text-[12px] font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none uppercase"
             />
           </div>
         ) : (
@@ -186,7 +186,7 @@ export function ColorPickerWidget({
               max={255}
               value={rInput}
               onChange={(e) => handleRgbChange(e.target.value, gInput, bInput)}
-              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
+              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
               placeholder="R"
             />
             <input
@@ -195,7 +195,7 @@ export function ColorPickerWidget({
               max={255}
               value={gInput}
               onChange={(e) => handleRgbChange(rInput, e.target.value, bInput)}
-              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
+              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
               placeholder="G"
             />
             <input
@@ -204,7 +204,7 @@ export function ColorPickerWidget({
               max={255}
               value={bInput}
               onChange={(e) => handleRgbChange(rInput, gInput, e.target.value)}
-              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
+              className="h-8 w-full rounded-lg border border-zinc-200 dark:border-white/8 bg-white dark:bg-white/[0.03] px-1 text-center text-[11.5px] font-mono text-zinc-900 dark:text-zinc-100 focus:border-zinc-400 focus:outline-none"
               placeholder="B"
             />
           </div>

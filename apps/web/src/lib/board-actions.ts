@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "./supabase/server";
 import { backend } from "./backend-client";
-import type { Category, Cluster, Milestone, Note, SortMode, Task } from "./types";
+import type { Category, Cluster, Milestone, Note, Priority, SortMode, Task } from "./types";
 
 // Server Actions the Board client component calls directly. Used to call
 // ./services/board.ts in-process; now calls apps/backend's /v1/** routes through Kong
@@ -42,7 +42,14 @@ async function requireWorkspaceContext(): Promise<WorkspaceContext> {
 }
 
 // ---- tasks ----
-export async function insertTask(input: { title: string; cluster_id: number | null; pos: number }): Promise<Task> {
+export async function insertTask(input: {
+  title: string;
+  cluster_id: number | null;
+  pos: number;
+  priority?: Priority;
+  deadline?: string | null;
+  deadline_time?: string | null;
+}): Promise<Task> {
   const { token, workspaceId } = await requireWorkspaceContext();
   return backend.auth<Task>("/v1/tasks", { token, workspaceId }, { method: "POST", body: input });
 }

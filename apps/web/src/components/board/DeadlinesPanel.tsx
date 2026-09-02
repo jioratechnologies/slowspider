@@ -26,23 +26,23 @@ export default function DeadlinesPanel({
   function row(t: Task, kind: "overdue" | "soon" | "up") {
     return (
       <div
-        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 hover:bg-[var(--accent-soft)] transition-colors"
+        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 hover:bg-(accent-soft) transition-colors"
         key={t.id}
         onClick={() => onOpenTask(t.id)}
       >
         <span className="size-1.5 shrink-0 rounded-full" style={{ background: clusterColor(t.cluster_id) }} />
-        <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">{t.title}</span>
+        <span className="min-w-0 flex-1 truncate text-[13px] text-(ink)">{t.title}</span>
         <span
           className={cn(
             "shrink-0 text-[11px] font-mono",
             kind === "overdue" && "text-rose-500 font-medium",
             kind === "soon" && "text-amber-500",
-            kind === "up" && "text-[var(--muted)]"
+            kind === "up" && "text-(muted)"
           )}
         >
           {fmtDate(t.deadline)}
         </span>
-        <span className="hidden shrink-0 truncate text-[11px] font-mono text-[var(--muted)] sm:inline">
+        <span className="hidden shrink-0 truncate text-[11px] font-mono text-(muted) sm:inline">
           · {clusterName(t.cluster_id)}
         </span>
       </div>
@@ -53,13 +53,13 @@ export default function DeadlinesPanel({
     <div
       id="deadlines-panel"
       className={cn(
-        "mb-4 scroll-mt-20 rounded-xl border border-[var(--line)] bg-[var(--panel)] px-3.5 py-2.5 shadow-xs transition-all",
+        "mb-4 scroll-mt-20 rounded-xl border border-(line) bg-(panel) px-3.5 py-2.5 shadow-xs transition-all",
         overdue.length && "border-l-4 border-l-rose-500"
       )}
     >
       <div className="flex flex-wrap items-center gap-2.5">
-        <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-[var(--ink)]">
-          <AlarmClock className="size-3.5 text-[var(--muted)]" />
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-(ink)">
+          <AlarmClock className="size-3.5 text-(muted)" />
           Deadlines
         </span>
 
@@ -75,7 +75,7 @@ export default function DeadlinesPanel({
             </span>
           )}
           {upcoming.length > 0 && (
-            <span className="rounded-md px-2 py-0.5 text-[10.5px] font-mono text-[var(--muted)] bg-[var(--panel-2)] border border-[var(--line)]">
+            <span className="rounded-md px-2 py-0.5 text-[10.5px] font-mono text-(muted) bg-(panel-2) border border-(line)">
               {upcoming.length} this week
             </span>
           )}
@@ -83,7 +83,7 @@ export default function DeadlinesPanel({
 
         <button
           type="button"
-          className="ml-auto flex items-center gap-1 cursor-pointer border-0 bg-transparent text-[11.5px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+          className="ml-auto flex items-center gap-1 cursor-pointer border-0 bg-transparent text-[11.5px] text-(muted) hover:text-(ink) transition-colors"
           onClick={() => setExpanded((v) => !v)}
         >
           <span>{expanded ? "Collapse" : "View"}</span>
@@ -100,7 +100,7 @@ export default function DeadlinesPanel({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="mt-2.5 flex flex-col gap-0.5 border-t border-[var(--line)] pt-2">
+            <div className="mt-2.5 flex flex-col gap-0.5 border-t border-(line) pt-2">
               {overdue.length > 0 && (
                 <>
                   <div className="mt-1 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-rose-500">Overdue / missed</div>
@@ -115,7 +115,7 @@ export default function DeadlinesPanel({
               )}
               {upcoming.length > 0 && (
                 <>
-                  <div className="mt-2 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-[var(--muted)]">Upcoming this week</div>
+                  <div className="mt-2 mb-0.5 px-1 text-[10px] font-mono uppercase tracking-wider text-(muted)">Upcoming this week</div>
                   {upcoming.map((t) => row(t, "up"))}
                 </>
               )}

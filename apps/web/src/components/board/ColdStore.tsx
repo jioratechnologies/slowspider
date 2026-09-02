@@ -46,31 +46,31 @@ export default function ColdStore({
     <section
       id="coldStore"
       className={cn(
-        "stash overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] shadow-xs transition-all"
+        "stash overflow-hidden rounded-xl border border-(line) bg-(panel) shadow-xs transition-all"
       )}
     >
       {/* Header */}
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left select-none hover:bg-[var(--accent-soft)] transition-colors"
+        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left select-none hover:bg-(accent-soft) transition-colors"
         onClick={onToggleOpen}
       >
-        <div className="flex size-6.5 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]">
-          <Snowflake className="size-3.5 text-[var(--ink)]" />
+        <div className="flex size-6.5 shrink-0 items-center justify-center rounded-lg border border-(line) bg-(panel-2) text-(muted)">
+          <Snowflake className="size-3.5 text-(ink)" />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block text-[13px] font-medium leading-tight text-[var(--ink)]">
+          <span className="block text-[13px] font-medium leading-tight text-(ink)">
             Cold Store
           </span>
-          <span className="text-[11px] text-[var(--muted)]">Paused projects, kept for later</span>
+          <span className="text-[11px] text-(muted)">Paused projects, kept for later</span>
         </div>
         {total > 0 && (
-          <span className="rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.2 text-[10.5px] font-mono text-[var(--muted)]">
+          <span className="rounded-full border border-(line) bg-(panel-2) px-2 py-0.2 text-[10.5px] font-mono text-(muted)">
             {total}
           </span>
         )}
         <ChevronDown
-          className={cn("size-3.5 shrink-0 text-[var(--muted)] transition-transform duration-200", open && "rotate-180")}
+          className={cn("size-3.5 shrink-0 text-(muted) transition-transform duration-200", open && "rotate-180")}
         />
       </button>
 
@@ -83,20 +83,20 @@ export default function ColdStore({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t border-[var(--line)] px-3 py-2.5 space-y-2.5">
+            <div className="border-t border-(line) px-3 py-2.5 space-y-2.5">
               {/* Cloud Archive Info Banner */}
-              <div className="flex items-center justify-between rounded-lg border border-[var(--line)] bg-[var(--panel-2)] px-2.5 py-1.5 text-[11px] text-[var(--muted)]">
+              <div className="flex items-center justify-between rounded-lg border border-(line) bg-(panel-2) px-2.5 py-1.5 text-[11px] text-(muted)">
                 <span className="flex items-center gap-1.5 font-mono">
                   <Archive className="size-3 shrink-0" />
                   <span>Archived &amp; Compressed</span>
                 </span>
-                <span className="font-mono text-[10px] text-[var(--ink3)]">
+                <span className="font-mono text-[10px] text-(ink3)">
                   &gt; 4mo
                 </span>
               </div>
 
               {!total && (
-                <p className="px-1 py-2 text-[11.5px] text-[var(--muted)] italic">
+                <p className="px-1 py-2 text-[11.5px] text-(muted) italic">
                   Nothing paused. Drag tasks or clusters here to pause them.
                 </p>
               )}
@@ -117,11 +117,11 @@ export default function ColdStore({
                         onBin={() => onBinCluster(c.id)}
                       >
                         <span className="size-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                        <span className="flex-1 truncate text-[12.5px] font-medium text-[var(--ink)]">{c.name}</span>
-                        <span className="shrink-0 text-[10px] text-[var(--muted)] font-mono border border-[var(--line)] bg-[var(--panel-2)] px-1.5 py-0.2 rounded">
+                        <span className="flex-1 truncate text-[12.5px] font-medium text-(ink)">{c.name}</span>
+                        <span className="shrink-0 text-[10px] text-(muted) font-mono border border-(line) bg-(panel-2) px-1.5 py-0.2 rounded">
                           Zipped
                         </span>
-                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">
+                        <span className="shrink-0 text-[10.5px] text-(muted) font-mono">
                           {n} task{n !== 1 ? "s" : ""}
                           {cat ? ` · ${cat.name}` : ""}
                         </span>
@@ -142,12 +142,12 @@ export default function ColdStore({
                         onResume={() => onResumeTask(t.id)}
                         onBin={() => onBinTask(t.id)}
                       >
-                        <span className="size-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
-                        <span className="flex-1 truncate text-[12.5px] text-[var(--ink)]">{title}</span>
-                        <span className="shrink-0 text-[10px] text-[var(--muted)] font-mono border border-[var(--line)] bg-[var(--panel-2)] px-1.5 py-0.2 rounded">
+                        <span className="size-1.5 shrink-0 rounded-full bg-(muted)" />
+                        <span className="flex-1 truncate text-[12.5px] text-(ink)">{title}</span>
+                        <span className="shrink-0 text-[10px] text-(muted) font-mono border border-(line) bg-(panel-2) px-1.5 py-0.2 rounded">
                           Zipped
                         </span>
-                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">
+                        <span className="shrink-0 text-[10.5px] text-(muted) font-mono">
                           {clusterName}
                         </span>
                       </ColdRow>
@@ -169,7 +169,7 @@ export default function ColdStore({
                     {hasMore && (
                       <button
                         type="button"
-                        className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-[var(--line)] py-1 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                        className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-(line) py-1 text-[11px] text-(muted) hover:text-(ink) transition-colors cursor-pointer"
                         onClick={() => setShowAll((v) => !v)}
                       >
                         {showAll ? (
@@ -208,8 +208,8 @@ function ColdRow({
   return (
     <div
       className={cn(
-        "stash-item group flex cursor-grab items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2.5 py-2 touch-none active:cursor-grabbing transition-all hover:border-[var(--line-strong)] hover:bg-[var(--panel)] text-[var(--ink)]",
-        frozen && "just-frozen ring-1 ring-[var(--ink)]"
+        "stash-item group flex cursor-grab items-center gap-2 rounded-lg border border-(line) bg-(bg) px-2.5 py-2 touch-none active:cursor-grabbing transition-all hover:border-(line-strong) hover:bg-(panel) text-(ink)",
+        frozen && "just-frozen ring-1 ring-(ink)"
       )}
       data-skind={skind}
       data-sid={sid}
@@ -221,7 +221,7 @@ function ColdRow({
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
-          className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
+          className="rounded p-1 text-(muted) hover:text-(ink) hover:bg-(accent-soft) transition-colors cursor-pointer"
           title="Resume"
           onClick={onResume}
         >
@@ -229,7 +229,7 @@ function ColdRow({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-[var(--muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+          className="rounded p-1 text-(muted) hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
           title="Move to bin"
           onClick={onBin}
         >

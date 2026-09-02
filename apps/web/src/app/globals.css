@@ -5,57 +5,55 @@
 /* We theme via [data-theme="dark"] and `.dark` class on <html> */
 @custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   SLOW SPIDER Â· "Paper" Design System
-   Inspired by e-ink note-taking devices: warm paper surfaces, soft graphite
-   ink, hairline rules, generous calm. Two functional hues only â€” brick for
-   overdue, ochre for starred. Everything else is ink on paper.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLOW SPIDER · High-Contrast Modern Workspace Design System
+   High readability, vibrant functional colors, solid surfaces, clear borders.
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Surfaces - Warm paper */
-  --bg: #F7F5F0;
-  --panel: #FCFBF7;
-  --panel-2: #F1EEE6;
-  --sunken: #EBE7DD;
+  /* Surfaces - Solid, crisp light */
+  --bg: #F8F9FA;
+  --panel: #FFFFFF;
+  --panel-2: #F1F3F5;
+  --sunken: #E9ECEF;
 
-  /* Ink & Typography - Warm graphite */
-  --ink: #1E1C17;
-  --muted: #6F6A5E;
-  --ink3: #9D9788;
+  /* Ink & Typography - Deep high-contrast slate */
+  --ink: #0F172A;
+  --muted: #475569;
+  --ink3: #64748B;
 
-  /* Borders & Dividers - Hairline rules */
-  --line: #E5E1D5;
-  --line-strong: #CDC7B8;
+  /* Borders & Dividers - Clean visible rules */
+  --line: #E2E8F0;
+  --line-strong: #CBD5E1;
 
-  /* Accents - Ink on paper */
-  --accent: #1E1C17;
-  --accent-soft: rgba(30, 28, 23, 0.05);
+  /* Accents */
+  --accent: #2563EB;
+  --accent-soft: rgba(37, 99, 235, 0.08);
 
   /* Legacy maps */
-  --sage: #1E1C17;
-  --sage-soft: rgba(30, 28, 23, 0.05);
-  --sage-ink: #1E1C17;
-  --clay: #6F6A5E;
-  --float: #FCFBF7;
+  --sage: #0F172A;
+  --sage-soft: rgba(15, 23, 42, 0.06);
+  --sage-ink: #0F172A;
+  --clay: #475569;
+  --float: #FFFFFF;
 
-  /* Priority & Status - Monochrome + two functional hues */
-  --high: #1E1C17;
-  --med: #6F6A5E;
-  --low: #9D9788;
+  /* Priority & Status - Vibrant, easily identifiable colors */
+  --high: #EF4444;
+  --med: #F59E0B;
+  --low: #3B82F6;
   --none: transparent;
-  --overdue: #A8492F;
-  --soon: #6F6A5E;
-  --star: #B08A3E;
+  --overdue: #E11D48;
+  --soon: #D97706;
+  --star: #F59E0B;
 
-  /* Elevation - Soft, diffuse, papery */
-  --sh-1: 0 1px 2px rgba(58, 52, 38, 0.04);
-  --sh-2: 0 2px 8px rgba(58, 52, 38, 0.06);
-  --sh-3: 0 8px 24px rgba(58, 52, 38, 0.09);
+  /* Elevation */
+  --sh-1: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sh-2: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --sh-3: 0 12px 32px rgba(15, 23, 42, 0.12), 0 4px 8px rgba(15, 23, 42, 0.06);
   --shadow: var(--sh-1);
-  --ring: rgba(30, 28, 23, 0.14);
+  --ring: rgba(37, 99, 235, 0.25);
 
   /* Radii */
-  --radius: 10px;
+  --radius: 12px;
 
   /* Typography */
   --serif: var(--font-serif), ui-serif, Georgia, serif;
@@ -66,83 +64,83 @@
   --spring: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Brand Mark */
-  --logo-mark: #1E1C17;
-  --logo-dot: #B08A3E;
+  --logo-mark: #0F172A;
+  --logo-dot: #F59E0B;
 
   /* shadcn token aliases */
   --card-foreground: var(--ink);
   --popover-foreground: var(--ink);
-  --primary-foreground: #F7F5F0;
+  --primary-foreground: #FFFFFF;
   --secondary-foreground: var(--ink);
   --accent-foreground: var(--ink);
-  --destructive-foreground: #FCFBF7;
+  --destructive-foreground: #FFFFFF;
 }
 
-/* â”€â”€ Dark Mode: Soft graphite â€” lifted anthracite surfaces, never pitch black â”€â”€ */
+/* ── Dark Mode: Rich, solid, high-contrast zinc surfaces ── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121212;
-    --panel: #1A1A1A;
-    --panel-2: #222222;
-    --sunken: #0C0C0C;
-    --ink: #F2F2F2;
-    --muted: #A8A8A8;
-    --ink3: #757575;
-    --line: #333333;
-    --line-strong: #4A4A4A;
-    --accent: #F2F2F2;
-    --accent-soft: rgba(242, 242, 242, 0.07);
-    --sage: #F2F2F2;
-    --sage-soft: rgba(242, 242, 242, 0.07);
-    --sage-ink: #F2F2F2;
-    --clay: #A8A8A8;
-    --float: #262626;
-    --high: #F2F2F2;
-    --med: #A8A8A8;
-    --low: #757575;
-    --overdue: #E5484D;
-    --soon: #A8A8A8;
-    --star: #F2F2F2;
-    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.32);
-    --sh-2: 0 2px 10px rgba(0, 0, 0, 0.36);
-    --sh-3: 0 8px 28px rgba(0, 0, 0, 0.44);
-    --ring: rgba(242, 242, 242, 0.24);
-    --logo-mark: #F2F2F2;
-    --logo-dot: #CBA45C;
-    --primary-foreground: #121212;
+    --bg: #09090B;
+    --panel: #141417;
+    --panel-2: #1C1C21;
+    --sunken: #09090B;
+    --ink: #F8FAFC;
+    --muted: #94A3B8;
+    --ink3: #64748B;
+    --line: #27272A;
+    --line-strong: #3F3F46;
+    --accent: #38BDF8;
+    --accent-soft: rgba(56, 189, 248, 0.12);
+    --sage: #F8FAFC;
+    --sage-soft: rgba(248, 250, 252, 0.08);
+    --sage-ink: #F8FAFC;
+    --clay: #94A3B8;
+    --float: #1C1C21;
+    --high: #F87171;
+    --med: #FBBF24;
+    --low: #60A5FA;
+    --overdue: #FB7185;
+    --soon: #FBBF24;
+    --star: #FBBF24;
+    --sh-1: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --sh-2: 0 4px 16px rgba(0, 0, 0, 0.6);
+    --sh-3: 0 12px 36px rgba(0, 0, 0, 0.7);
+    --ring: rgba(56, 189, 248, 0.35);
+    --logo-mark: #F8FAFC;
+    --logo-dot: #FBBF24;
+    --primary-foreground: #09090B;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #121212;
-  --panel: #1A1A1A;
-  --panel-2: #222222;
-  --sunken: #0C0C0C;
-  --ink: #F2F2F2;
-  --muted: #A8A8A8;
-  --ink3: #757575;
-  --line: #333333;
-  --line-strong: #4A4A4A;
-  --accent: #F2F2F2;
-  --accent-soft: rgba(242, 242, 242, 0.07);
-  --sage: #F2F2F2;
-  --sage-soft: rgba(242, 242, 242, 0.07);
-  --sage-ink: #F2F2F2;
-  --clay: #A8A8A8;
-  --float: #262626;
-  --high: #F2F2F2;
-  --med: #A8A8A8;
-  --low: #757575;
-  --overdue: #E5484D;
-  --soon: #A8A8A8;
-  --star: #F2F2F2;
-  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --sh-2: 0 2px 10px rgba(0, 0, 0, 0.36);
-  --sh-3: 0 8px 28px rgba(0, 0, 0, 0.44);
-  --ring: rgba(242, 242, 242, 0.24);
-  --logo-mark: #F2F2F2;
-  --logo-dot: #CBA45C;
-  --primary-foreground: #121212;
+  --bg: #09090B;
+  --panel: #141417;
+  --panel-2: #1C1C21;
+  --sunken: #09090B;
+  --ink: #F8FAFC;
+  --muted: #94A3B8;
+  --ink3: #64748B;
+  --line: #27272A;
+  --line-strong: #3F3F46;
+  --accent: #38BDF8;
+  --accent-soft: rgba(56, 189, 248, 0.12);
+  --sage: #F8FAFC;
+  --sage-soft: rgba(248, 250, 252, 0.08);
+  --sage-ink: #F8FAFC;
+  --clay: #94A3B8;
+  --float: #1C1C21;
+  --high: #F87171;
+  --med: #FBBF24;
+  --low: #60A5FA;
+  --overdue: #FB7185;
+  --soon: #FBBF24;
+  --star: #FBBF24;
+  --sh-1: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --sh-2: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --sh-3: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --ring: rgba(56, 189, 248, 0.35);
+  --logo-mark: #F8FAFC;
+  --logo-dot: #FBBF24;
+  --primary-foreground: #09090B;
 }
 
 * {
@@ -159,42 +157,29 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 1.55;
   font-weight: 400;
   letter-spacing: 0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Paper grain â€” a whisper of tooth under the ink */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
-}
-[data-theme="dark"] body,
-.dark body,
-:root:not([data-theme="light"]) body {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
-/* Editorial defaults â€” serif voice for headings, quiet tracking */
 h1, h2, h3 {
   font-family: var(--serif);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 ::selection {
-  background: rgba(176, 138, 62, 0.24);
-  color: var(--ink);
-}
-
-[data-theme="dark"] ::selection {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(56, 189, 248, 0.25);
   color: var(--ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--muted);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 main {
@@ -212,59 +197,73 @@ main [contenteditable="true"] * {
 
 /* ---- Drag and Drop Visual States ---- */
 .card.dragging {
-  opacity: 0.3;
+  opacity: 0.35;
+  transform: scale(0.98);
 }
 
 .cluster.dragover {
-  border-color: var(--ink);
+  border-color: var(--accent);
   background: var(--accent-soft);
 }
 
 .cluster.cluster-dragging {
-  opacity: 0.3;
+  opacity: 0.35;
 }
 
 .cluster.cluster-over {
-  border-color: var(--ink);
+  border-color: var(--accent);
 }
 
-.tray.dragover {
-  border-color: var(--ink);
-  background: var(--accent-soft);
-}
-
-.stash.dragover {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 1px var(--ink) inset;
-}
-
-#dumpBin.dragover {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 1px var(--ink) inset;
-}
-
-.stash-item.sdragging {
-  opacity: 0.3;
-}
-
-.stash-ghost {
-  pointer-events: none;
-}
-
-/* ---- Floating DnD drop rail â€” hidden at rest, appears only mid-drag ---- */
+/* ---- Floating DnD drop rail ---- */
 .dnd-rail {
   position: fixed;
-  right: 14px;
+  right: 20px;
   top: 50%;
   translate: 0 -50%;
-  z-index: 80;
+  z-index: 120;
   display: none;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: rgba(18, 18, 23, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: dndRailFadeIn 0.18s ease-out;
+}
+
+@keyframes dndRailFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(20px, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
 }
 
 body[data-dnd] .dnd-rail {
   display: flex;
+}
+
+.dnd-rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dnd-rail-label {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #71717a;
+  padding-left: 4px;
+  letter-spacing: 0.05em;
 }
 
 .dnd-zone {
@@ -273,40 +272,50 @@ body[data-dnd] .dnd-rail {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  width: 68px;
-  height: 68px;
-  border-radius: 16px;
-  border: 1.5px dashed var(--line-strong);
-  background: var(--panel);
-  color: var(--muted);
+  width: 66px;
+  height: 60px;
+  border-radius: 14px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: #a1a1aa;
   font-size: 11px;
-  letter-spacing: 0.02em;
-  box-shadow: var(--sh-2);
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    background 0.15s ease;
+  font-weight: 600;
+  box-shadow: var(--sh-1);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: copy;
 }
 
+.dnd-zone:hover,
 .dnd-zone.dragover {
   border-style: solid;
-  border-color: var(--ink);
-  background: var(--accent-soft);
-  color: var(--ink);
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.18);
+  color: #ffffff;
   transform: scale(1.08);
 }
 
-.dnd-zone-danger.dragover {
-  border-color: #e11d48;
-  background: color-mix(in srgb, #e11d48 12%, var(--panel));
-  color: #e11d48;
+.dnd-zone-workflow.dragover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+  color: #ffffff;
 }
 
-/* Scrollbars â€” thin graphite leads */
+.dnd-zone-priority.dragover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+  color: #ffffff;
+}
+
+.dnd-zone-danger.dragover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -316,7 +325,7 @@ body[data-dnd] .dnd-rail {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink3);
+  background: var(--muted);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -351,21 +360,60 @@ body[data-dnd] .dnd-rail {
   --color-card: var(--panel);
   --color-foreground: var(--ink);
   --color-background: var(--bg);
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  input, textarea, select, button {
+    outline: none !important;
+  }
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+
+  /* WebKit / Chromium autofill reset */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #f4f4f5 inset !important;
+    box-shadow: 0 0 0 1000px #f4f4f5 inset !important;
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+    transition: background-color 5000s ease-in-out 0s;
+    font-family: inherit !important;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover, 
+  .dark input:-webkit-autofill:focus, 
+  .dark input:-webkit-autofill:active,
+  [data-theme="dark"] input:-webkit-autofill,
+  [data-theme="dark"] input:-webkit-autofill:hover,
+  [data-theme="dark"] input:-webkit-autofill:focus,
+  [data-theme="dark"] input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #18181b inset !important;
+    box-shadow: 0 0 0 1000px #18181b inset !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    caret-color: #f8fafc !important;
+    font-family: inherit !important;
   }
 }

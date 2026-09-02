@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, FileText, File as FileIcon } from "lucide-react";
+import { Download, FileText, File as FileIcon, Pencil } from "lucide-react";
 import { mediaUrl } from "@/lib/note-media";
 import type { Note } from "@/lib/types";
 
@@ -11,7 +11,13 @@ import CustomAudioPlayer from "./CustomAudioPlayer";
  * Storage objects are private — every render trades the stored path for a
  * short-lived signed URL rather than linking the object directly.
  */
-export default function NoteMedia({ note }: { note: Note }) {
+export default function NoteMedia({ 
+  note,
+  onEditSketch,
+}: { 
+  note: Note;
+  onEditSketch?: (url: string) => void;
+}) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -82,15 +88,26 @@ export default function NoteMedia({ note }: { note: Note }) {
           alt={displayName}
           onError={() => setImgError(true)}
         />
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          download={displayName}
-          className="inline-flex items-center gap-1.5 text-[11.5px] text-zinc-400 hover:text-zinc-200 transition-colors"
-        >
-          <Download className="size-3.5" /> Download Image
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={displayName}
+            className="inline-flex items-center gap-1.5 text-[11.5px] text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <Download className="size-3.5" /> Download Image
+          </a>
+          {onEditSketch && (
+            <button
+              type="button"
+              onClick={() => onEditSketch(url)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-purple-500/10 px-2.5 py-1 text-[11.5px] font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-500/20 transition-colors cursor-pointer border border-purple-500/25 shadow-2xs"
+            >
+              <Pencil className="size-3.5 text-purple-500" /> Edit Canvas
+            </button>
+          )}
+        </div>
       </div>
     );
   }

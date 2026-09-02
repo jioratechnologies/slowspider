@@ -42,27 +42,27 @@ export default function DumpBin({
   const LIMIT = 4;
 
   return (
-    <section className="stash overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--panel)] shadow-xs transition-all" id="dumpBin">
+    <section className="stash overflow-hidden rounded-xl border border-(line) bg-(panel) shadow-xs transition-all" id="dumpBin">
       {/* Header */}
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left select-none hover:bg-[var(--accent-soft)] transition-colors"
+        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left select-none hover:bg-(accent-soft) transition-colors"
         onClick={onToggleOpen}
       >
-        <div className="flex size-6.5 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--muted)]">
-          <Trash2 className="size-3.5 text-[var(--ink)]" />
+        <div className="flex size-6.5 shrink-0 items-center justify-center rounded-lg border border-(line) bg-(panel-2) text-(muted)">
+          <Trash2 className="size-3.5 text-(ink)" />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block text-[13px] font-medium leading-tight text-[var(--ink)]">Dumping Bin</span>
-          <span className="text-[11px] text-[var(--muted)]">Removed for good after 2 weeks</span>
+          <span className="block text-[13px] font-medium leading-tight text-(ink)">Dumping Bin</span>
+          <span className="text-[11px] text-(muted)">Removed for good after 2 weeks</span>
         </div>
         {count > 0 && (
-          <span className="rounded-full border border-[var(--line)] bg-[var(--panel-2)] px-2 py-0.2 text-[10.5px] font-mono text-[var(--muted)]">
+          <span className="rounded-full border border-(line) bg-(panel-2) px-2 py-0.2 text-[10.5px] font-mono text-(muted)">
             {count}
           </span>
         )}
         <ChevronDown
-          className={cn("size-3.5 shrink-0 text-[var(--muted)] transition-transform duration-200", open && "rotate-180")}
+          className={cn("size-3.5 shrink-0 text-(muted) transition-transform duration-200", open && "rotate-180")}
         />
       </button>
 
@@ -75,9 +75,9 @@ export default function DumpBin({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t border-[var(--line)] px-3 py-2.5 space-y-2.5">
+            <div className="border-t border-(line) px-3 py-2.5 space-y-2.5">
               {!count && (
-                <p className="px-1 py-2 text-[11.5px] text-[var(--muted)] italic">
+                <p className="px-1 py-2 text-[11.5px] text-(muted) italic">
                   The bin is empty. Deleted items land here.
                 </p>
               )}
@@ -99,10 +99,10 @@ export default function DumpBin({
                         onDelete={() => onDeleteClusterForever(c.id)}
                       >
                         <span className="size-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                        <span className={cn("flex-1 truncate text-[12.5px] font-medium text-[var(--ink)]", rs === 2 && "line-through text-[var(--muted)]")}>
+                        <span className={cn("flex-1 truncate text-[12.5px] font-medium text-(ink)", rs === 2 && "line-through text-(muted)")}>
                           {c.name}
                         </span>
-                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">
+                        <span className="shrink-0 text-[10.5px] text-(muted) font-mono">
                           {n} task{n !== 1 ? "s" : ""}
                         </span>
                       </BinRow>
@@ -122,11 +122,11 @@ export default function DumpBin({
                         onRestore={() => onRestoreTask(t.id)}
                         onDelete={() => onDeleteTaskForever(t.id)}
                       >
-                        <span className="size-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
-                        <span className={cn("flex-1 truncate text-[12.5px] text-[var(--ink)]", rs === 2 && "line-through text-[var(--muted)]")}>
+                        <span className="size-1.5 shrink-0 rounded-full bg-(muted)" />
+                        <span className={cn("flex-1 truncate text-[12.5px] text-(ink)", rs === 2 && "line-through text-(muted)")}>
                           {title}
                         </span>
-                        <span className="shrink-0 text-[10.5px] text-[var(--muted)] font-mono">{clusterName(t.cluster_id)}</span>
+                        <span className="shrink-0 text-[10.5px] text-(muted) font-mono">{clusterName(t.cluster_id)}</span>
                       </BinRow>
                     );
                   }),
@@ -147,7 +147,7 @@ export default function DumpBin({
                     {hasMore && (
                       <button
                         type="button"
-                        className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-[var(--line)] py-1 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+                        className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-(line) py-1 text-[11px] text-(muted) hover:text-(ink) transition-colors cursor-pointer"
                         onClick={() => setShowAll((v) => !v)}
                       >
                         {showAll ? (
@@ -164,7 +164,7 @@ export default function DumpBin({
               {count > 0 && (
                 <button
                   type="button"
-                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--panel-2)] py-1.5 text-[11.5px] text-[var(--muted)] hover:text-rose-500 hover:border-rose-500/30 transition-colors"
+                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-(line) bg-(panel-2) py-1.5 text-[11.5px] text-(muted) hover:text-rose-500 hover:border-rose-500/30 transition-colors"
                   onClick={onEmptyBin}
                 >
                   Empty bin
@@ -198,7 +198,7 @@ function BinRow({
   return (
     <div
       className={cn(
-        "stash-item group flex cursor-grab items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2.5 py-2 touch-none active:cursor-grabbing transition-all hover:border-[var(--line-strong)] hover:bg-[var(--panel)] text-[var(--ink)]",
+        "stash-item group flex cursor-grab items-center gap-2 rounded-lg border border-(line) bg-(bg) px-2.5 py-2 touch-none active:cursor-grabbing transition-all hover:border-(line-strong) hover:bg-(panel) text-(ink)",
         rotStage === 1 && "opacity-75",
         rotStage === 2 && "opacity-50"
       )}
@@ -210,7 +210,7 @@ function BinRow({
 
       {/* Days left badge */}
       <span
-        className="inline-flex shrink-0 items-center gap-1 rounded border border-[var(--line)] bg-[var(--panel-2)] px-1.5 py-0.2 text-[10px] font-mono text-[var(--muted)]"
+        className="inline-flex shrink-0 items-center gap-1 rounded border border-(line) bg-(panel-2) px-1.5 py-0.2 text-[10px] font-mono text-(muted)"
         title={`Deleted permanently in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`}
       >
         <Clock className="size-2.5" />
@@ -221,7 +221,7 @@ function BinRow({
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
-          className="rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
+          className="rounded p-1 text-(muted) hover:text-(ink) hover:bg-(accent-soft) transition-colors cursor-pointer"
           title="Restore"
           onClick={onRestore}
         >
@@ -229,7 +229,7 @@ function BinRow({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-[var(--muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+          className="rounded p-1 text-(muted) hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
           title="Delete permanently"
           onClick={onDelete}
         >

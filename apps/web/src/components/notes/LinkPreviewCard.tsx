@@ -68,11 +68,11 @@ export default function LinkPreviewCard({
   const image = !imgError && data?.image ? data.image : null;
 
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-[var(--panel-2)]/60 overflow-hidden transition-all text-[var(--ink)]">
+    <div className="rounded-lg border border-(line) bg-(panel) overflow-hidden transition-all text-(ink) shadow-xs">
       {/* Header bar */}
-      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-[var(--line)] bg-[var(--panel)]">
-        <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-[var(--muted)] font-mono">
-          <Globe className="size-3 shrink-0 text-[var(--muted)]" />
+      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-(line) bg-(panel)">
+        <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-(muted) font-mono">
+          <Globe className="size-3 shrink-0 text-(muted)" />
           <span className="truncate">{domain}</span>
         </div>
 
@@ -81,7 +81,7 @@ export default function LinkPreviewCard({
             <button
               type="button"
               onClick={() => setShowPreview((v) => !v)}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--accent-soft)] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-(muted) hover:text-(ink) hover:bg-(accent-soft) transition-colors cursor-pointer"
               title={showPreview ? "Hide preview" : "Show preview"}
             >
               {showPreview ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
@@ -93,7 +93,7 @@ export default function LinkPreviewCard({
             href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-mono text-[var(--ink)] hover:underline transition-colors"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-mono text-(ink) hover:underline transition-colors"
             title="Open in new tab"
           >
             <ExternalLink className="size-3" />
@@ -108,10 +108,10 @@ export default function LinkPreviewCard({
           href={cleanUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col sm:flex-row gap-2.5 p-2.5 transition-colors hover:bg-[var(--accent-soft)] group block"
+          className="flex flex-col gap-2 p-2.5 transition-colors hover:bg-(accent-soft) group block min-w-0"
         >
           {image && (
-            <div className="relative w-full sm:w-20 sm:h-16 shrink-0 rounded overflow-hidden bg-[var(--sunken)] border border-[var(--line)]">
+            <div className="relative w-full h-20 shrink-0 rounded overflow-hidden bg-(sunken) border border-(line)">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
@@ -124,16 +124,16 @@ export default function LinkPreviewCard({
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             {loading && !data ? (
-              <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
+              <div className="flex items-center gap-1.5 text-[11px] text-(muted)">
                 <Loader2 className="size-3 animate-spin" /> Loading preview...
               </div>
             ) : (
               <>
-                <h4 className="text-[12.5px] font-medium text-[var(--ink)] group-hover:underline transition-colors line-clamp-1 leading-snug">
+                <h4 className="text-[12.5px] font-medium text-(ink) group-hover:underline transition-colors line-clamp-1 leading-snug">
                   {title}
                 </h4>
                 {description ? (
-                  <p className="mt-0.5 text-[11px] text-[var(--muted)] line-clamp-2 leading-relaxed">
+                  <p className="mt-0.5 text-[11px] text-(muted) line-clamp-2 leading-relaxed">
                     {description}
                   </p>
                 ) : null}
@@ -147,7 +147,7 @@ export default function LinkPreviewCard({
             href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--ink)] hover:underline break-all inline-flex items-center gap-1 font-mono"
+            className="text-(ink) hover:underline break-all inline-flex items-center gap-1 font-mono"
           >
             <span>{title || cleanUrl}</span>
             <ExternalLink className="size-2.5 shrink-0 opacity-70" />

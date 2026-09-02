@@ -25,6 +25,8 @@ export interface DragDropCallbacks {
   activateCluster: (clusterId: number) => void;
   restoreTaskToZone: (taskId: number, targetClusterId: number | null) => void;
   setJustFrozen: (key: string | null) => void;
+  setTaskWorkflow?: (taskId: number, workflowId: string) => void;
+  setTaskPriority?: (taskId: number, priority: string) => void;
 }
 
 function prefersReduce(): boolean {
@@ -79,6 +81,9 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
       const el = target as HTMLElement;
       return (
         el?.closest<HTMLElement>(".cluster") ||
+        el?.closest<HTMLElement>("[data-workflow-column]") ||
+        el?.closest<HTMLElement>("[data-priority-column]") ||
+        el?.closest<HTMLElement>(".dnd-zone") ||
         el?.closest<HTMLElement>(".tray") ||
         el?.closest<HTMLElement>("#coldStore,#dumpBin,[data-drop='coldStore'],[data-drop='dumpBin']")
       );
@@ -138,7 +143,17 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
         callbacks.binTask(id);
         return;
       }
-      const targetCluster = zone.classList.contains("tray") ? null : Number(zone.dataset.cluster);
+      const workflowCol = zone.getAttribute("data-workflow-column");
+      if (workflowCol && callbacks.setTaskWorkflow) {
+        callbacks.setTaskWorkflow(id, workflowCol);
+        return;
+      }
+      const priorityCol = zone.getAttribute("data-priority-column");
+      if (priorityCol && callbacks.setTaskPriority) {
+        callbacks.setTaskPriority(id, priorityCol);
+        return;
+      }
+      const targetCluster = zone.classList.contains("tray") ? null : zone.dataset.cluster ? Number(zone.dataset.cluster) : null;
       const overCard = (e.target as HTMLElement)?.closest<HTMLElement>(".card[data-id]");
       const overTaskId = overCard && Number(overCard.dataset.id) !== id ? Number(overCard.dataset.id) : null;
       callbacks.moveTask(id, targetCluster, overTaskId);

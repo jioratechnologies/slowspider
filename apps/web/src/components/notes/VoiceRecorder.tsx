@@ -126,21 +126,21 @@ export default function VoiceRecorder({
           onClick={start}
           disabled={disabled}
           className={cn(
-            "h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-2)] text-[var(--ink)] hover:border-[var(--line-strong)] text-[12px] cursor-pointer",
+            "h-8 rounded-lg border border-(line) bg-(panel-2) text-(ink) hover:border-(line-strong) text-[12px] cursor-pointer",
             className
           )}
         >
-          <Mic className="size-3.5 mr-1 text-[var(--muted)]" /> Record audio
+          <Mic className="size-3.5 mr-1 text-(muted)" /> Record audio
         </Button>
       ) : (
-        <div className="flex items-center gap-2.5 rounded-lg border border-[var(--ink)] bg-[var(--bg)] px-2.5 py-1 animate-in fade-in">
+        <div className="flex items-center gap-2.5 rounded-lg border border-(ink) bg-(bg) px-2.5 py-1 animate-in fade-in">
           {/* Pulsing indicator + Timer */}
           <div className="flex items-center gap-1.5">
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-rose-500" />
             </span>
-            <span className="text-[12px] font-mono font-medium text-[var(--ink)] tabular-nums">
+            <span className="text-[12px] font-mono font-medium text-(ink) tabular-nums">
               {String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}
             </span>
           </div>
@@ -152,7 +152,7 @@ export default function VoiceRecorder({
                 key={idx}
                 animate={{ height: `${lvl}%` }}
                 transition={{ duration: 0.08, ease: "linear" }}
-                className="w-0.5 min-h-[3px] rounded-full bg-[var(--ink)]"
+                className="w-0.5 min-h-[3px] rounded-full bg-(ink)"
               />
             ))}
           </div>
@@ -163,7 +163,7 @@ export default function VoiceRecorder({
               type="button"
               size="sm"
               onClick={() => stop(true)}
-              className="h-6.5 rounded bg-[var(--ink)] text-[var(--bg)] px-2 text-[11px] font-medium cursor-pointer"
+              className="h-6.5 rounded bg-(ink) text-(bg) px-2 text-[11px] font-medium cursor-pointer"
               title="Save recording"
             >
               <Check className="size-3 mr-0.5" /> Done
@@ -173,7 +173,7 @@ export default function VoiceRecorder({
               variant="ghost"
               size="sm"
               onClick={() => stop(false)}
-              className="h-6.5 w-6.5 p-0 rounded text-[var(--muted)] hover:text-rose-500 cursor-pointer"
+              className="h-6.5 w-6.5 p-0 rounded text-(muted) hover:text-rose-500 cursor-pointer"
               title="Discard recording"
             >
               <Trash2 className="size-3" />

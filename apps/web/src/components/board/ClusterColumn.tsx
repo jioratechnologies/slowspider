@@ -68,7 +68,7 @@ export default function ClusterColumn({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       className="cluster group relative flex w-full flex-col rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-[#121215] p-3.5 shadow-xs transition-all min-w-[290px]"
-      data-cluster-id={cluster.id}
+      data-cluster={cluster.id}
     >
       {/* Cluster Header */}
       <div className="mb-3.5 flex flex-col gap-2.5">

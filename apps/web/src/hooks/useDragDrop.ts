@@ -132,6 +132,11 @@ export function useDragDrop(clusters: Cluster[], callbacks: DragDropCallbacks) {
       if (!zone) return;
       e.preventDefault();
       zone.classList.remove("dragover");
+      // Clear the drag state here rather than waiting for "dragend" — moveTask/etc below
+      // trigger a re-render that can detach the dragged card before "dragend" fires, and a
+      // detached node's "dragend" never bubbles to this document listener, leaving the rail
+      // (body[data-dnd] .dnd-rail) stuck open.
+      document.body.removeAttribute("data-dnd");
       const { callbacks } = ctxRef.current;
       const id = dragId;
       dragId = null;

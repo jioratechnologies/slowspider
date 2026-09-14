@@ -6,7 +6,8 @@ import { WorkspaceService } from "../../workspace/workspace.service";
 import { ApiContext } from "../api-context.interface";
 
 // Port of withApiAuth() in apps/web's src/lib/api/handler.ts as a Nest guard. Verifies
-// `Authorization: Bearer <supabase access token>` via supabase.auth.getUser(), resolves
+// `Authorization: Bearer <supabase access token>` locally against the project's JWKS (see
+// SupabaseService.verifyAccessToken — no network round trip per request), resolves
 // workspaceId from `x-workspace-id` (falling back to the account's default workspace), and
 // attaches the resulting ApiContext onto the request for @CurrentUser() to read back out.
 //
@@ -29,14 +30,14 @@ export class SupabaseAuthGuard implements CanActivate {
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     if (!token) throw new UnauthorizedException("Not signed in.");
 
-    const { data, error } = await this.supabase.anon().auth.getUser(token);
-    if (error || !data.user) throw new UnauthorizedException("Invalid or expired token.");
+    const user = await this.supabase.verifyAccessToken(token);
+    if (!user) throw new UnauthorizedException("Invalid or expired token.");
 
     const headerWorkspace = Number(req.headers["x-workspace-id"]);
-    const workspaceId = headerWorkspace || (await this.workspaceService.getDefaultWorkspaceId(data.user.id));
+    const workspaceId = headerWorkspace || (await this.workspaceService.getDefaultWorkspaceId(user.id));
     if (!workspaceId) throw new BadRequestException("No workspace found for this account.");
 
-    const ctx: ApiContext = { userId: data.user.id, email: data.user.email || "", token, workspaceId };
+    const ctx: ApiContext = { userId: user.id, email: user.email, token, workspaceId };
     req.apiContext = ctx;
     return true;
   }

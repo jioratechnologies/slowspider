@@ -709,6 +709,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+                  Text(
+                    'Powered by JIORATECH',
+                    textAlign: TextAlign.center,
+                    style: AppType.sans(
+                      color: ink3Color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),

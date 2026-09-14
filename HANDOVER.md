@@ -56,7 +56,7 @@ Needs `apps/web/.env.local` to exist with real values (see below). Runs on
 
 ```
 cd apps/android
-flutter run -d chrome        # works today, no Android SDK needed
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080
 ```
 
 Defaults to hitting Kong at `http://localhost:8000` (override with
@@ -83,17 +83,17 @@ to delete if doing cleanup.
 
 ## What's built (phase history — see the migration doc for full detail on each)
 
-| Phase | Status | What |
-|---|---|---|
-| 0/1 | Done | Monorepo scaffold, NestJS backend, 1:1 port of all `/v1` routes |
-| 2 | Done | Kong gateway (DB-less), `docker-compose.yml` |
-| 3 | Done | `apps/web` cut over to call backend through Kong; local Prisma/service layer deleted from web |
-| 5 | Done | Whole-record live sync (NATS) — task/cluster/note/workspace changes push to other devices |
-| Realtime auth fix | Done | Browsers connect to backend's own authenticated `/v1/realtime` WS, not NATS directly (NATS has zero host-exposed ports) |
-| shared-types | Done | `packages/shared-types` is the real DTO source of truth across all three apps |
-| CRDT | Done | `Note.body` (text/rich notes) supports real concurrent co-editing via Yjs, riding the same `/v1/realtime` connection |
-| Flutter app | First pass done | `apps/android` — feature-matched to what `apps/mobile` already has (auth, board, tasks, clusters, categories, notes, attachments, archive, calendar, invites), plus whole-record realtime sync (below). No offline-first SQLite yet, never run on real Android. |
-| Flutter realtime | Done | `apps/android` connects to the same authenticated `GET /v1/realtime` WS (through Kong) as `apps/web` — `lib/core/realtime_client.dart` + wiring in `lib/state/board_provider.dart`. Whole-record broadcast sync only (task/cluster/category/milestone/note create/update/delete); the CRDT/Yjs `Note.body` co-editing protocol on the same connection is deliberately not handled — see "Flutter realtime/offline" below. |
+| Phase             | Status          | What                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0/1               | Done            | Monorepo scaffold, NestJS backend, 1:1 port of all`/v1` routes                                                                                                                                                                                                                                                                                                                                                                        |
+| 2                 | Done            | Kong gateway (DB-less),`docker-compose.yml`                                                                                                                                                                                                                                                                                                                                                                                           |
+| 3                 | Done            | `apps/web` cut over to call backend through Kong; local Prisma/service layer deleted from web                                                                                                                                                                                                                                                                                                                                         |
+| 5                 | Done            | Whole-record live sync (NATS) — task/cluster/note/workspace changes push to other devices                                                                                                                                                                                                                                                                                                                                              |
+| Realtime auth fix | Done            | Browsers connect to backend's own authenticated`/v1/realtime` WS, not NATS directly (NATS has zero host-exposed ports)                                                                                                                                                                                                                                                                                                                |
+| shared-types      | Done            | `packages/shared-types` is the real DTO source of truth across all three apps                                                                                                                                                                                                                                                                                                                                                         |
+| CRDT              | Done            | `Note.body` (text/rich notes) supports real concurrent co-editing via Yjs, riding the same `/v1/realtime` connection                                                                                                                                                                                                                                                                                                                |
+| Flutter app       | First pass done | `apps/android` — feature-matched to what `apps/mobile` already has (auth, board, tasks, clusters, categories, notes, attachments, archive, calendar, invites), plus whole-record realtime sync (below). No offline-first SQLite yet, never run on real Android.                                                                                                                                                                    |
+| Flutter realtime  | Done            | `apps/android` connects to the same authenticated `GET /v1/realtime` WS (through Kong) as `apps/web` — `lib/core/realtime_client.dart` + wiring in `lib/state/board_provider.dart`. Whole-record broadcast sync only (task/cluster/category/milestone/note create/update/delete); the CRDT/Yjs `Note.body` co-editing protocol on the same connection is deliberately not handled — see "Flutter realtime/offline" below. |
 
 ## Known gaps / not done
 

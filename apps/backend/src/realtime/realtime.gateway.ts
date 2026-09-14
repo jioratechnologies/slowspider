@@ -69,8 +69,9 @@ export class RealtimeGateway {
 
   /**
    * Auth handshake, ported from SupabaseAuthGuard's canActivate(): verify the Supabase
-   * access token via supabase.auth.getUser(token), then verify the resulting user is
-   * actually a member of the requested workspace via WorkspaceService.isMember() — same
+   * access token locally via SupabaseService.verifyAccessToken() (JWKS, no network round
+   * trip), then verify the resulting user is actually a member of the requested workspace
+   * via WorkspaceService.isMember() — same
    * membership check every REST call's guard indirectly relies on. Either failure rejects
    * the upgrade at the HTTP level (a real 401/403 status, socket destroyed) rather than
    * completing the WS handshake and closing it a moment later.
@@ -94,9 +95,9 @@ export class RealtimeGateway {
 
     let userId: string;
     try {
-      const { data, error } = await this.supabase.anon().auth.getUser(token);
-      if (error || !data.user) return this.reject(socket, 401, "Unauthorized");
-      userId = data.user.id;
+      const user = await this.supabase.verifyAccessToken(token);
+      if (!user) return this.reject(socket, 401, "Unauthorized");
+      userId = user.id;
     } catch (err) {
       this.logger.warn(`Realtime auth check errored: ${(err as Error).message}`);
       return this.reject(socket, 401, "Unauthorized");

@@ -1120,6 +1120,21 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
             ],
           ),
         ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              'Powered by JIORATECH',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: ink3Color,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

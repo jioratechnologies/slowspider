@@ -41,8 +41,11 @@ export class BoardService {
    * retention window (a global sweep, not user-scoped). */
   async purgeBin(): Promise<void> {
     const cutoff = new Date(Date.now() - BIN_MS).toISOString();
-    await this.supabase.admin().from("clusters").delete().eq("status", "binned").lt("binned_at", cutoff);
-    await this.supabase.admin().from("tasks").delete().eq("binned", true).lt("binned_at", cutoff);
+    const db = this.supabase.admin();
+    await Promise.all([
+      db.from("clusters").delete().eq("status", "binned").lt("binned_at", cutoff),
+      db.from("tasks").delete().eq("binned", true).lt("binned_at", cutoff),
+    ]);
   }
 
   async fetchBoardData(workspaceId: number, userId: string): Promise<BoardData> {

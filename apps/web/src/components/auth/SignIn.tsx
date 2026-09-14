@@ -628,7 +628,7 @@ export default function SignIn() {
                 <span className="text-[11px] tracking-wide text-(ink3)">© {new Date().getFullYear()} Slow Spider</span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-(ink3)">
                   <span className="size-1 rounded-full bg-(ink3)" />
-                  Calm by design
+                  Powered by JIORATECH
                 </span>
                 <a
                   href="#"

@@ -1184,12 +1184,7 @@ export default function Board({
               </div>
             )}
 
-            <div className="mt-8 mb-2 text-center text-[11px] text-(ink3)">
-              Synced to your Slow Spider account ·{" "}
-              <a className="cursor-pointer text-(ink) hover:underline" onClick={exportJSON}>
-                Export a backup
-              </a>
-            </div>
+            <div className="mt-8 mb-2 text-center text-[11px] text-(ink3)">Powered by JIORATECH</div>
           </main>
         </div>
       </div>

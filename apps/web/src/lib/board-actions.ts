@@ -15,7 +15,6 @@ import type { Category, Cluster, Milestone, Note, Priority, SortMode, Task } fro
 const WORKSPACE_COOKIE = "active_workspace_id";
 
 interface WorkspaceContext {
-  userId: string;
   token: string;
   /** May be omitted when no workspace cookie is set yet — the backend falls back to the
    * account's default workspace itself (SupabaseAuthGuard), so there's no need to resolve
@@ -25,11 +24,10 @@ interface WorkspaceContext {
 
 async function requireWorkspaceContext(): Promise<WorkspaceContext> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
-
+  // getSession() alone is enough — it reads the (already-verified-on-login) JWT from the
+  // SSR cookie with no network call. The extra getUser() this used to also call did add a
+  // Supabase Auth round trip purely to throw away everything but session.access_token —
+  // it never touched user.id anywhere below, and doubled every mutation's auth latency.
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -38,7 +36,7 @@ async function requireWorkspaceContext(): Promise<WorkspaceContext> {
   const cookieStore = await cookies();
   const fromCookie = Number(cookieStore.get(WORKSPACE_COOKIE)?.value);
 
-  return { userId: user.id, token: session.access_token, workspaceId: fromCookie || undefined };
+  return { token: session.access_token, workspaceId: fromCookie || undefined };
 }
 
 // ---- tasks ----

@@ -66,3 +66,14 @@ services:
         paths:
           - /v1/realtime
         strip_path: false
+
+  # Everything else (page loads, Next.js assets, server actions) goes to the frontend.
+  # Kong's router matches the longest path first, so /v1 and /cron above still win over
+  # this catch-all regardless of declaration order.
+  - name: frontend
+    url: http://frontend:3000
+    routes:
+      - name: frontend-catch-all
+        paths:
+          - /
+        strip_path: false

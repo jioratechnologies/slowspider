@@ -11,6 +11,23 @@ services:
       - "3001"
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_REALTIME_WS_URL: ${NEXT_PUBLIC_REALTIME_WS_URL}
+    env_file:
+      - ./apps/web/.env
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+    restart: unless-stopped
+
   # Realtime backbone (Phase 5, whole-record live sync — see
   # docs/MIGRATION-PLAN-bff-kong-split.md). Fully internal to the Docker network as of the
   # realtime-auth fix: only apps/backend ever speaks NATS now (its NatsService publisher, and
@@ -36,6 +53,7 @@ services:
     image: kong:3.9
     depends_on:
       - backend
+      - frontend
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/kong.yml

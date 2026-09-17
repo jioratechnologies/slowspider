@@ -47,7 +47,7 @@ services:
     volumes:
       - ./infra/kong/kong.yml:/kong/kong.yml:ro
     ports:
-      - "8000:8000" # proxy — every client (web/android/iOS) hits this
+      - "8000" # proxy — every client (web/android/iOS) hits this; Coolify maps external port
       - "127.0.0.1:8001:8001" # admin API, localhost-only
     restart: unless-stopped
 

@@ -26,6 +26,7 @@ RUN npm run build -w apps/web
 FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PORT=3000
 # `output: "standalone"` (next.config.ts) traces only the deps apps/web's server actually
 # needs and lays them out rooted at the workspace root — no separate `npm install` here.
 COPY --from=build /app/apps/web/.next/standalone ./

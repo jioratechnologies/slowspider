@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+    environment:
+      - PORT=3001
     env_file:
       - ./apps/backend/.env
     depends_on:
@@ -20,6 +22,8 @@ services:
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
         NEXT_PUBLIC_REALTIME_WS_URL: ${NEXT_PUBLIC_REALTIME_WS_URL}
+    environment:
+      - PORT=3000
     env_file:
       - ./apps/web/.env
     depends_on:

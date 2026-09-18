@@ -25,6 +25,7 @@ RUN npm run build -w apps/backend
 FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PORT=3001
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json
